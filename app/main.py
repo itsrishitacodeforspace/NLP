@@ -1,7 +1,6 @@
 """FastAPI entrypoint for BharatContract AI."""
 from __future__ import annotations
 
-import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -13,7 +12,6 @@ from app.core.config import get_settings
 from app.core.exceptions import BharatContractError
 from app.core.logging import get_logger, setup_logging
 from app.db.neo4j import Neo4jConnection, ensure_indexes
-
 
 setup_logging()
 logger = get_logger()

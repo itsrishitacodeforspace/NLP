@@ -8,7 +8,7 @@ Each rule has:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from app.models.schemas import (
@@ -29,6 +29,7 @@ class RiskRule:
     description: str
     recommendation: Optional[str] = None
     requires_indian: bool = False
+    is_contract_level: bool = False  # if True, fired once per contract not per clause
     check: Optional[Callable[[Clause, ContractSummary], Optional[RiskFlag]]] = None
 
 
@@ -333,12 +334,13 @@ RISK_RULES: List[RiskRule] = [
              description="Foreign law applied to a domestic contract.", check=rule_governing_law_mismatch),
     RiskRule(rule_id="RISK_ARB_001", name="Arbitration seat/venue mismatch", severity=RiskSeverity.HIGH, clause_type="Dispute Resolution",
              description="Seat foreign but venue Indian.", check=rule_arbitration_seat_mismatch),
-    RiskRule(rule_id="RISK_STAMP_001", name="Missing stamp duty provision", severity=RiskSeverity.CRITICAL, clause_type="Governing Law",
-             description="Indian Stamp Act requirement unmet.", requires_indian=True, check=rule_missing_stamp_duty),
-    RiskRule(rule_id="RISK_TDS_001", name="TDS provision missing", severity=RiskSeverity.MEDIUM, clause_type="Payment Terms",
-             description="No TDS deduction reference in payment clause.", requires_indian=True, check=rule_tds_missing),
-    RiskRule(rule_id="RISK_S124_001", name="Section 124 indemnity gap", severity=RiskSeverity.MEDIUM, clause_type="Indemnification",
-             description="Indian indemnity gap.", requires_indian=True, check=rule_section_124_indemnity),
+    # Indian-statutory rules fire ONCE per contract (not per clause).
+    RiskRule(rule_id="RISK_STAMP_001", name="Missing stamp duty provision", severity=RiskSeverity.CRITICAL, clause_type="ANY",
+             description="Indian Stamp Act requirement unmet.", requires_indian=True, is_contract_level=True, check=rule_missing_stamp_duty),
+    RiskRule(rule_id="RISK_TDS_001", name="TDS provision missing", severity=RiskSeverity.MEDIUM, clause_type="ANY",
+             description="No TDS deduction reference in payment clause.", requires_indian=True, is_contract_level=True, check=rule_tds_missing),
+    RiskRule(rule_id="RISK_S124_001", name="Section 124 indemnity gap", severity=RiskSeverity.MEDIUM, clause_type="ANY",
+             description="Indian indemnity gap.", requires_indian=True, is_contract_level=True, check=rule_section_124_indemnity),
 ]
 
 
@@ -346,10 +348,20 @@ def apply_rules(
     clauses: List[Clause],
     summary: ContractSummary,
 ) -> List[RiskFlag]:
-    """Run all registered rules against every clause. Returns a flat list."""
-    flags: List[RiskFlag] = []
+    """Run all registered rules against every clause. Returns a flat list.
+
+    Rules with `is_contract_level=True` run once at the contract level and are
+    NOT duplicated per clause. All other rules may fire per-clause; we then
+    dedupe by rule_id keeping the highest-severity occurrence so the UI does
+    not show the same rule three times for three matching clauses.
+    """
+    raw_flags: List[RiskFlag] = []
+
+    # 1. Per-clause rules
     for cl in clauses:
         for rule in RISK_RULES:
+            if rule.is_contract_level:
+                continue
             if rule.requires_indian and (
                 not summary.jurisdiction or summary.jurisdiction.lower() not in {"india", "indian"}
             ):
@@ -359,42 +371,61 @@ def apply_rules(
             except Exception:
                 continue
             if flag:
-                flags.append(flag)
-    # Aggregate-level rules
-    flags.extend(_contract_level_rules(clauses, summary))
-    return flags
+                raw_flags.append(flag)
+
+    # 2. Contract-level rules
+    raw_flags.extend(_contract_level_rules(clauses, summary))
+
+    # 3. Dedupe by rule_id — keep highest severity + score, attach to first
+    #    matching clause if available.
+    severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
+    by_rule: dict[str, RiskFlag] = {}
+    for f in raw_flags:
+        existing = by_rule.get(f.rule_id)
+        if existing is None:
+            by_rule[f.rule_id] = f
+            continue
+        new_sev = severity_order.get(f.severity.value, 0)
+        old_sev = severity_order.get(existing.severity.value, 0)
+        if new_sev > old_sev or (new_sev == old_sev and f.score > existing.score):
+            by_rule[f.rule_id] = f
+    return list(by_rule.values())
 
 
 def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> List[RiskFlag]:
     flags: List[RiskFlag] = []
 
-    # Missing mandatory clauses
+    # Missing mandatory clauses — use BOTH the classifier output AND a
+    # keyword check across clause text to avoid false negatives.
     detected_types = {t for c in clauses for t in c.clause_types}
-    mandatory = {
-        "Governing Law": "Governing law clause missing.",
-        "Termination": "Termination clause missing.",
-        "Limitation of Liability": "Limitation of liability clause missing.",
-    }
-    for clause_type, msg in mandatory.items():
-        if clause_type not in detected_types:
+    text_corpus = " ".join((c.text or "").lower() for c in clauses)
+
+    mandatory_checks = [
+        ("Governing Law", ["governed by the laws", "governing law", "jurisdiction of"]),
+        ("Termination", ["termination", "may terminate", "terminate this agreement"]),
+        ("Limitation of Liability", ["limitation of liability", "limit of liability", "in no event shall"]),
+    ]
+    for clause_type, keywords in mandatory_checks:
+        classified_present = clause_type in detected_types
+        keyword_present = any(k in text_corpus for k in keywords)
+        if not (classified_present or keyword_present):
             flags.append(
                 RiskFlag(
-                    risk_id=f"contract_{clause_type.replace(' ', '_')}_MISSING",
+                    risk_id=f"contract_{clause_type.replace(' ', '_').upper()}_MISSING",
                     rule_id=f"MISSING_CLAUSE_{clause_type.upper().replace(' ', '_')}",
                     name=f"Missing clause: {clause_type}",
                     severity=RiskSeverity.HIGH,
-                    explanation=msg,
+                    explanation=f"{clause_type} clause not detected.",
                     recommendation=f"Add a standard {clause_type.lower()} clause.",
                     score=60.0,
                 )
             )
 
-    # Data protection presence if personal data is referenced
-    mentions_personal_data = any(
-        "personal data" in (c.text or "").lower() or "personal information" in (c.text or "").lower()
-        for c in clauses
+    # Data protection presence if personal data is referenced.
+    mentions_personal_data = "personal data" in text_corpus or "personal information" in text_corpus
+    has_dp = "Data Protection" in detected_types or any(
+        k in text_corpus for k in ("data protection", "data breach", "personal data")
     )
-    has_dp = "Data Protection" in detected_types
     if mentions_personal_data and not has_dp:
         flags.append(
             RiskFlag(

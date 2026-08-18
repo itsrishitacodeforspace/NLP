@@ -9,7 +9,6 @@ from loguru import logger
 
 from app.core.config import get_settings
 
-
 _configured = False
 
 

@@ -1,7 +1,7 @@
 """Cypher query library + graph writer."""
 from __future__ import annotations
 
-from typing import Iterable, List, Optional
+from typing import List
 
 from app.core.logging import get_logger
 from app.db.neo4j import run_read, run_write
@@ -9,14 +9,12 @@ from app.models.schemas import (
     AnalysisResult,
     Clause,
     ContractSummary,
-    Entity,
     GraphEdge,
     GraphNode,
     GraphSnapshot,
     Obligation,
     RiskFlag,
 )
-
 
 logger = get_logger()
 

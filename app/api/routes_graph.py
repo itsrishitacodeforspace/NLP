@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException
 from app.db.queries import fetch_graph
 from app.services.jobs import list_jobs
 
-
 router = APIRouter(prefix="/api/v1/graph", tags=["graph"])
 
 
@@ -21,7 +20,7 @@ def get_graph(contract_id: str):
     # In-memory fallback
     for j in list_jobs():
         if j.contract_id == contract_id and j.result:
-            return _graph_from_result(j.result.contract_id, j.result)
+            return _graph_from_result(contract_id, j.result)
     raise HTTPException(status_code=404, detail="Graph not available")
 
 

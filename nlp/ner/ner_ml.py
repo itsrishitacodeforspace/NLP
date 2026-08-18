@@ -1,12 +1,11 @@
 """DeBERTa-v3 NER enrichment wrapper. Loaded lazily."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 from app.models.schemas import Entity
 
 try:  # pragma: no cover - optional import
-    import torch  # type: ignore
     from transformers import AutoModelForTokenClassification, AutoTokenizer  # type: ignore
     _TRANSFORMERS_AVAILABLE = True
 except Exception:  # pragma: no cover

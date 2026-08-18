@@ -1,10 +1,9 @@
 """Clause-level + contract-level risk scoring."""
 from __future__ import annotations
 
-from typing import Iterable, List
+from typing import List
 
-from app.models.schemas import Clause, ContractSummary, RiskFlag, RiskSeverity
-
+from app.models.schemas import Clause, RiskFlag, RiskSeverity
 
 _SEVERITY_WEIGHTS = {
     RiskSeverity.LOW: 10,

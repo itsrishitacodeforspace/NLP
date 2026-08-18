@@ -13,7 +13,6 @@ from typing import List, Optional
 
 from app.models.schemas import Obligation, ObligationType, RiskSeverity
 
-
 # Modal verbs used to detect obligation flavour
 OBLIGATION_MODALS = {"shall", "must", "agrees to", "is required to", "will", "undertakes to"}
 RIGHT_MODALS = {"may", "is entitled to", "has the right to", "can", "reserves the right to"}
@@ -58,14 +57,14 @@ def extract_obligations_from_clause(
     clause_text: str,
     *,
     obligation_counter: int = 0,
-) -> List[Obligation]:
+) -> list:
     """Parse a clause into structured Obligation rows."""
     if not clause_text or not clause_text.strip():
         return []
 
     # Split by sentence-like boundaries while keeping them in order
     sentences = _split_sentences(clause_text)
-    obligations: List[Obligation] = []
+    obligations: list = []
     for sent in sentences:
         hit = _analyse_sentence(sent)
         if not hit:
@@ -98,8 +97,13 @@ def extract_obligations_from_clause(
 
 
 def _split_sentences(text: str) -> List[str]:
-    """Sentence splitter that respects legal abbreviations."""
-    text = re.sub(r"\s+", " ", text).strip()
+    """Sentence splitter that respects legal abbreviations and headings."""
+    # First, split on double-newlines / headings.
+    # Strip the leading heading-like prefix (e.g. "1. Limitation of Liability").
+    text = re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+[A-Z][^\n]{0,120}\n", "", text, count=1)
+    # Normalise whitespace but keep newlines as sentence boundaries for now.
+    text = re.sub(r"[ \t]+", " ", text).strip()
+    text = re.sub(r"\n+", " ", text)
     # Protect common abbreviations
     placeholders = {
         "Pvt.": "Pvt\u0001",
@@ -180,11 +184,43 @@ def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
 
 
 def _extract_subjects(sentence: str) -> tuple[Optional[str], Optional[str]]:
-    matches = SUBJECT_RE.findall(sentence)
-    if not matches:
+    stripped = re.sub(r"^\s*\(?[a-z0-9]+[.)]\s*", "", sentence)
+    stripped = re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+", "", stripped)
+    # If the sentence starts with a heading-like title (no verb yet), drop it.
+    parts = stripped.split("\n", 1)
+    if len(parts) > 1:
+        first = parts[0].strip()
+        second = parts[1].strip()
+        # Heading detection: short title-cased chunk without a modal verb.
+        if (
+            0 < len(first) <= 100
+            and not re.search(r"\b(shall|must|may|will|agrees)\b", first, re.IGNORECASE)
+            and len(second) > len(first)
+        ):
+            stripped = second
+
+    # Find subject — up to the first modal verb or preposition.
+    cut_match = re.search(
+        r"\b(?:shall|must|may|will|agrees to|undertakes to|hereby)\b",
+        stripped,
+        re.IGNORECASE,
+    )
+    subject = stripped[: cut_match.start()].strip().rstrip(",") if cut_match else stripped[:60].strip()
+
+    # Remove trailing prepositions or leading "the/this".
+    subject = re.sub(r"\s+(to|of|from|in|under|pursuant|for|by)\s*$", "", subject)
+    subject = re.sub(r"^(the|this|that|a|an)\s+", "", subject, flags=re.IGNORECASE).strip()
+
+    if len(subject) < 3 or subject.lower() in {"the", "this", "that", "a", "an"}:
         return None, None
-    subject = matches[0].strip()
-    counterparty = matches[1].strip() if len(matches) > 1 else None
+
+    # Counterparty — find the next noun phrase after the modal.
+    counterparty = None
+    if cut_match:
+        rest = stripped[cut_match.end():].strip()
+        m = re.match(r"^([A-Z][A-Za-z0-9&,'.\-_ ]{2,60}?)", rest)
+        if m:
+            counterparty = m.group(1).strip().rstrip(",.;:")
     return subject, counterparty
 
 

@@ -6,7 +6,6 @@ from pathlib import Path
 from app.models.schemas import ContractType, PartySide
 from app.services.analyzer import analyse_path
 
-
 SAMPLE = Path(__file__).resolve().parents[1] / "data" / "raw" / "sample_msa.txt"
 
 

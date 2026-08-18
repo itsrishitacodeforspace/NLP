@@ -16,7 +16,6 @@ from app.core.exceptions import DocumentParseError, UnsupportedFormatError
 from app.core.logging import get_logger
 from app.utils.text import clean_text, split_into_paragraphs
 
-
 logger = get_logger()
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md"}
@@ -186,8 +185,8 @@ def _ocr_pdf_page(pdf_path: Path, page_number: int) -> str:
     """Render a single page to image and run Tesseract OCR on it."""
     try:
         import fitz  # type: ignore
-        from PIL import Image  # type: ignore
         import pytesseract  # type: ignore
+        from PIL import Image  # type: ignore
     except ImportError:
         logger.warning("OCR libraries unavailable; skipping OCR fallback.")
         return ""
@@ -322,7 +321,7 @@ def parse_bytes(
     enable_ocr: bool = True,
 ) -> ParsedDocument:
     """Persist bytes to disk, parse, and return ParsedDocument."""
-    from app.utils.fs import save_upload
+    from app.utils.fs import derive_title_from_filename, save_upload
 
     path, derived_id = save_upload(file_bytes, original_name)
     parsed = parse_document(
@@ -330,6 +329,9 @@ def parse_bytes(
         contract_id=contract_id or derived_id,
         enable_ocr=enable_ocr,
     )
+    # Use the original filename for the title (not the prefixed on-disk name).
+    parsed.title = derive_title_from_filename(original_name)
+    parsed.file_name = original_name
     return parsed
 
 

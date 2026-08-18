@@ -1,7 +1,6 @@
 """Contract upload + analysis routes."""
 from __future__ import annotations
 
-import io
 from datetime import datetime
 from typing import Optional
 
@@ -14,14 +13,12 @@ from app.db.postgres import upsert_contract_metadata
 from app.db.queries import write_analysis
 from app.models.schemas import (
     AnalysisResult,
-    ContractMetadata,
     ContractType,
     JobInfo,
     PartySide,
 )
 from app.services.analyzer import analyse_bytes
-from app.services.jobs import create_job, get_job, run_in_background
-
+from app.services.jobs import create_job, run_in_background
 
 router = APIRouter(prefix="/api/v1/contracts", tags=["contracts"])
 logger = get_logger()

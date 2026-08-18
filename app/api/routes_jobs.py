@@ -5,7 +5,6 @@ from fastapi import APIRouter, HTTPException
 
 from app.services.jobs import get_job, list_jobs
 
-
 router = APIRouter(prefix="/api/v1/jobs", tags=["jobs"])
 
 

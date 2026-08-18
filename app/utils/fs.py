@@ -12,7 +12,6 @@ from typing import Tuple
 from app.core.config import get_settings
 from app.core.exceptions import DocumentParseError
 
-
 _SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
 
 
@@ -45,6 +44,13 @@ def save_upload(file_bytes: bytes, original_name: str) -> Tuple[Path, str]:
     except OSError as exc:
         raise DocumentParseError(f"Failed to persist upload: {exc}") from exc
     return target, contract_id
+
+
+def derive_title_from_filename(filename: str) -> str:
+    """Make a human-friendly title from an uploaded filename."""
+    stem = Path(filename).stem
+    stem = stem.replace("_", " ").replace("-", " ").strip()
+    return stem.title() if stem else "Untitled Contract"
 
 
 def remove_path_safely(path: str | Path) -> None:

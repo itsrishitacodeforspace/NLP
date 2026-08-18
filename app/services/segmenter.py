@@ -17,10 +17,8 @@ from app.core.logging import get_logger
 from app.utils.text import (
     clean_text,
     detect_section_number,
-    looks_like_section_heading,
     split_into_paragraphs,
 )
-
 
 logger = get_logger()
 
@@ -87,8 +85,12 @@ def segment_clauses(
         if len(full_text) > long_threshold:
             # Split long clause into multiple sub-clauses.
             sub_clauses = _split_long_clause(
-                body, base_id=f"{contract_id}_c{idx:03d}", section_number=section_num,
-                heading=heading, char_start=start,
+                body,
+                base_id=f"{contract_id}_c{idx:03d}",
+                section_number=section_num,
+                heading=heading,
+                char_start=start,
+                long_threshold=long_threshold,
             )
             for sc in sub_clauses:
                 sc.metadata.setdefault("parent_index", idx)
@@ -126,12 +128,24 @@ def _group_paragraphs_into_clauses(paragraphs: List[str]) -> List[tuple[Optional
     grouped: List[tuple[Optional[str], Optional[str], str]] = []
     buffer: List[str] = []
 
+    def _trim_heading(h: str) -> Optional[str]:
+        """Use only the first line of a heading candidate, max 100 chars."""
+        if not h:
+            return None
+        first_line = h.split("\n", 1)[0].strip()
+        if not first_line:
+            return None
+        if len(first_line) > 120:
+            return None
+        return first_line
+
     def flush():
         if not buffer:
             return
-        heading = buffer[0]
+        heading_raw = buffer[0]
+        heading = _trim_heading(heading_raw)
         body = "\n\n".join(buffer[1:]) if len(buffer) > 1 else ""
-        section_num = detect_section_number(heading.split("\n", 1)[0])
+        section_num = detect_section_number(heading.split("\n", 1)[0]) if heading else None
         grouped.append((heading, section_num, body))
         buffer.clear()
 
@@ -246,7 +260,15 @@ def _split_long_clause(
     char_start: int,
     long_threshold: int = LONG_CLAUSE_CHARS,
 ) -> List[Clause]:
-    """Split a clause body into smaller pieces at paragraph boundaries."""
+    """Split a clause body into smaller pieces at paragraph or sentence
+    boundaries.
+
+    Three-stage strategy:
+      1. Group paragraphs into chunks <= long_threshold.
+      2. If a single paragraph is still larger than the threshold, split it
+         by sentence boundaries (`.!?`).
+      3. As a last resort, perform a fixed-character split.
+    """
     paragraphs = split_into_paragraphs(body)
     clauses: List[Clause] = []
     buffer: List[str] = []
@@ -259,7 +281,8 @@ def _split_long_clause(
             return
         joined = "\n\n".join(buffer).strip()
         clause_id = f"{base_id}_s{sub_idx:02d}"
-        local_start = char_start + sum(len(p) + 2 for p in clauses[: sub_idx - 1])
+        prior_len = sum(len(c.text) + 2 for c in clauses)
+        local_start = char_start + prior_len
         clauses.append(
             Clause(
                 clause_id=clause_id,
@@ -276,7 +299,30 @@ def _split_long_clause(
         buffer.clear()
         buffer_len = 0
 
+    def _split_oversized_paragraph(p: str) -> List[str]:
+        """Split a single oversized paragraph into sentence-sized chunks."""
+        if len(p) <= long_threshold:
+            return [p]
+        # Stage 2: sentence split
+        sentence_chunks = [s for s in re.split(r"(?<=[.!?])\s+", p) if s.strip()]
+        # Stage 3: fixed-char split if a sentence alone exceeds threshold
+        out: List[str] = []
+        for s in sentence_chunks:
+            if len(s) <= long_threshold:
+                out.append(s)
+                continue
+            for i in range(0, len(s), long_threshold):
+                out.append(s[i : i + long_threshold])
+        return out or [p]
+
+    expanded: List[str] = []
     for p in paragraphs:
+        if len(p) > long_threshold:
+            expanded.extend(_split_oversized_paragraph(p))
+        else:
+            expanded.append(p)
+
+    for p in expanded:
         if buffer_len + len(p) > long_threshold and buffer:
             flush()
         buffer.append(p)

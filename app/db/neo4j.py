@@ -1,16 +1,13 @@
 """Database adapters: Neo4j (graph) and PostgreSQL (metadata)."""
 from __future__ import annotations
 
-import json
 import logging
 from contextlib import contextmanager
-from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 from app.core.config import get_settings
 from app.core.exceptions import GraphWriteError
 from app.core.logging import get_logger
-
 
 logger = get_logger()
 _stdlib_logger = logging.getLogger("neo4j")
@@ -25,6 +22,8 @@ class Neo4jConnection:
     def __init__(self) -> None:
         self._driver = None
         self._available = False
+        self._connect_attempts = 0
+        self._last_connect_attempt: float = 0.0
 
     @classmethod
     def instance(cls) -> "Neo4jConnection":
@@ -39,8 +38,17 @@ class Neo4jConnection:
         return self._driver
 
     def _connect(self) -> None:
+        import time as _time
+
         from neo4j import GraphDatabase
         from neo4j.exceptions import ServiceUnavailable
+
+        # Throttle connection attempts to once per 10 seconds when failing.
+        now = _time.time()
+        if self._connect_attempts >= 1 and (now - self._last_connect_attempt) < 10:
+            return
+        self._last_connect_attempt = now
+        self._connect_attempts += 1
 
         s = get_settings()
         try:
@@ -48,12 +56,13 @@ class Neo4jConnection:
                 s.neo4j_uri,
                 auth=(s.neo4j_user, s.neo4j_password),
                 max_connection_lifetime=3600,
-                connection_acquisition_timeout=10,
+                connection_acquisition_timeout=3,
                 encrypted=False,
             )
             with self._driver.session() as session:
                 session.run("RETURN 1").consume()
             self._available = True
+            self._connect_attempts = 0
             logger.info("Connected to Neo4j at {}", s.neo4j_uri)
         except (ServiceUnavailable, Exception) as exc:
             self._available = False
@@ -123,31 +132,44 @@ def neo4j_session():
 
 
 def run_write(query: str, parameters: dict | None = None) -> dict:
-    """Execute a write query with retry."""
-    from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-    from neo4j.exceptions import TransientError
+    """Execute a write query with retry. Fast-fails if Neo4j is unreachable."""
+    from neo4j.exceptions import ServiceUnavailable, TransientError
 
-    @retry(
-        retry=retry_if_exception_type(TransientError),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=0.5, max=4),
-        reraise=True,
-    )
-    def _do_run():
-        with neo4j_session() as session:
-            result = session.execute_write(lambda tx: tx.run(query, parameters or {}).consume())
-            return result
-
+    conn = Neo4jConnection.instance()
+    if not conn.available:
+        raise GraphWriteError("Neo4j is not available")
     try:
-        return _do_run()
+        driver = conn.driver
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                with driver.session() as session:
+                    return session.execute_write(
+                        lambda tx: tx.run(query, parameters or {}).consume()
+                    )
+            except TransientError as exc:
+                last_exc = exc
+                import time as _time
+                _time.sleep(0.5 * (attempt + 1))
+                continue
+            except ServiceUnavailable as exc:
+                # Driver knows Neo4j is gone — abort immediately.
+                conn._available = False
+                raise GraphWriteError(str(exc)) from exc
+        raise GraphWriteError(str(last_exc) if last_exc else "Transient write error")
+    except GraphWriteError:
+        raise
     except Exception as exc:
         raise GraphWriteError(str(exc)) from exc
 
 
 def run_read(query: str, parameters: dict | None = None) -> List[dict]:
     """Execute a read query and return list of dicts."""
+    conn = Neo4jConnection.instance()
+    if not conn.available:
+        return []
     try:
-        with neo4j_session() as session:
+        with conn.driver.session() as session:
             result = session.run(query, parameters or {})
             return [dict(record) for record in result]
     except Exception as exc:

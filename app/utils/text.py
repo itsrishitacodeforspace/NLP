@@ -34,17 +34,28 @@ INDIAN_LEGAL_TERMS = {
 
 
 def normalise_whitespace(text: str) -> str:
-    """Collapse runs of whitespace and trim each line."""
+    """Collapse runs of whitespace and trim each line, while preserving
+    paragraph breaks (consecutive blank lines)."""
     if not text:
         return ""
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = _CONTROL_RE.sub("", text)
-    lines = []
+    cleaned_lines: list[str] = []
+    blank_groups: list[int] = []  # how many consecutive blanks at each position
+    run: list[str] = []
+    blanks = 0
     for line in text.split("\n"):
-        line = _WS_RE.sub(" ", line).strip()
-        if line:
-            lines.append(line)
-    return _NL_RE.sub("\n\n", "\n".join(lines)).strip()
+        normalised = _WS_RE.sub(" ", line).strip()
+        if not normalised:
+            blanks += 1
+            continue
+        if blanks > 0 and run:
+            # separator — keep as a single blank line between paragraphs.
+            cleaned_lines.append("")
+        run.append(normalised)
+        cleaned_lines.append(normalised)
+        blanks = 0
+    return _NL_RE.sub("\n\n", "\n".join(cleaned_lines)).strip()
 
 
 def normalise_unicode(text: str) -> str:

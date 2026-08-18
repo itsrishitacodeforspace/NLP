@@ -14,7 +14,6 @@ from sqlalchemy import (
     Column,
     DateTime,
     Float,
-    Integer,
     String,
     Text,
     create_engine,
@@ -23,7 +22,6 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
-
 
 logger = get_logger()
 
@@ -72,16 +70,20 @@ def get_engine():
         try:
             _engine = create_engine(
                 settings.database_url,
-                pool_pre_ping=True,
+                pool_pre_ping=False,
                 pool_size=5,
                 max_overflow=5,
                 future=True,
             )
+            # Probe connection with a short timeout; do not block on cold start.
+            with _engine.connect() as conn:
+                conn.execute(__import__("sqlalchemy").text("SELECT 1"))
             Base.metadata.create_all(_engine)
             logger.info("Postgres engine initialised at {}", settings.database_url)
         except Exception as exc:
             logger.warning("Postgres unavailable ({}). Metadata writes will be no-ops.", exc)
             _engine = None
+            set_postgres_unavailable()
     return _engine
 
 
@@ -112,7 +114,21 @@ def session_scope() -> Iterator[Optional[Session]]:
         session.close()
 
 
+_AVAILABLE_CACHE: dict[str, bool] = {"postgres": True}
+
+
+def postgres_available() -> bool:
+    """Cheap check; if engine init failed once, skip for the rest of this process."""
+    return _AVAILABLE_CACHE.get("postgres", False)
+
+
+def set_postgres_unavailable() -> None:
+    _AVAILABLE_CACHE["postgres"] = False
+
+
 def upsert_contract_metadata(record: dict) -> bool:
+    if not postgres_available():
+        return False
     with session_scope() as session:
         if session is None:
             return False
@@ -139,6 +155,8 @@ def upsert_contract_metadata(record: dict) -> bool:
 
 
 def upsert_job(record: dict) -> bool:
+    if not postgres_available():
+        return False
     with session_scope() as session:
         if session is None:
             return False
@@ -166,6 +184,8 @@ def upsert_job(record: dict) -> bool:
 
 
 def get_job(job_id: str) -> Optional[dict]:
+    if not postgres_available():
+        return None
     with session_scope() as session:
         if session is None:
             return None
@@ -186,6 +206,8 @@ def get_job(job_id: str) -> Optional[dict]:
 
 
 def list_contracts(limit: int = 100) -> list[dict]:
+    if not postgres_available():
+        return []
     with session_scope() as session:
         if session is None:
             return []

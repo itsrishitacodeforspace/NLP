@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
@@ -118,6 +117,7 @@ class ContractSummary(BaseModel):
     title: str
     file_name: str
     contract_type: ContractType = ContractType.OTHER
+    jurisdiction: str = "India"
     parties: List[str] = Field(default_factory=list)
     effective_date: Optional[str] = None
     expiry_date: Optional[str] = None

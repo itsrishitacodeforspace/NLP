@@ -9,10 +9,8 @@ installed.
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-
 
 # Mapping of category -> list of keyword/phrase patterns (lowercased).
 CLAUSE_RULES: Dict[str, List[str]] = {

@@ -17,7 +17,6 @@ from typing import Dict, List, Optional
 from app.models.schemas import Entity
 from app.utils.text import clean_text
 
-
 # ---------------------------------------------------------------------------
 # Regex patterns
 # ---------------------------------------------------------------------------
@@ -79,6 +78,9 @@ DATE_RES = [
     re.compile(r"\b\d{1,2}-\d{1,2}-\d{2,4}\b"),
     re.compile(r"\bFY\s?\d{4}-?\d{0,4}", re.IGNORECASE),
     re.compile(r"\b\d{1,2}\s?(?:st|nd|rd|th)?\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\b", re.IGNORECASE),
+    # Abbreviated month forms: "07 Jan 2025", "Jan 7, 2025"
+    re.compile(r"\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{2,4}\b", re.IGNORECASE),
+    re.compile(r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b", re.IGNORECASE),
 ]
 NOTICE_PERIOD_RE = re.compile(
     r"\b(?:within|no later than|at least|prior to|after)?\s*(\d+)\s+"
@@ -223,32 +225,69 @@ def extract_entities(text: str, *, clause_text: Optional[str] = None) -> Extract
 
 
 def detect_arbitration_seat(text: str) -> Optional[str]:
-    """Return the most likely arbitration seat mentioned in text."""
+    """Return the most likely arbitration seat mentioned in text.
+
+    Heuristic:
+      1. Prefer explicit phrases: "seat of arbitration shall be X".
+      2. Inside arbitration-context sentences, prefer FOREIGN seats, then
+         Indian *cities* (not the generic "India").
+      3. Skip the generic "India" entry unless nothing more specific was found.
+    """
     cleaned = clean_text(text)
     lowered = cleaned.lower()
+
+    # 1. Explicit phrase
+    explicit = re.search(
+        r"seat\s+of\s+arbitration\s+(?:shall\s+be|is|means)\s+([A-Za-z][A-Za-z\s,]{2,60})",
+        lowered,
+    )
+    if explicit:
+        value = explicit.group(1).strip().rstrip(",.").title()
+        if value.lower() not in {"india", "indian"}:
+            return value
+
+    # 2. Walk arbitration-context sentences and prefer specific cities
+    for sent in re.split(r"(?<=[.!?])\s+", cleaned):
+        ls = sent.lower()
+        if "arbitration" not in ls and "seat" not in ls and "venue" not in ls:
+            continue
+        for seat in FOREIGN_SEATS:
+            if seat in ls:
+                return seat.title()
+        for seat in INDIAN_SEATS - {"india"}:
+            if seat in ls:
+                return seat.title()
+
+    # 3. Anywhere — first foreign seat, then specific Indian city.
     for seat in FOREIGN_SEATS:
         if seat in lowered:
             return seat.title()
-    for seat in INDIAN_SEATS:
+    for seat in INDIAN_SEATS - {"india"}:
         if seat in lowered:
             return seat.title()
+
+    # 4. Last resort — return "India" only as generic jurisdiction.
+    if "india" in lowered or "indian" in lowered:
+        return "India"
     return None
 
 
 def detect_governing_law(text: str) -> Optional[str]:
     """Return the governing law phrase if found."""
-    lowered = clean_text(text).lower()
+    cleaned = clean_text(text)
+    lowered = cleaned.lower()
     patterns = [
-        r"governed by the laws of ([a-z ,]{2,40})",
-        r"governing law[^\.]{0,40}laws of ([a-z ,]{2,40})",
-        r"subject to the laws of ([a-z ,]{2,40})",
+        r"governed by the laws of[^.]{0,80}",
+        r"governing law[^\.]{0,80}laws of[^.]{0,80}",
+        r"subject to the laws of[^.]{0,80}",
+        r"laws of the state of[^.]{0,80}",
         r"laws of india",
-        r"laws of the state of ([a-z ,]{2,40})",
     ]
     for pat in patterns:
         m = re.search(pat, lowered)
         if m:
-            return m.group(0).strip().rstrip(".,")
+            phrase = m.group(0).strip().rstrip(".,")
+            return phrase[:160]
     return None
 
 

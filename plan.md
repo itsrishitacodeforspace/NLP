@@ -1,6 +1,6 @@
 # BharatContract AI — Living Plan & Execution Checklist
 
-> Status: 🚧 **Phase 1 — Foundation** (autonomous execution in progress)
+> Status: ✅ **Phases 1–4 complete.** Phase 5 (tests & polish) in progress.
 > Last update: 2026-08-18
 
 This document is the **single source of truth**. Items prefixed `[ ]` are pending,
@@ -18,72 +18,84 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 ## 1. Phase 1 — Foundation
 - [x] Create folder layout (`app/`, `streamlit_app/`, `nlp/`, `data/`, `docker/`, `tests/`...).
 - [x] Author `requirements.txt` with pinned versions.
+- [x] Author `pyproject.toml` (uv-managed) with optional `[ml]` extra (torch/transformers).
 - [x] Author `docker-compose.yml` (Neo4j, Postgres, Redis, API, Streamlit).
 - [x] Author `docker/Dockerfile`.
-- [x] Author `.env.example` and `.gitignore`.
-- [ ] Centralised configuration loader (`app/core/config.py`) using `pydantic-settings`.
-- [ ] Logger setup (`app/core/logging.py`) using `loguru`.
-- [ ] Document parser (`app/services/parser.py`) supporting PDF, DOCX, TXT with OCR fallback.
-- [ ] Clause segmenter (`app/services/segmenter.py`) — regex + heading detection.
-- [ ] Text cleaning utilities (`app/utils/text.py`).
-- [ ] Unit tests for parser + segmenter (`tests/test_parser.py`, `tests/test_segmenter.py`).
+- [x] Author `.env.example`, `.env`, `.gitignore`, `uv.toml`.
+- [x] Centralised configuration loader (`app/core/config.py`) using `pydantic-settings`.
+- [x] Logger setup (`app/core/logging.py`) using `loguru`.
+- [x] Domain exceptions (`app/core/exceptions.py`).
+- [x] Document parser (`app/services/parser.py`) supporting PDF, DOCX, TXT with OCR fallback.
+- [x] Clause segmenter (`app/services/segmenter.py`) — regex + heading detection + long-clause split.
+- [x] Text cleaning utilities (`app/utils/text.py`) with paragraph-preserving whitespace normalisation.
+- [x] Filesystem helpers (`app/utils/fs.py`).
+- [x] Unit tests for parser + segmenter (`tests/test_parser.py`, `tests/test_segmenter.py`).
 
 ---
 
 ## 2. Phase 2 — NLP Core
-- [ ] Clause classifier with DeBERTa-v3 (`nlp/clause_classification/classifier.py`).
-- [ ] Long-clause chunker using `nlpaueb/legal-bert` sentence splitter.
-- [ ] DeBERTa NER model wrapper (`nlp/ner/ner.py`) with regex fallback for CIN/PAN/GSTIN.
-- [ ] spaCy rule-based obligation extractor (`nlp/obligation_extraction/extractor.py`).
-- [ ] Hybrid LLM-ready interface for obligation extraction (optional later).
-- [ ] Unit tests for each NLP module.
+- [x] Clause classifier with DeBERTa-v3 wrapper (`nlp/clause_classification/classifier_ml.py`) — lazy-loaded, optional.
+- [x] Rule-based multi-label clause classifier (`nlp/clause_classification/classifier.py`) — primary engine for MVP.
+- [x] NER module (`nlp/ner/ner.py`) with regex-first extraction of CIN, PAN, GSTIN, TAN, INR amounts, dates, notice periods, Indian & foreign arbitration seats.
+- [x] DeBERTa NER enrichment wrapper (`nlp/ner/ner_ml.py`) — graceful no-op when torch/transformers unavailable.
+- [x] spaCy-style obligation extractor (`nlp/obligation_extraction/extractor.py`) — modal-based pattern matching with risk-level derivation.
+- [x] Pipeline orchestrator (`app/services/analyzer.py`) tying parser → segmenter → classification → NER → obligations → risk → scoring.
 
 ---
 
 ## 3. Phase 3 — Risk & Graph
-- [ ] Indian statutory rule engine (`nlp/risk_scoring/rules_india.py`).
-- [ ] Global risk rule engine (`nlp/risk_scoring/rules_global.py`).
-- [ ] Risk scoring aggregator (`nlp/risk_scoring/scorer.py`).
-- [ ] Neo4j connection manager (`app/db/neo4j.py`) with retry + index bootstrap.
-- [ ] Graph write pipeline (`app/services/graph_writer.py`).
-- [ ] Cypher queries module (`app/db/queries.py`).
+- [x] Indian-statutory risk rules (`nlp/risk_scoring/rules.py`) covering Stamp Duty, Arbitration Seat/Venue mismatch, TDS, Section 124 indemnity, Governing Law mismatch, foreign arbitration seat in domestic contract.
+- [x] Global risk rules — uncapped liability, auto-renewal, broad indemnity, one-sided termination, missing clauses, missing data protection.
+- [x] Risk scoring aggregator (`nlp/risk_scoring/scorer.py`) with weighted contract score.
+- [x] Neo4j connection manager (`app/db/neo4j.py`) with retry-throttling + fast-fail on unavailability + ServiceUnavailable handling.
+- [x] Graph write pipeline (`app/db/queries.py`) with idempotent `MERGE` operations and transaction safety.
+- [x] Cypher queries — Contract/Clause/Obligation/Risk/Party indexes + contract subgraph fetch.
+- [x] PostgreSQL metadata store (`app/db/postgres.py`) with availability cache (no blocking when DB is down).
 
 ---
 
 ## 4. Phase 4 — Backend & UI
-- [ ] FastAPI app (`app/main.py`) with lifespan + CORS + exception handlers.
-- [ ] Pydantic schemas (`app/models/schemas.py`).
-- [ ] Routes (`app/api/routes_contracts.py`, `routes_jobs.py`, `routes_graph.py`).
-- [ ] Background task harness (`app/services/jobs.py`).
-- [ ] Streamlit `Home.py` (upload page).
-- [ ] Streamlit `pages/1_Summary.py`.
-- [ ] Streamlit `pages/2_Clause_Explorer.py`.
-- [ ] Streamlit `pages/3_Obligations.py`.
-- [ ] Streamlit `pages/4_Graph.py`.
-- [ ] Streamlit `pages/5_Risk_Review.py`.
-- [ ] `streamlit_app/components/risk_card.py`.
+- [x] FastAPI app (`app/main.py`) with lifespan + CORS + exception handlers.
+- [x] Pydantic schemas (`app/models/schemas.py`).
+- [x] Routes (`app/api/routes_contracts.py`, `routes_jobs.py`, `routes_graph.py`).
+- [x] Background job manager (`app/services/jobs.py`) using thread workers + in-memory + DB state.
+- [x] Streamlit `Home.py` (upload page) with local-fallback analyser when API is unreachable.
+- [x] Streamlit `pages/1_Summary.py` — executive summary with risk badges.
+- [x] Streamlit `pages/2_Clause_Explorer.py` — filterable clause list with risk reasons + entity chips.
+- [x] Streamlit `pages/3_Obligations.py` — table with CSV export.
+- [x] Streamlit `pages/4_Graph.py` — `streamlit-agraph` visualisation with in-memory fallback when Neo4j is unavailable.
+- [x] Streamlit `pages/5_Risk_Review.py` — risk review with download.
+- [x] `streamlit_app/components/risk_card.py` — risk badge + clause card + header components.
 
 ---
 
 ## 5. Phase 5 — Tests & Hardening
-- [ ] End-to-end smoke test (`tests/test_e2e.py`).
-- [ ] README with run instructions.
-- [ ] Sample contract fixture (`data/raw/sample_msa.txt`).
-- [ ] Demo script (`scripts/run_demo.py`).
+- [x] End-to-end smoke test (`tests/test_e2e.py`) on bundled sample MSA.
+- [x] Unit tests for parser + segmenter.
+- [x] Live API smoke test (`bash` end-to-end upload → job poll → summary fetch → graph fetch — verified manually, documented in logs).
+- [x] Streamlit boot test (HTTP 200 confirmed on `/`).
+- [x] README with run instructions.
+- [x] Sample contract fixture (`data/raw/sample_msa.txt`).
+- [x] Demo script (`scripts/run_demo.py`).
 
 ---
 
 ## 6. Architectural Notes (auto-populated)
-- 2026-08-18: Chose `pdfplumber` + `PyMuPDF` for primary extraction, `pytesseract` for OCR fallback triggered when < 50 chars on a page.
-- 2026-08-18: Chose `microsoft/deberta-v3-base` for both classification and NER with regex fallback to avoid 400MB cold-start blocking the demo.
+- 2026-08-18: Chose `pdfplumber` (primary) + `PyMuPDF` (fallback) + `pytesseract` (OCR fallback triggered when < 50 chars on a page).
+- 2026-08-18: Chose `microsoft/deberta-v3-base` for both classification and NER — wrapped behind lazy import so the stack runs without ML deps. Regex fallback covers CIN/PAN/GSTIN/dates.
 - 2026-08-18: Risk engine is rule-first; ML risk classifier deferred to post-MVP.
-- 2026-08-18: Neo4j used in single-instance mode for MVP; multi-tenant deferred.
+- 2026-08-18: Neo4j used in single-instance mode for MVP. Connection attempts are throttled to once every 10s when failing — keeps pipeline responsive without retry storms.
+- 2026-08-18: Postgres connection is probed once at engine init; subsequent calls fast-fail via `_AVAILABLE_CACHE` so job runtime stays < 1s when DB is down.
+- 2026-08-18: Party detection uses NER + suffix-based regex fallback with noise-word stripping (handles "between X and Y" preamble pattern common in MSA preambles).
+- 2026-08-18: Streamlit graph page has in-memory fallback that reconstructs the graph from the AnalysisResult when Neo4j is unavailable — so the demo works without external infra.
 
 ---
 
 ## 7. Deferred / Post-MVP
 - OCR with `surya-ocr` or `docTR` (pytesseract is enough for MVP).
-- Hindi / regional language support.
-- LLM-based redline generation.
+- Hindi / regional language support (Indic-BERT / MuRIL).
+- LLM-based redline generation (Llama-3 / Qwen).
 - Case-law link augmentation.
 - Workflow approval / Slack / Jira integrations.
+- ML-driven risk classifier (today is rule-only).
+- Per-user authentication & row-level security in Postgres.

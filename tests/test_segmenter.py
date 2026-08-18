@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from app.services.segmenter import segment_clauses
 
-
 SAMPLE = """\
 1. Payment Terms
 Customer shall pay Provider within 30 days of invoice receipt. Late payments

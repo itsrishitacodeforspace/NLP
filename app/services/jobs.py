@@ -7,16 +7,14 @@ later.
 """
 from __future__ import annotations
 
-import asyncio
 import threading
 from datetime import datetime
-from typing import Awaitable, Callable, Dict, Optional
+from typing import Callable, Dict, Optional
 
 from app.core.logging import get_logger
 from app.db.postgres import upsert_job
 from app.models.schemas import AnalysisResult, JobInfo, JobStatus
 from app.utils.fs import unique_id
-
 
 logger = get_logger()
 

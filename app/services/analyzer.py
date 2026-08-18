@@ -1,8 +1,7 @@
 """High-level orchestrator: parser -> segmenter -> NLP -> risk -> graph."""
 from __future__ import annotations
 
-import json
-from datetime import datetime
+import re
 from pathlib import Path
 from typing import List, Optional
 
@@ -12,10 +11,8 @@ from app.models.schemas import (
     Clause,
     ContractSummary,
     ContractType,
-    JobStatus,
     Obligation,
     PartySide,
-    RiskFlag,
     RiskSeverity,
 )
 from app.services.parser import parse_bytes, parse_document
@@ -31,8 +28,7 @@ from nlp.ner.ner import (
 )
 from nlp.obligation_extraction.extractor import extract_obligations_from_clause
 from nlp.risk_scoring.rules import apply_rules
-from nlp.risk_scoring.scorer import _level_for, severity_to_score
-
+from nlp.risk_scoring.scorer import severity_to_score
 
 logger = get_logger()
 
@@ -209,31 +205,127 @@ def _analyse(
 
 
 def _detect_parties(clauses: List[Clause]) -> List[str]:
+    """Detect party names using NER entities + preamble + pattern-3 fallbacks."""
     parties: List[str] = []
-    for c in clauses[:8]:
+    section_starts = re.compile(r"^\s*\d+(\.\d+)*\s*\.?\s*[A-Z]")
+    blacklist = {
+        "agreement", "indemnification", "confidentiality", "between",
+        "stamp duty", "force majeure", "term and renewal", "data protection",
+        "intellectual property", "limitation of liability", "definitions",
+        "governing law", "dispute resolution", "termination", "miscellaneous",
+        "notice", "payment terms", "warranty", "service levels",
+        "change control", "acceptance", "compliance", "insurance",
+        "audit rights", "assignment", "non-compete", "non-solicit",
+    }
+
+    # 1. NER entities from the first clauses
+    for c in clauses[:6]:
         for ent in c.entities:
-            if ent.label in {"PARTY", "ORG"} and ent.text:
-                t = ent.text.strip()
-                if t and t not in parties and len(t) <= 60:
+            if ent.label not in {"PARTY", "ORG"}:
+                continue
+            t = (ent.text or "").strip().strip(",.;:")
+            if not t or len(t) > 80 or section_starts.match(t):
+                continue
+            if t.lower() in blacklist:
+                continue
+            if any(kw in t.lower() for kw in ("pvt", "ltd", "llp", "limited", "inc", "corp", "llc")):
+                if t not in parties:
                     parties.append(t)
-        if len(parties) >= 6:
+            elif re.search(r"\b[A-Z][A-Za-z]+\s+[A-Z][A-Za-z]+\b", t):
+                if t not in parties:
+                    parties.append(t)
+        if len(parties) >= 4:
             break
-    if not parties:
-        # Fallback: capitalised proper-noun spans in early text
+
+    # 2. Preamble "between X and Y" pattern
+    if len(parties) < 2:
+        preamble_patterns = [
+            re.compile(
+                r"(?im)^\s*this\s+\w+\s+agreement\s*(?:\([^)]*\))?\s*is\s+(?:made|entered\s+into)?\s*"
+                r"(?:on|as\s+of)?\s*[^\n]{0,40}?\n+\s*between\s+"
+                r"([^\n,;]+?)\s*(?:\(|,|having)\s*"
+                r".*?\s*(?:and|&)\s+"
+                r"([^\n,;]+?)(?:\s*\(|\s*,|\s*having|\.|\n|$)",
+                re.DOTALL,
+            ),
+            re.compile(
+                r"(?im)between\s+([A-Z][^\n,;(]{2,80}?)\s+(?:and|&)\s+([A-Z][^\n,;(]{2,80}?)\s*(?:\(|,|\.|having|$)",
+            ),
+        ]
         for c in clauses[:3]:
-            for line in (c.text or "").splitlines():
-                words = line.strip().split()
-                if 1 <= len(words) <= 6 and line.strip().istitle():
-                    if line.strip() not in parties:
-                        parties.append(line.strip())
+            text = c.text or ""
+            for pat in preamble_patterns:
+                m = pat.search(text)
+                if not m:
+                    continue
+                for grp in (m.group(1), m.group(2)):
+                    name = grp.strip().strip(",.;:")
+                    if not name:
+                        continue
+                    name = re.sub(r"^\s*the\s+", "", name, flags=re.IGNORECASE)
+                    # Drop noise tokens
+                    drop = {"having", "with", "between", "and", "of", "the"}
+                    while name.split()[0].lower() in drop:
+                        name = " ".join(name.split()[1:])
+                    while name.split()[-1].lower() in drop:
+                        name = " ".join(name.split()[:-1])
+                    if 3 <= len(name) <= 80 and name not in parties:
+                        parties.append(name)
+                break
+            if len(parties) >= 2:
+                break
+
+    # 3. Suffix-based fallback
+    if len(parties) < 2:
+        pvt_suffix = re.compile(
+            r"\b((?:[A-Z][\w'.-]+\s+){0,4}(?:Pvt\.?\s*Ltd\.?|Limited|LLP|Inc\.?|Corporation|Corp\.?|LLC|PLC))\b"
+        )
+        noise_words = {
+            "having", "with", "between", "of", "the", "and", "from", "pan",
+            "cin", "gstin", "represented", "incorporated", "registered", "its",
+            "their", "whose", "whereas", "recital",
+        }
+        pan_noise = re.compile(r"^[A-Z]{5}\d{4}[A-Z],?\s*(?:and\s+)?", re.IGNORECASE)
+        for c in clauses[:3]:
+            text = c.text or ""
+            for match in pvt_suffix.finditer(text):
+                end = match.end()
+                start = match.start()
+                prefix = text[:start]
+                cut = max(prefix.rfind("\n"), prefix.rfind(". "), prefix.rfind(" ("), -1)
+                candidate = text[cut + 1:end].strip().strip(",.;:")
+                while candidate and candidate.split()[0].lower() in noise_words:
+                    candidate = " ".join(candidate.split()[1:])
+                while candidate and candidate.split()[-1].lower() in noise_words:
+                    candidate = " ".join(candidate.split()[:-1])
+                candidate = pan_noise.sub("", candidate).strip().strip(",.;:")
+                if 4 <= len(candidate) <= 80 and candidate not in parties:
+                    parties.append(candidate)
                 if len(parties) >= 4:
                     break
-    return parties[:6]
+            if len(parties) >= 4:
+                break
+
+    return parties[:4]
 
 
 def _first_date(clauses: List[Clause]) -> Optional[str]:
+    """Prefer entities, then generic date search."""
     for c in clauses:
         for ent in c.entities:
             if ent.label == "DATE":
-                return ent.text
+                value = ent.text.strip()
+                if value and len(value) > 4:
+                    return value
+    generic_date_re = re.compile(
+        r"\b(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{2,4})\b",
+        re.IGNORECASE,
+    )
+    for c in clauses[:10]:
+        text = c.text or ""
+        m = generic_date_re.search(text)
+        if m:
+            return m.group(1).strip()
     return None
+
+

@@ -8,10 +8,9 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from nlp.clause_classification.classifier import ClassificationResult, CLAUSE_RULES
+from nlp.clause_classification.classifier import CLAUSE_RULES, ClassificationResult
 
 try:  # pragma: no cover - optional
-    import torch  # type: ignore
     from transformers import AutoModelForSequenceClassification, AutoTokenizer  # type: ignore
     _TRANSFORMERS_AVAILABLE = True
 except Exception:  # pragma: no cover
