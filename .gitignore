@@ -1,0 +1,42 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data / artefacts
+uploads/*
+!uploads/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/annotated/*
+!data/annotated/.gitkeep
+models/hf/*
+!models/hf/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
