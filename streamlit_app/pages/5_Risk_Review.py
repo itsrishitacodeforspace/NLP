@@ -27,28 +27,50 @@ def main() -> None:
             return
 
     if not risks:
-        st.success("No risks detected — review the playbook rules if needed.")
+        st.success("✅ No risks detected — review the playbook rules if needed.")
         return
 
     severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
     risks = sorted(risks, key=lambda r: severity_order.get(r.get("severity"), 0), reverse=True)
 
-    sev_filter = st.multiselect(
-        "Severity filter",
-        options=["critical", "high", "medium", "low"],
-        default=["critical", "high", "medium", "low"],
-    )
+    col1, col2 = st.columns([2, 3])
+    with col1:
+        sev_filter = st.multiselect(
+            "🚦 Severity filter",
+            options=["critical", "high", "medium", "low"],
+            default=["critical", "high", "medium", "low"],
+        )
+    with col2:
+        # Count summary
+        counts = {sev: sum(1 for r in risks if r.get("severity") == sev) for sev in severity_order}
+        chips = " ".join(
+            f"<span style='background:{('#7C3AED' if s=='critical' else '#EF4444' if s=='high' else '#F59E0B' if s=='medium' else '#10B981')}22;"
+            f"color:{('#7C3AED' if s=='critical' else '#EF4444' if s=='high' else '#F59E0B' if s=='medium' else '#10B981')};"
+            f"padding:4px 10px;border-radius:12px;margin:2px;font-weight:600;'>"
+            f"{s.upper()}: {counts[s]}</span>"
+            for s in ["critical", "high", "medium", "low"]
+            if counts[s]
+        )
+        if chips:
+            st.markdown(chips, unsafe_allow_html=True)
+
+    shown = 0
     for r in risks:
         if r.get("severity") not in sev_filter:
             continue
         risk_card(r)
+        shown += 1
 
-    st.download_button(
-        "Download risk JSON",
-        str(risks).encode("utf-8"),
-        file_name=f"risks_{cid}.json",
-        mime="application/json",
-    )
+    if shown == 0:
+        st.info("No risks match the current filter.")
+
+    if shown:
+        st.download_button(
+            "📥 Download risks JSON",
+            str(risks).encode("utf-8"),
+            file_name=f"risks_{cid}.json",
+            mime="application/json",
+        )
 
 
 if __name__ == "__main__":

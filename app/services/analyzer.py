@@ -218,26 +218,91 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
         "audit rights", "assignment", "non-compete", "non-solicit",
     }
 
-    # 1. NER entities from the first clauses
-    for c in clauses[:6]:
-        for ent in c.entities:
-            if ent.label not in {"PARTY", "ORG"}:
-                continue
-            t = (ent.text or "").strip().strip(",.;:")
-            if not t or len(t) > 80 or section_starts.match(t):
-                continue
-            if t.lower() in blacklist:
-                continue
-            if any(kw in t.lower() for kw in ("pvt", "ltd", "llp", "limited", "inc", "corp", "llc")):
-                if t not in parties:
-                    parties.append(t)
-            elif re.search(r"\b[A-Z][A-Za-z]+\s+[A-Z][A-Za-z]+\b", t):
-                if t not in parties:
-                    parties.append(t)
-        if len(parties) >= 4:
-            break
+    def _scan(text: str) -> List[str]:
+        """Extract party candidates from a chunk of text."""
+        found: List[str] = []
+        if not text:
+            return found
+        # 1. Suffix-based extraction (most reliable for Indian companies).
+        pvt_suffix = re.compile(
+            r"\b((?:[A-Z][\w'.-]+\s+){0,5}(?:Pvt\.?\s*Ltd\.?|Limited|LLP|Inc\.?|Corporation|Corp\.?|LLC|PLC))\b"
+        )
+        noise_words = {
+            "having", "with", "between", "of", "the", "and", "from", "pan",
+            "cin", "gstin", "represented", "incorporated", "registered", "its",
+            "their", "whose", "whereas", "recital", "by", "as", "for",
+            "annexure", "annexed", "schedule", "section", "clause",
+            "services", "company", "agent", "customer", "resident", "client",
+            "party", "parties", "provider", "recipient",
+        }
+        pan_noise = re.compile(r"^[A-Z]{5}\d{4}[A-Z],?\s*(?:and\s+)?", re.IGNORECASE)
+        # Also catch "DTwelve Accommodations Private Limited" style names
+        # where "Private Limited" or "Pte Ltd" appears.
+        generic_corp = re.compile(
+            r"\b((?:[A-Z][\w'.-]+\s+){0,5}(?:Private\s+Limited|Pte\.?\s+Ltd\.?|Private\s+Ltd\.?|Ltd\.?))\b"
+        )
+        for pat in (pvt_suffix, generic_corp):
+            for match in pat.finditer(text):
+                end = match.end()
+                start = match.start()
+                prefix = text[:start]
+                cut = max(prefix.rfind("\n"), prefix.rfind(". "), prefix.rfind(" ("), -1)
+                # Walk back through tokens but stop at noise words.
+                tokens_back = re.findall(r"[A-Z][\w'.-]+", text[max(0, cut + 1) : end])
+                kept: List[str] = []
+                for tok in reversed(tokens_back):
+                    if tok.lower() in noise_words or tok.lower() in blacklist:
+                        break
+                    kept.append(tok)
+                    if len(kept) >= 7:
+                        break
+                if not kept:
+                    continue
+                kept.reverse()
+                name = " ".join(kept)
+                name = pan_noise.sub("", name).strip().strip(",.;:")
+                # Strip leading noise tokens like "Private Limited" that
+                # bleed in from a previous match.
+                while name:
+                    first = name.split()[0].lower()
+                    if first in {"private", "limited", "pvt", "llp", "inc", "corp",
+                                  "the", "and", "of", "company", "agent", "customer"}:
+                        name = " ".join(name.split()[1:]).strip()
+                    else:
+                        break
+                if 4 <= len(name) <= 100 and name not in parties and name not in found:
+                    found.append(name)
+                if len(found) >= 6:
+                    return found
+        return found
 
-    # 2. Preamble "between X and Y" pattern
+    # 1. Scan the heading + body of the first 3 clauses (preamble often
+    # appears as the heading of clause 0).
+    for c in clauses[:3]:
+        for chunk in ((c.heading or ""), (c.text or "")[:2000]):
+            for name in _scan(chunk):
+                if name not in parties:
+                    parties.append(name)
+            if len(parties) >= 4:
+                break
+
+    # 2. NER entities (PARTY/ORG) from the first 6 clauses.
+    if len(parties) < 2:
+        for c in clauses[:6]:
+            for ent in c.entities:
+                if ent.label not in {"PARTY", "ORG"}:
+                    continue
+                t = (ent.text or "").strip().strip(",.;:")
+                if not t or len(t) > 80 or section_starts.match(t):
+                    continue
+                if t.lower() in blacklist:
+                    continue
+                if re.search(r"\b[A-Z][A-Za-z]+\s+[A-Z][A-Za-z]+\b", t) and t not in parties:
+                    parties.append(t)
+            if len(parties) >= 4:
+                break
+
+    # 3. Preamble "between X and Y" pattern (last-ditch).
     if len(parties) < 2:
         preamble_patterns = [
             re.compile(
@@ -252,61 +317,37 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
                 r"(?im)between\s+([A-Z][^\n,;(]{2,80}?)\s+(?:and|&)\s+([A-Z][^\n,;(]{2,80}?)\s*(?:\(|,|\.|having|$)",
             ),
         ]
-        for c in clauses[:3]:
-            text = c.text or ""
-            for pat in preamble_patterns:
-                m = pat.search(text)
-                if not m:
-                    continue
-                for grp in (m.group(1), m.group(2)):
-                    name = grp.strip().strip(",.;:")
-                    if not name:
-                        continue
-                    name = re.sub(r"^\s*the\s+", "", name, flags=re.IGNORECASE)
-                    # Drop noise tokens
-                    drop = {"having", "with", "between", "and", "of", "the"}
-                    while name.split()[0].lower() in drop:
-                        name = " ".join(name.split()[1:])
-                    while name.split()[-1].lower() in drop:
-                        name = " ".join(name.split()[:-1])
-                    if 3 <= len(name) <= 80 and name not in parties:
-                        parties.append(name)
-                break
-            if len(parties) >= 2:
-                break
-
-    # 3. Suffix-based fallback
-    if len(parties) < 2:
-        pvt_suffix = re.compile(
-            r"\b((?:[A-Z][\w'.-]+\s+){0,4}(?:Pvt\.?\s*Ltd\.?|Limited|LLP|Inc\.?|Corporation|Corp\.?|LLC|PLC))\b"
+        search_text = "\n".join(
+            (c.heading or "") + "\n" + (c.text or "")[:1500] for c in clauses[:2]
         )
-        noise_words = {
-            "having", "with", "between", "of", "the", "and", "from", "pan",
-            "cin", "gstin", "represented", "incorporated", "registered", "its",
-            "their", "whose", "whereas", "recital",
-        }
-        pan_noise = re.compile(r"^[A-Z]{5}\d{4}[A-Z],?\s*(?:and\s+)?", re.IGNORECASE)
-        for c in clauses[:3]:
-            text = c.text or ""
-            for match in pvt_suffix.finditer(text):
-                end = match.end()
-                start = match.start()
-                prefix = text[:start]
-                cut = max(prefix.rfind("\n"), prefix.rfind(". "), prefix.rfind(" ("), -1)
-                candidate = text[cut + 1:end].strip().strip(",.;:")
-                while candidate and candidate.split()[0].lower() in noise_words:
-                    candidate = " ".join(candidate.split()[1:])
-                while candidate and candidate.split()[-1].lower() in noise_words:
-                    candidate = " ".join(candidate.split()[:-1])
-                candidate = pan_noise.sub("", candidate).strip().strip(",.;:")
-                if 4 <= len(candidate) <= 80 and candidate not in parties:
-                    parties.append(candidate)
-                if len(parties) >= 4:
-                    break
-            if len(parties) >= 4:
-                break
+        for pat in preamble_patterns:
+            m = pat.search(search_text)
+            if not m:
+                continue
+            for grp in (m.group(1), m.group(2)):
+                name = grp.strip().strip(",.;:")
+                if not name:
+                    continue
+                name = re.sub(r"^\s*the\s+", "", name, flags=re.IGNORECASE)
+                drop = {"having", "with", "between", "and", "of", "the"}
+                while name and name.split()[0].lower() in drop:
+                    name = " ".join(name.split()[1:])
+                while name and name.split()[-1].lower() in drop:
+                    name = " ".join(name.split()[:-1])
+                if 3 <= len(name) <= 80 and name not in parties:
+                    parties.append(name)
+            break
 
-    return parties[:4]
+    # Dedupe case-insensitively, prefer the most-complete spelling.
+    deduped: List[str] = []
+    seen_lower: set[str] = set()
+    for name in parties:
+        key = name.lower().strip()
+        if key in seen_lower:
+            continue
+        seen_lower.add(key)
+        deduped.append(name)
+    return deduped[:4]
 
 
 def _first_date(clauses: List[Clause]) -> Optional[str]:

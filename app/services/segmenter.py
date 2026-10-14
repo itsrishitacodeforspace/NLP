@@ -120,22 +120,26 @@ def segment_clauses(
 def _group_paragraphs_into_clauses(paragraphs: List[str]) -> List[tuple[Optional[str], Optional[str], str]]:
     """Group paragraphs into (heading, section_number, body) tuples.
 
-    Heading detection rules:
-      - Paragraph starts with a section number pattern.
-      - Paragraph is fully uppercase and <= 100 chars (ALL CAPS heading).
-      - Paragraph ends with no punctuation and is short (<= 120 chars) -> likely heading.
+    Algorithm:
+      1. Normalise: split any paragraph that starts with a heading line and
+         has a body on subsequent lines.
+      2. Walk through the items. Each time we see a strong-heading line
+         (starts with a section number OR is an ALL-CAPS legal title),
+         flush the current buffer as one (heading, body) pair.
+      3. The first item is special: even if it doesn't match a heading
+         pattern, we treat it as the preamble's heading so all the
+         metadata that follows it stays attached as the preamble body.
     """
     grouped: List[tuple[Optional[str], Optional[str], str]] = []
     buffer: List[str] = []
 
     def _trim_heading(h: str) -> Optional[str]:
-        """Use only the first line of a heading candidate, max 100 chars."""
         if not h:
             return None
         first_line = h.split("\n", 1)[0].strip()
         if not first_line:
             return None
-        if len(first_line) > 120:
+        if len(first_line) > 200:
             return None
         return first_line
 
@@ -145,7 +149,9 @@ def _group_paragraphs_into_clauses(paragraphs: List[str]) -> List[tuple[Optional
         heading_raw = buffer[0]
         heading = _trim_heading(heading_raw)
         body = "\n\n".join(buffer[1:]) if len(buffer) > 1 else ""
-        section_num = detect_section_number(heading.split("\n", 1)[0]) if heading else None
+        section_num = (
+            detect_section_number(heading.split("\n", 1)[0]) if heading else None
+        )
         grouped.append((heading, section_num, body))
         buffer.clear()
 
@@ -161,9 +167,32 @@ def _group_paragraphs_into_clauses(paragraphs: List[str]) -> List[tuple[Optional
         else:
             normalised.append(p)
 
-    for para in normalised:
+    for idx, para in enumerate(normalised):
         first_line = para.split("\n", 1)[0].strip()
-        if _looks_like_heading_line(first_line):
+        # Strong heading: section-number prefix OR ALL-CAPS legal title.
+        is_strong_heading = bool(detect_section_number(first_line)) or (
+            first_line == first_line.upper()
+            and len(first_line) <= 100
+            and any(c.isalpha() for c in first_line)
+            and any(
+                kw in first_line.lower()
+                for kw in (
+                    "agreement",
+                    "terms",
+                    "conditions",
+                    "section",
+                    "article",
+                    "clause",
+                    "schedule",
+                    "annexure",
+                    "chapter",
+                )
+            )
+        )
+        if idx == 0 and not buffer:
+            # Force-start the first group with whatever we see.
+            buffer.append(para)
+        elif is_strong_heading:
             flush()
             buffer.append(para)
         else:
@@ -190,19 +219,23 @@ def _looks_like_heading_line(line: str) -> bool:
     # Section number ("1.", "1.1", "(a)", "Article 5", etc.)
     if detect_section_number(line):
         return True
-    # ALL CAPS short line — typical of legal headings like "LIMITATION OF LIABILITY"
     stripped = line.strip()
+    # Strip out parenthetical / quoted segments before checking case so
+    # 'RESIDENT ACCOMMODATION SERVICE AGREEMENT ("Agreement")' is treated as
+    # an all-caps heading.
+    cleaned = re.sub(r"\([^)]*\)", "", stripped)
+    cleaned = re.sub(r'"[^"]*"', "", cleaned)
+    cleaned = re.sub(r"'[^']*'", "", cleaned).strip()
+    has_alpha = any(c.isalpha() for c in cleaned)
     if (
-        len(stripped) <= 80
-        and any(c.isalpha() for c in stripped)
-        and stripped == stripped.upper()
+        has_alpha
+        and cleaned == cleaned.upper()
+        and len(stripped) <= 120
         and not stripped.endswith(".")
         and not stripped.endswith(",")
     ):
         return True
-    # Keyword hint — only if the line is very short (<= 60 chars) and is title-cased
-    # (i.e. "Indemnification", "Limitation of Liability") to avoid matching body
-    # sentences like "Customer shall pay Provider within 30 days of invoice payment".
+    # Keyword hint — only if the line is very short (<= 60 chars) and is title-cased.
     if (
         len(stripped) <= 60
         and not stripped.endswith(".")

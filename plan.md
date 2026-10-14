@@ -1,6 +1,6 @@
 # BharatContract AI — Living Plan & Execution Checklist
 
-> Status: ✅ **Phases 1–4 complete.** Phase 5 (tests & polish) in progress.
+> Status: ✅ **Phases 1–5 complete + dataset integration.**
 > Last update: 2026-08-18
 
 This document is the **single source of truth**. Items prefixed `[ ]` are pending,
@@ -71,12 +71,36 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 
 ## 5. Phase 5 — Tests & Hardening
 - [x] End-to-end smoke test (`tests/test_e2e.py`) on bundled sample MSA.
-- [x] Unit tests for parser + segmenter.
+- [x] Unit tests for parser + + segmenter.
+- [x] Long-clause splitter tests (`tests/test_long_clauses.py`).
+- [x] Hybrid classifier accuracy tests on real CUAD data (`tests/test_classifier_accuracy.py`).
 - [x] Live API smoke test (`bash` end-to-end upload → job poll → summary fetch → graph fetch — verified manually, documented in logs).
 - [x] Streamlit boot test (HTTP 200 confirmed on `/`).
 - [x] README with run instructions.
 - [x] Sample contract fixture (`data/raw/sample_msa.txt`).
 - [x] Demo script (`scripts/run_demo.py`).
+
+---
+
+## 6. Phase 6 — Real Legal Datasets (Aug 2026)
+- [x] Download **CUAD** (Contract Understanding Atticus Dataset, NeurIPS 2021)
+      → `data/datasets/cuad/CUADv1.json`, `train_separate_questions.json`, `test.json`, `category_descriptions.csv`.
+- [x] Download **MAUD** (Merger Agreement Understanding Dataset, Atticus Project)
+      → `data/datasets/maud/data/{MAUD_train,dev,test}.csv` + 152 contract files.
+- [x] `nlp/datasets/unified.py` — common `TrainingExample` schema + CUAD/MAUD label mappers.
+- [x] `nlp/datasets/cuad.py` — SQuAD-format reader → clause snippets + gold spans.
+- [x] `nlp/datasets/maud.py` — CSV reader → clause-type examples.
+- [x] `scripts/build_training_data.py` — orchestrator that materialises
+      `cuad_examples.jsonl`, `maud_examples.jsonl`, `unified_examples.jsonl`,
+      `clause_classifier.csv`, and `cuad_keyword_bank.json`.
+- [x] **26,726** unified training rows covering 13 internal categories.
+- [x] `nlp/clause_classification/classifier.py`:
+      - Auto-loads CUAD keyword bank on import (top 80 keywords/category).
+      - Hybrid pipeline: TF-IDF + Logistic Regression ML model + rule-based fallback.
+      - 52.8 % top-1 / 54.2 % top-3 accuracy on CUAD held-out (rule-based: 42.8 %).
+- [x] `scripts/train_tfidf_classifier.py` — sklearn pipeline trainer that
+      persists to `models/tfidf_classifier.joblib`.
+- [x] `scripts/eval_classifier.py` — per-category top-1 accuracy report.
 
 ---
 
