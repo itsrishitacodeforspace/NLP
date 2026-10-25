@@ -100,7 +100,7 @@ def main() -> None:
         view = view.copy()
         view["Type"] = view["Type"].apply(lambda t: f"{_TYPE_ICON.get(t, '')} {t}" if pd.notna(t) else t)
 
-    st.dataframe(view, use_container_width=True, hide_index=True, height=420)
+    st.dataframe(view, width="stretch", hide_index=True, height=420)
 
     st.download_button(
         "📥 Download CSV",

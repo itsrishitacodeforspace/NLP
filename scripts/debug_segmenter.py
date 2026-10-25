@@ -1,14 +1,14 @@
 """Debug the long-clause splitter."""
+from pathlib import Path
+
 from app.services.parser import parse_document
 from app.services.segmenter import _split_long_clause
 
+SAMPLE = Path(__file__).resolve().parents[1] / "data" / "raw" / "sample_msa.txt"
+
 
 def main() -> int:
-    parsed = parse_document(
-        "uploads/c_20260818_070241_27255d78d61f_agreement_01K35HTFJE4G8JJF7MDEWPKG3S-3.pdf",
-        contract_id="debug",
-        enable_ocr=False,
-    )
+    parsed = parse_document(SAMPLE, contract_id="debug", enable_ocr=False)
     body = parsed.full_text[3000:17000]  # arbitrary slice containing the body of clause 0
     subs = _split_long_clause(
         body,

@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import routes_contracts, routes_graph, routes_jobs
+from app.api import routes_auth, routes_contracts, routes_graph, routes_jobs
 from app.core.config import get_settings
 from app.core.exceptions import BharatContractError
 from app.core.logging import get_logger, setup_logging
@@ -62,16 +62,18 @@ async def _bharatcontract_error_handler(request: Request, exc: BharatContractErr
 @app.exception_handler(Exception)
 async def _unhandled_handler(request: Request, exc: Exception):
     logger.exception("Unhandled error on {}", request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "type": type(exc).__name__},
-    )
+    content = {"detail": "Internal server error"}
+    # Only surface the exception class in development — never in production.
+    if settings.app_env.lower() in {"development", "dev", "local"}:
+        content["type"] = type(exc).__name__
+    return JSONResponse(status_code=500, content=content)
 
 
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
+app.include_router(routes_auth.router)
 app.include_router(routes_contracts.router)
 app.include_router(routes_jobs.router)
 app.include_router(routes_graph.router)
@@ -84,6 +86,7 @@ def root():
         "version": "0.1.0",
         "docs": "/docs",
         "health": "/healthz",
+        "auth": "/api/v1/auth/token",
     }
 
 
@@ -95,6 +98,7 @@ def healthz():
         "status": "ok",
         "neo4j": neo4j_ok,
         "env": settings.app_env,
+        "auth_enabled": settings.auth_enabled,
     }
 
 

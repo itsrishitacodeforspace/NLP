@@ -65,6 +65,12 @@ def risk_card(risk: dict) -> None:
         rec = risk.get("recommendation")
         if rec:
             st.info(f"**Recommendation:** {rec}")
+        authorities = risk.get("case_law") or []
+        if authorities:
+            with st.expander(f"⚖️ Authority ({len(authorities)})"):
+                for ref in authorities:
+                    st.markdown(f"**{ref.get('citation', '')}**")
+                    st.caption(ref.get("summary", ""))
 
 
 def clause_card(clause: dict) -> None:

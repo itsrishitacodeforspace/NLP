@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.core.time import utcnow
+
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
@@ -55,6 +57,12 @@ class JobStatus(str, Enum):
     FAILED = "failed"
 
 
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    ANALYST = "analyst"
+    VIEWER = "viewer"
+
+
 # ---------------------------------------------------------------------------
 # Domain models
 # ---------------------------------------------------------------------------
@@ -101,6 +109,14 @@ class Obligation(BaseModel):
     source: str = "rule"
 
 
+class CaseLawReference(BaseModel):
+    """A non-authoritative pointer to the statute/case behind a risk rule."""
+
+    citation: str
+    summary: str
+    jurisdiction: str = "India"
+
+
 class RiskFlag(BaseModel):
     risk_id: str
     clause_id: Optional[str] = None
@@ -110,6 +126,7 @@ class RiskFlag(BaseModel):
     explanation: str
     recommendation: Optional[str] = None
     score: float = 0.0
+    case_law: List[CaseLawReference] = Field(default_factory=list)
 
 
 class ContractSummary(BaseModel):
@@ -133,7 +150,7 @@ class ContractSummary(BaseModel):
     top_risks: List[RiskFlag] = Field(default_factory=list)
     clause_count: int = 0
     obligation_count: int = 0
-    analyzed_at: datetime = Field(default_factory=datetime.utcnow)
+    analyzed_at: datetime = Field(default_factory=utcnow)
 
 
 class AnalysisResult(BaseModel):
@@ -150,7 +167,7 @@ class JobInfo(BaseModel):
     status: JobStatus = JobStatus.QUEUED
     progress: float = 0.0
     message: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utcnow)
     finished_at: Optional[datetime] = None
     result: Optional[AnalysisResult] = None
     error: Optional[str] = None
@@ -159,6 +176,20 @@ class JobInfo(BaseModel):
 # ---------------------------------------------------------------------------
 # Request payloads
 # ---------------------------------------------------------------------------
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    username: str
+    role: str
+
+
+class UserInfo(BaseModel):
+    username: str
+    role: str
+    authenticated: bool = False
 
 
 class ContractMetadata(BaseModel):

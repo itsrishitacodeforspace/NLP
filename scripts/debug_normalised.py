@@ -1,15 +1,15 @@
 """Inspect normalised segments after the segmenter preprocessing."""
+from pathlib import Path
+
 from app.services.parser import parse_document
 from app.services.segmenter import _looks_like_heading_line
 from app.utils.text import clean_text, split_into_paragraphs
 
+SAMPLE = Path(__file__).resolve().parents[1] / "data" / "raw" / "sample_msa.txt"
+
 
 def main() -> int:
-    parsed = parse_document(
-        "uploads/c_20260818_070241_27255d78d61f_agreement_01K35HTFJE4G8JJF7MDEWPKG3S-3.pdf",
-        contract_id="debug",
-        enable_ocr=False,
-    )
+    parsed = parse_document(SAMPLE, contract_id="debug", enable_ocr=False)
     cleaned = clean_text(parsed.full_text)
     paragraphs = split_into_paragraphs(cleaned)
     print(f"paragraphs: {len(paragraphs)}")

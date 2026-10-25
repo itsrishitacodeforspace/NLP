@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Callable, Dict, Optional
 
 from app.core.logging import get_logger
+from app.core.time import utcnow
 from app.db.postgres import upsert_job
 from app.models.schemas import AnalysisResult, JobInfo, JobStatus
 from app.utils.fs import unique_id
@@ -67,7 +68,7 @@ def update_job(
         if error is not None:
             info.error = error
         if status in {JobStatus.SUCCEEDED, JobStatus.FAILED}:
-            info.finished_at = datetime.utcnow()
+            info.finished_at = utcnow()
         _jobs[job_id] = info
     _persist(info)
     return info
@@ -98,7 +99,7 @@ def get_job(job_id: str) -> Optional[JobInfo]:
         message=record["message"] or None,
         result=result,
         error=record["error"] or None,
-        created_at=datetime.fromisoformat(record["created_at"]) if record["created_at"] else datetime.utcnow(),
+        created_at=datetime.fromisoformat(record["created_at"]) if record["created_at"] else utcnow(),
         finished_at=datetime.fromisoformat(record["finished_at"]) if record["finished_at"] else None,
     )
 

@@ -1,7 +1,7 @@
 # BharatContract AI — Living Plan & Execution Checklist
 
-> Status: ✅ **Phases 1–6 complete + hardening pass.**
-> Last update: 2026-10-22
+> Status: ✅ **Phases 1–7 complete + runtime verification + auth/case-law extensions.**
+> Last update: 2026-10-25
 
 This document is the **single source of truth**. Items prefixed `[ ]` are pending,
 `[x]` are completed, `[~]` are partially done.
@@ -74,8 +74,9 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 - [x] Unit tests for parser + segmenter.
 - [x] Long-clause splitter tests (`tests/test_long_clauses.py`).
 - [x] Hybrid classifier accuracy tests on real CUAD data (`tests/test_classifier_accuracy.py`).
-- [x] API smoke test via FastAPI `TestClient` (upload → job poll → summary fetch → graph fetch; live server not verified).
-- [x] Streamlit `AppTest` smoke check; live HTTP/browser boot not verified.
+- [x] API smoke test via FastAPI `TestClient` (upload → job poll → summary fetch → graph fetch).
+- [x] **Live** FastAPI boot verified (uvicorn bind; every route + error cases probed for real).
+- [x] Streamlit `AppTest` smoke check **and live HTTP boot verified**; all 6 pages execute cleanly.
 - [x] README with run instructions.
 - [x] Sample contract fixture (`data/raw/sample_msa.txt`).
 - [x] Demo script (`scripts/run_demo.py`).
@@ -130,7 +131,27 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 
 ---
 
-## 8. Deferred / Post-MVP
+## 8. Verification Pass & Extensions (2026-10-25)
+- [x] **Live runtime verified**: FastAPI boot + full upload→job→summary/clauses/obligations/risks/graph
+      round-trip; error cases (400 bad ext, 400 empty, 413 oversized, 404 unknown, 422 non-multipart).
+- [x] **Streamlit verified**: serves over HTTP (`/_stcore/health`) and all 6 pages run under `AppTest`.
+- [x] `datetime.utcnow()` (deprecated in 3.12) removed via `app/core/time.utcnow()` (7 sites).
+- [x] Streamlit `use_container_width` → `width="stretch"` (removed after 2025-12-31 upstream).
+- [x] Empty/whitespace uploads rejected at the edge with **400** (was a late async job failure).
+- [x] Generic 500 handler no longer leaks the exception class outside development.
+- [x] Contract lookups fall back to Postgres after an in-memory job-cache miss
+      (`list_job_ids_for_contract`), so results survive eviction/restart.
+- [x] `AGENTS.md` corrected (dropped stale `package.json` reference; documented uv workflows/architecture).
+- [x] **Case-law augmentation**: `nlp/risk_scoring/case_law.py` maps each rule to its
+      statutory / landmark authority (BALCO, BGS SGS Soma, Tribunal…); surfaced in `RiskFlag.case_law`,
+      the risk cards, and JSON export.
+- [x] **Authentication & RBAC**: optional JWT bearer auth (`AUTH_ENABLED`), bcrypt hashing with a
+      stdlib PBKDF2 fallback, ranked roles `viewer < analyst < admin`, `/api/v1/auth/token` +
+      `/api/v1/auth/me`, and role-gated upload.
+
+---
+
+## 9. Deferred / Post-MVP
 - OCR with `surya-ocr` or `docTR` (pytesseract is enough for MVP).
 - Hindi / regional language support (Indic-BERT / MuRIL).
 - LLM-based redline generation (Llama-3 / Qwen).

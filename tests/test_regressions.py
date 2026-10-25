@@ -49,6 +49,20 @@ def test_job_persistence_serialises_datetimes(monkeypatch):
     assert captured[0]["result"]["contract"]["analyzed_at"] == "2026-10-22T12:00:00"
 
 
+def test_case_law_is_attached_to_statutory_risks():
+    from nlp.risk_scoring.case_law import CASE_LAW, lookup_case_law
+
+    stamp = lookup_case_law("RISK_STAMP_001")
+    assert stamp, "stamp-duty rule should carry an authority pointer"
+    assert all(ref.citation for ref in stamp)
+    # ARB mismatch rule must cite BALCO per the README playbook claim.
+    arb = " ".join(ref.citation for ref in lookup_case_law("RISK_ARB_001"))
+    assert "BALCO" in arb
+    # Unknown rules simply return nothing (no crash).
+    assert lookup_case_law("RISK_DOES_NOT_EXIST") == []
+    assert all(isinstance(v, list) for v in CASE_LAW.values())
+
+
 def test_tfidf_outputs_are_canonicalised():
     class FakePipeline:
         classes_ = ["Pricing Terms", "Unknown Label"]

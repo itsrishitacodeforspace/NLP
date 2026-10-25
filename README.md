@@ -22,8 +22,10 @@ BharatContract AI is an end-to-end contract intelligence platform tuned for the 
    - Foreign governing law in a domestic contract
    - TDS / GST compliance signals
    - Plus global playbook: uncapped liability, auto-renewal, broad indemnity, one-sided termination, missing mandatory clauses.
+   - Each finding carries **statutory / case-law pointers** (Indian Stamp Act ss. 33 & 35, *BALCO*, *BGS SGS Soma*, Contract Act ss. 124–125, DPDP Act 2023, …).
 7. **Persist** the full picture in **Neo4j** (graph) + **PostgreSQL** (metadata).
-8. **Visualise** in a Streamlit dashboard with summary, clause explorer, obligation tracker, risk review, and graph view.
+8. **Authenticate** optionally with JWT bearer tokens and role-based access (`admin` / `analyst` / `viewer`).
+9. **Visualise** in a Streamlit dashboard with summary, clause explorer, obligation tracker, risk review, and graph view.
 
 ---
 
@@ -68,8 +70,8 @@ Prints a JSON summary of the bundled sample: parties, dates, governing law, arbi
 
 ```
 app/                          FastAPI backend
-  api/                        routes (contracts, jobs, graph)
-  core/                       config, logging, exceptions
+  api/                        routes (auth, contracts, jobs, graph) + deps
+  core/                       config, logging, exceptions, time, security
   db/                         graph + SQL adapters
   models/                     Pydantic schemas
   services/                   parser, segmenter, analyzer, jobs
@@ -78,7 +80,7 @@ nlp/                          NLP modules
   clause_classification/      rule-based + TF-IDF classifier
   ner/                        regex-first NER + optional DeBERTa enrichment
   obligation_extraction/      modal-verb pattern extractor
-  risk_scoring/               rule engine + aggregator
+  risk_scoring/               rule engine + aggregator + case-law pointers
 streamlit_app/                Dashboard
   pages/                      1_Summary, 2_Clause_Explorer, ...
   components/                 risk_card, clause_card, header
@@ -138,6 +140,42 @@ Copy `.env.example` to `.env` and fill in real values. The defaults are local-de
 | `MAX_UPLOAD_MB` | Upload size cap |
 | `CORS_ORIGINS` | JSON list of allowed browser origins |
 | `ENABLE_OCR_FALLBACK` | Auto OCR when <50 chars/page |
+| `AUTH_ENABLED` | Require JWT bearer tokens (default `false`) |
+| `AUTH_SECRET_KEY` | HMAC secret used to sign access tokens |
+| `AUTH_TOKEN_EXPIRE_MINUTES` | Access-token lifetime (default 60) |
+| `AUTH_ADMIN_PASSWORD` | Password for the seeded `admin` user |
+| `AUTH_USERS` | Optional JSON list of `{username, password, role}` users |
+
+---
+
+## API authentication (optional)
+
+Auth is **off by default** so the demo needs zero configuration. Turn it on to
+require bearer tokens on the upload route:
+
+```bash
+export AUTH_ENABLED=true
+export AUTH_SECRET_KEY="a-long-random-secret"
+export AUTH_USERS='[{"username":"ana","password":"s3cret","role":"analyst"}]'
+uv run uvicorn app.main:app
+```
+
+```bash
+# Obtain a token
+curl -s -X POST http://localhost:8000/api/v1/auth/token \
+  -d "username=ana&password=s3cret"
+# -> {"access_token":"...","token_type":"bearer","expires_in":3600,...}
+
+# Call a protected route
+curl -s -H "Authorization: Bearer <token>" \
+  -F "file=@data/raw/sample_msa.txt" \
+  http://localhost:8000/api/v1/contracts/upload
+```
+
+Roles are ranked `viewer < analyst < admin`; `POST /api/v1/contracts/upload`
+needs `analyst` or above. Passwords are hashed with bcrypt (stdlib PBKDF2
+fallback); tokens are HS256 JWTs. If `AUTH_USERS` is not set and auth is
+enabled, an `admin` account is seeded from `AUTH_ADMIN_PASSWORD` with a warning.
 
 ---
 
@@ -160,7 +198,7 @@ You can run the entire demo (FastAPI + Streamlit + bundled sample) with **zero i
 uv run pytest -v
 ```
 
-Covers parser, segmenter, long-clause splitting, classifier regression thresholds on CUAD, obligation/job regressions, and the end-to-end pipeline against the bundled sample MSA.
+Covers parser, segmenter, long-clause splitting, classifier regression thresholds on CUAD, obligation/job regressions, case-law pointers, authentication/RBAC, and the end-to-end pipeline (plus a live API round-trip) against the bundled sample MSA.
 
 ---
 

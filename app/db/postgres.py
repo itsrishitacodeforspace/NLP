@@ -6,7 +6,6 @@ created on first request. Heavy use of Neo4j is preferred for relationships.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime
 from typing import Iterator, Optional
 
 from sqlalchemy import (
@@ -22,6 +21,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.time import utcnow
 
 logger = get_logger()
 
@@ -41,8 +41,8 @@ class ContractRecord(Base):
     overall_risk_score = Column(Float, default=0.0)
     overall_risk_level = Column(String, default="low")
     payload = Column(JSON, default=dict)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
 
 
 class JobRecord(Base):
@@ -55,7 +55,7 @@ class JobRecord(Base):
     message = Column(Text, default="")
     result = Column(JSON, default=dict)
     error = Column(Text, default="")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
     finished_at = Column(DateTime, nullable=True)
 
 
@@ -177,7 +177,7 @@ def upsert_job(record: dict) -> bool:
                 if key in record:
                     setattr(obj, key, record[key])
             if record.get("status") in {"succeeded", "failed"}:
-                obj.finished_at = datetime.utcnow()
+                obj.finished_at = utcnow()
             return True
     except Exception as exc:
         logger.warning("Job write failed: {}", exc)
@@ -204,6 +204,23 @@ def get_job(job_id: str) -> Optional[dict]:
             "created_at": obj.created_at.isoformat() if obj.created_at else None,
             "finished_at": obj.finished_at.isoformat() if obj.finished_at else None,
         }
+
+
+def list_job_ids_for_contract(contract_id: str, limit: int = 20) -> list[str]:
+    """Return recent job ids for a contract, newest first."""
+    if not postgres_available():
+        return []
+    with session_scope() as session:
+        if session is None:
+            return []
+        rows = (
+            session.query(JobRecord.job_id)
+            .filter(JobRecord.contract_id == contract_id)
+            .order_by(JobRecord.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [r[0] for r in rows]
 
 
 def list_jobs(limit: int = 200) -> list[dict]:

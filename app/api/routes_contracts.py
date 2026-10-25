@@ -1,15 +1,16 @@
 """Contract upload + analysis routes."""
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 
+from app.api.deps import Principal, require_role
 from app.core.config import get_settings
 from app.core.exceptions import DocumentParseError, UnsupportedFormatError
 from app.core.logging import get_logger
+from app.core.time import utcnow
 from app.db.postgres import upsert_contract_metadata
 from app.db.queries import write_analysis
 from app.models.schemas import (
@@ -39,8 +40,12 @@ async def upload_contract(
     user_role: PartySide = Form(PartySide.CUSTOMER.value),
     jurisdiction: str = Form("India"),
     playbook_id: Optional[str] = Form(None),
+    principal: Principal = Depends(require_role("admin", "analyst")),
 ):
-    """Upload a contract and kick off background analysis."""
+    """Upload a contract and kick off background analysis.
+
+    Requires an ``admin`` or ``analyst`` role when authentication is enabled.
+    """
     settings = get_settings()
     filename = file.filename or "upload"
     ext = _ext_of(filename)
@@ -59,6 +64,8 @@ async def upload_contract(
             status_code=413,
             detail=f"File exceeds the {settings.max_upload_mb} MB limit.",
         )
+    if not contents.strip():
+        raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
     contract_id = _contract_id_for(filename, contents)
     job = await run_in_threadpool(create_job, contract_id)
@@ -148,15 +155,27 @@ def _contract_id_for(filename: str, contents: bytes) -> str:
     import hashlib
 
     digest = hashlib.sha256(contents).hexdigest()[:10]
-    stamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    stamp = utcnow().strftime("%Y%m%d_%H%M%S")
     return f"c_{stamp}_{digest}"
 
 
 def _latest_job_for(contract_id: str) -> Optional[JobInfo]:
-    from app.services.jobs import list_jobs
+    """Return the newest completed job for a contract.
 
-    candidates = [j for j in list_jobs() if j.contract_id == contract_id]
-    if not candidates:
-        return None
-    candidates.sort(key=lambda j: j.created_at, reverse=True)
-    return candidates[0]
+    Prefers the in-memory job cache, then falls back to PostgreSQL so results
+    survive the in-memory eviction cap (``MAX_IN_MEMORY_JOBS``) or a restart.
+    """
+    from app.services.jobs import get_job, list_jobs
+
+    candidates = [j for j in list_jobs() if j.contract_id == contract_id and j.result]
+    if candidates:
+        candidates.sort(key=lambda j: j.created_at, reverse=True)
+        return candidates[0]
+
+    from app.db.postgres import list_job_ids_for_contract
+
+    for job_id in list_job_ids_for_contract(contract_id):
+        job = get_job(job_id)
+        if job and job.result:
+            return job
+    return None

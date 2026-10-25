@@ -18,6 +18,7 @@ from app.models.schemas import (
     RiskFlag,
     RiskSeverity,
 )
+from nlp.risk_scoring.case_law import lookup_case_law
 
 
 @dataclass
@@ -409,7 +410,13 @@ def apply_rules(
         old_sev = severity_order.get(existing.severity.value, 0)
         if new_sev > old_sev or (new_sev == old_sev and f.score > existing.score):
             by_rule[f.rule_id] = f
-    return list(by_rule.values())
+
+    # 4. Enrich each finding with its statutory / case-law pointers.
+    flags = list(by_rule.values())
+    for flag in flags:
+        if not flag.case_law:
+            flag.case_law = lookup_case_law(flag.rule_id)
+    return flags
 
 
 def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> List[RiskFlag]:

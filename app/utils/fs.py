@@ -5,12 +5,12 @@ import hashlib
 import re
 import shutil
 import uuid
-from datetime import datetime
 from pathlib import Path
 from typing import Tuple
 
 from app.core.config import get_settings
 from app.core.exceptions import DocumentParseError
+from app.core.time import utcnow
 
 _SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -34,7 +34,7 @@ def save_upload(file_bytes: bytes, original_name: str) -> Tuple[Path, str]:
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     digest = hashlib.sha256(file_bytes).hexdigest()[:12]
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = utcnow().strftime("%Y%m%d_%H%M%S")
     contract_id = f"c_{timestamp}_{digest}"
 
     sanitised = safe_filename(original_name)

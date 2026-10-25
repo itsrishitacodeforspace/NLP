@@ -80,6 +80,14 @@ class Settings(BaseSettings):
     enable_background_jobs: bool = Field(default=True)
     enable_ocr_fallback: bool = Field(default=True)
 
+    # Authentication (OFF by default so the demo needs zero configuration)
+    auth_enabled: bool = Field(default=False)
+    auth_secret_key: str = Field(default="dev-insecure-secret-change-me")
+    auth_token_expire_minutes: int = Field(default=60)
+    auth_admin_password: str = Field(default="admin")
+    # JSON list of {"username": ..., "password": ..., "role": ...} entries.
+    auth_users: str = Field(default="")
+
     # NLP toggles (used in MVP to gracefully fall back when models missing)
     use_rule_based_classifier: bool = Field(default=True)
 
