@@ -247,3 +247,18 @@ the ML risk classifier (no labelled risk data — would be self-referential).
 **Final checks:** `ruff check .` clean; `pytest` → **29 passed** (24 + case-law + 4 auth).
 
 ---
+
+## 2026-10-25T~18:20Z — Committed & merged to main (task #3)
+
+- Staged 24 files (deliberately excluded the machine-specific `.commandcode/`)
+  and committed as **`316aa5e`** on `audit/repo-hardening`.
+- `main` had **not** diverged (0 commits ahead), so merged with
+  `git merge --ff-only audit/repo-hardening` → **fast-forward**, no merge commit.
+- Now on branch **`main`** at `316aa5e`, which is **3 commits ahead of `origin/main`**.
+- Post-merge re-check on `main`: `ruff` clean, `pytest` → **29 passed**.
+
+**NOT pushed** — pushing to `origin/main` is shared/visible, so I'm leaving that to
+an explicit go-ahead. The `audit/repo-hardening` branch still exists (points at the
+same commit) in case a PR is preferred over a direct push.
+
+---
