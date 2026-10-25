@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import streamlit as st
 
@@ -63,7 +64,7 @@ def main() -> None:
     if not uploaded:
         st.info("Upload a contract to start. While you wait, here's a tiny demo:")
         if st.button("Run demo analysis on bundled sample MSA"):
-            _run_local(st, "data/raw/sample_msa.txt")
+            _run_local(st, Path(__file__).resolve().parents[1] / "data" / "raw" / "sample_msa.txt")
         return
 
     if st.button("Analyze contract", type="primary"):
@@ -85,14 +86,12 @@ def _handle_upload(st, file_bytes: bytes, filename: str) -> None:
             jurisdiction=jurisdiction,
         )
         progress = st.progress(0.05, text="Queued...")
-        last_msg = ""
         for _ in range(60):
             j = get_job(job["job_id"])
             progress.progress(
                 min(1.0, float(j.get("progress", 0.0))),
                 text=f"{j.get('status', '...')} — {j.get('message', '')}",
             )
-            last_msg = j.get("message", "")
             if j.get("status") == "succeeded":
                 set_current_contract_id(j["contract_id"], j.get("result", {}).get("contract", {}).get("title"))
                 st.session_state["last_result"] = j.get("result")
@@ -111,10 +110,9 @@ def _handle_upload(st, file_bytes: bytes, filename: str) -> None:
         _run_local_bytes(st, file_bytes, filename)
 
 
-def _run_local(st, path: str) -> None:
-    with open(path, "rb") as fh:
-        file_bytes = fh.read()
-    _run_local_bytes(st, file_bytes, path.rsplit("/", 1)[-1])
+def _run_local(st, path: Path) -> None:
+    file_bytes = path.read_bytes()
+    _run_local_bytes(st, file_bytes, path.name)
 
 
 def _run_local_bytes(st, file_bytes: bytes, filename: str) -> None:

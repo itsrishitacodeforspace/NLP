@@ -21,10 +21,11 @@ from app.utils.text import clean_text
 # Regex patterns
 # ---------------------------------------------------------------------------
 
-CIN_RE = re.compile(r"\bU[A-Z]{5}\d{2}[A-Z]{3}\d{6}\b")
-LLPIN_RE = re.compile(r"\b[A-Z]{2}-\d{4}-\d{4}-\d{4}-\d{4}\b")  # LLP IN
+# CIN: 21 characters, e.g. U63040MH2019PTC123456.
+CIN_RE = re.compile(r"\b[LUFE]\d{5}[A-Z]{2}\d{4}[A-Z]{3}\d{6}\b")
+LLPIN_RE = re.compile(r"\b[A-Z]{3}-\d{4}\b")
 PAN_RE = re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b")
-GSTIN_RE = re.compile(r"\b\d{2}[A-Z]{5}\d{4}[A-Z]\d[Z][A-Z0-9]\b")
+GSTIN_RE = re.compile(r"\b\d{2}[A-Z]{5}\d{4}[A-Z][0-9A-Z]Z[0-9A-Z]\b")
 TAN_RE = re.compile(r"\b[A-Z]{4}\d{5}[A-Z]\b")
 
 # Indian cities (abbreviated — covers top commercial centres)
@@ -84,7 +85,7 @@ DATE_RES = [
 ]
 NOTICE_PERIOD_RE = re.compile(
     r"\b(?:within|no later than|at least|prior to|after)?\s*(\d+)\s+"
-    r"(day|days|week|weeks|month|months|year|years|business day[s]?)\b",
+    r"(hour|hours|day|days|week|weeks|month|months|year|years|business day[s]?)\b",
     re.IGNORECASE,
 )
 TERM_DURATION_RE = re.compile(
@@ -122,92 +123,39 @@ def extract_entities(text: str, *, clause_text: Optional[str] = None) -> Extract
     supplied text. Falls back to the contract-wide text if clause-level
     text isn't useful.
     """
-    source = clause_text or text
-    cleaned = clean_text(source or "")
+    scan_text = clause_text or text or ""
     entities: List[Entity] = []
 
     # Indian identifiers
-    entities.extend(_scan_regex(CIN_RE, cleaned, "CIN", 0.99))
-    entities.extend(_scan_regex(LLPIN_RE, cleaned, "LLPIN", 0.95))
-    entities.extend(_scan_regex(PAN_RE, cleaned, "PAN", 0.99))
-    entities.extend(_scan_regex(GSTIN_RE, cleaned, "GSTIN", 0.99))
-    entities.extend(_scan_regex(TAN_RE, cleaned, "TAN", 0.95))
+    entities.extend(_scan_regex(CIN_RE, scan_text, "CIN", 0.99))
+    entities.extend(_scan_regex(LLPIN_RE, scan_text, "LLPIN", 0.95))
+    entities.extend(_scan_regex(PAN_RE, scan_text, "PAN", 0.99))
+    entities.extend(_scan_regex(GSTIN_RE, scan_text, "GSTIN", 0.99))
+    entities.extend(_scan_regex(TAN_RE, scan_text, "TAN", 0.95))
 
     # Money
-    entities.extend(_scan_regex(INR_RE, cleaned, "PAYMENT_AMOUNT", 0.95))
-    entities.extend(_scan_regex(USD_RE, cleaned, "PAYMENT_AMOUNT", 0.95))
-    entities.extend(_scan_regex(EUR_RE, cleaned, "PAYMENT_AMOUNT", 0.95))
-    entities.extend(_scan_regex(GBP_RE, cleaned, "PAYMENT_AMOUNT", 0.95))
+    entities.extend(_scan_regex(INR_RE, scan_text, "PAYMENT_AMOUNT", 0.95))
+    entities.extend(_scan_regex(USD_RE, scan_text, "PAYMENT_AMOUNT", 0.95))
+    entities.extend(_scan_regex(EUR_RE, scan_text, "PAYMENT_AMOUNT", 0.95))
+    entities.extend(_scan_regex(GBP_RE, scan_text, "PAYMENT_AMOUNT", 0.95))
 
     # Dates
     for regex in DATE_RES:
-        entities.extend(_scan_regex(regex, cleaned, "DATE", 0.95))
+        entities.extend(_scan_regex(regex, scan_text, "DATE", 0.95))
 
     # Notice / term durations
-    entities.extend(_scan_regex(NOTICE_PERIOD_RE, cleaned, "NOTICE_PERIOD", 0.9))
-    entities.extend(_scan_regex(TERM_DURATION_RE, cleaned, "TERM_DURATION", 0.9))
-    entities.extend(_scan_regex(CURE_PERIOD_RE, cleaned, "CURE_PERIOD", 0.9))
+    entities.extend(_scan_regex(NOTICE_PERIOD_RE, scan_text, "NOTICE_PERIOD", 0.9))
+    entities.extend(_scan_regex(TERM_DURATION_RE, scan_text, "TERM_DURATION", 0.9))
+    entities.extend(_scan_regex(CURE_PERIOD_RE, scan_text, "CURE_PERIOD", 0.9))
 
     # Locations (jurisdictions / cities / seats)
-    lowered = cleaned.lower()
-    for city in INDIAN_CITIES:
-        for m in re.finditer(rf"\b{re.escape(city)}\b", lowered):
-            entities.append(
-                Entity(
-                    text=cleaned[m.start():m.end()],
-                    label="JURISDICTION_CITY",
-                    start_char=m.start(),
-                    end_char=m.end(),
-                    confidence=0.9,
-                    source="regex",
-                )
-            )
-            break  # one per city per chunk
-    for state in INDIAN_STATES:
-        for m in re.finditer(rf"\b{re.escape(state)}\b", lowered):
-            entities.append(
-                Entity(
-                    text=cleaned[m.start():m.end()],
-                    label="INDIAN_STATE",
-                    start_char=m.start(),
-                    end_char=m.end(),
-                    confidence=0.9,
-                    source="regex",
-                )
-            )
-            break
-    for seat in INDIAN_SEATS:
-        for m in re.finditer(rf"\b{re.escape(seat)}\b", lowered):
-            entities.append(
-                Entity(
-                    text=cleaned[m.start():m.end()],
-                    label="ARBITRATION_SEAT_INDIA",
-                    start_char=m.start(),
-                    end_char=m.end(),
-                    confidence=0.85,
-                    source="regex",
-                )
-            )
-            break
-    for seat in FOREIGN_SEATS:
-        for m in re.finditer(rf"\b{re.escape(seat)}\b", lowered):
-            entities.append(
-                Entity(
-                    text=cleaned[m.start():m.end()],
-                    label="ARBITRATION_SEAT_FOREIGN",
-                    start_char=m.start(),
-                    end_char=m.end(),
-                    confidence=0.85,
-                    source="regex",
-                )
-            )
-            break
+    entities.extend(_scan_locations(scan_text))
 
     # DeBERTa NER enrichment (optional)
     try:
         from nlp.ner.ner_ml import enrich_entities_with_deberta
 
-        enriched = enrich_entities_with_deberta(cleaned, existing=entities)
+        enriched = enrich_entities_with_deberta(scan_text, existing=entities)
         entities = enriched
     except Exception:
         pass
@@ -242,9 +190,14 @@ def detect_arbitration_seat(text: str) -> Optional[str]:
         lowered,
     )
     if explicit:
-        value = explicit.group(1).strip().rstrip(",.").title()
-        if value.lower() not in {"india", "indian"}:
-            return value
+        raw = explicit.group(1)
+        known = sorted(FOREIGN_SEATS | (INDIAN_SEATS - {"india"}), key=len, reverse=True)
+        for seat in known:
+            if re.search(rf"\b{re.escape(seat)}\b", raw):
+                return seat.title()
+        value = re.split(r"\b(?:and|or)\b|[.;]", raw, maxsplit=1)[0].strip().rstrip(",.")
+        if value and value.lower() not in {"india", "indian"}:
+            return value.title()
 
     # 2. Walk arbitration-context sentences and prefer specific cities
     for sent in re.split(r"(?<=[.!?])\s+", cleaned):
@@ -272,19 +225,36 @@ def detect_arbitration_seat(text: str) -> Optional[str]:
     return None
 
 
-def detect_governing_law(text: str) -> Optional[str]:
-    """Return the governing law phrase if found."""
+def detect_arbitration_venue(text: str) -> Optional[str]:
+    """Return the arbitration venue if explicitly stated, else ``None``."""
     cleaned = clean_text(text)
-    lowered = cleaned.lower()
+    m = re.search(
+        r"(?:venue|place)\s+of\s+arbitration\s+(?:shall\s+be|is|at)\s+([A-Za-z][A-Za-z\s,]{2,60})",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if not m:
+        return None
+    raw = m.group(1)
+    known = sorted(FOREIGN_SEATS | (INDIAN_SEATS - {"india"}), key=len, reverse=True)
+    for seat in known:
+        if re.search(rf"\b{re.escape(seat)}\b", raw, re.IGNORECASE):
+            return seat.title()
+    return raw.split(".")[0].strip().rstrip(",.").title() or None
+
+
+def detect_governing_law(text: str) -> Optional[str]:
+    """Return the governing law phrase if found, preserving source casing."""
+    cleaned = clean_text(text)
     patterns = [
         r"governed by the laws of[^.]{0,80}",
-        r"governing law[^\.]{0,80}laws of[^.]{0,80}",
+        r"governing law[^.]{0,80}laws of[^.]{0,80}",
         r"subject to the laws of[^.]{0,80}",
         r"laws of the state of[^.]{0,80}",
         r"laws of india",
     ]
     for pat in patterns:
-        m = re.search(pat, lowered)
+        m = re.search(pat, cleaned, re.IGNORECASE)
         if m:
             phrase = m.group(0).strip().rstrip(".,")
             return phrase[:160]
@@ -298,7 +268,7 @@ def detect_stamp_duty_mention(text: str) -> bool:
 
 def detect_tds_mention(text: str) -> bool:
     lowered = clean_text(text).lower()
-    return any(kw in lowered for kw in ("tax deducted at source", "tds", "section 194", "section 195"))
+    return bool(re.search(r"\b(?:tax deducted at source|tds|section 19[45])\b", lowered))
 
 
 def detect_gstin_mention(text: str) -> bool:
@@ -308,6 +278,38 @@ def detect_gstin_mention(text: str) -> bool:
 # ---------------------------------------------------------------------------
 # Internals
 # ---------------------------------------------------------------------------
+
+
+def _scan_locations(text: str) -> List[Entity]:
+    """Match city/state/seat names, preferring longer names over substrings."""
+    lowered = text.lower()
+    groups = (
+        ("JURISDICTION_CITY", INDIAN_CITIES, 0.9),
+        ("INDIAN_STATE", INDIAN_STATES, 0.9),
+        ("ARBITRATION_SEAT_INDIA", INDIAN_SEATS, 0.85),
+        ("ARBITRATION_SEAT_FOREIGN", FOREIGN_SEATS, 0.85),
+    )
+    entities: List[Entity] = []
+    for label, names, confidence in groups:
+        taken: List[tuple[int, int]] = []
+        for name in sorted(names, key=len, reverse=True):
+            for m in re.finditer(rf"\b{re.escape(name)}\b", lowered):
+                if any(m.start() < end and m.end() > start for start, end in taken):
+                    continue
+                if len(taken) >= 25:
+                    break
+                taken.append((m.start(), m.end()))
+                entities.append(
+                    Entity(
+                        text=text[m.start() : m.end()],
+                        label=label,
+                        start_char=m.start(),
+                        end_char=m.end(),
+                        confidence=confidence,
+                        source="regex",
+                    )
+                )
+    return entities
 
 
 def _scan_regex(pattern: re.Pattern, text: str, label: str, confidence: float) -> List[Entity]:

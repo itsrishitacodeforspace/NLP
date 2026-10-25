@@ -1,6 +1,5 @@
 """Inspect the unified classifier corpus."""
 import csv
-import sys
 from collections import defaultdict
 from pathlib import Path
 

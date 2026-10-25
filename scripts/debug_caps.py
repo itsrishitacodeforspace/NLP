@@ -4,7 +4,7 @@ def main() -> int:
     print(f"stripped: {stripped!r}")
     print(f"upper:    {stripped.upper()!r}")
     print(f"equal:    {stripped == stripped.upper()}")
-    for i, (a, b) in enumerate(zip(stripped, stripped.upper())):
+    for i, (a, b) in enumerate(zip(stripped, stripped.upper(), strict=False)):
         if a != b:
             print(f"  diff @ {i}: {a!r} vs {b!r}")
     return 0

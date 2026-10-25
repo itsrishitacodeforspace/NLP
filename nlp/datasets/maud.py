@@ -1,68 +1,34 @@
 """MAUD (Merger Agreement Understanding Dataset) loader.
 
-MAUD ships pre-extracted clauses for ~150 merger agreements. Each row in
-``MAUD_train.csv``/``MAUD_dev.csv``/``MAUD_test.csv`` has a
-``clause_id``, ``contract_id``, ``clause_type`` (sub-question), ``clause_text``,
-and a list of ``answer_choices`` with labels.
+MAUD rows are extractive QA pairs over merger agreements. The real columns
+are: ``data_type, contract_name, text, answer, label, question, subquestion,
+text_type, id, category``. ``text_type`` is the clause-level taxonomy; the
+other columns describe the specific question and its answer class.
 """
 from __future__ import annotations
 
 import csv
+import re
 from pathlib import Path
 from typing import Iterable, Iterator, List
 
-from nlp.datasets.unified import (
-    TrainingExample,
-    map_maud_label,
-    write_jsonl,
-)
+from nlp.datasets.unified import TrainingExample, write_jsonl
+from nlp.taxonomy import map_maud_label
+
+MAX_SNIPPET_CHARS = 1500
 
 
-# Mapping from MAUD sub-question -> our internal clause category.
-MAUD_TYPE_TO_INTERNAL = {
-    "Affiliate": "Miscellaneous",
-    "Anti-Assignment": "Assignment",
-    "Audit Rights": "Audit Rights",
-    "Books and Records": "Audit Rights",
-    "Cap on Liability": "Limitation of Liability",
-    "Change of Control": "Assignment",
-    "Competitive Restriction Exception": "Non-Compete / Non-Solicit",
-    "Covenant Not To Sue": "Miscellaneous",
-    "Effective Date": "Term and Renewal",
-    "Exclusivity": "Non-Compete / Non-Solicit",
-    "Expiration Date": "Term and Renewal",
-    "Governing Law": "Governing Law",
-    "Indemnification": "Indemnification",
-    "Insurance": "Insurance",
-    "IP Ownership Assignment": "Intellectual Property",
-    "Joint IP Ownership": "Intellectual Property",
-    "License Grant": "Intellectual Property",
-    "Limitation of Liability": "Limitation of Liability",
-    "Liquidated Damages": "Limitation of Liability",
-    "Minimum Commitment": "Payment Terms",
-    "Most Favored Nation": "Payment Terms",
-    "Non-Compete": "Non-Compete / Non-Solicit",
-    "Non-Solicit of Customers": "Non-Compete / Non-Solicit",
-    "Non-Solicit of Employees": "Non-Compete / Non-Solicit",
-    "Non-Transferable License": "Intellectual Property",
-    "Notice Period to Terminate Renewal": "Term and Renewal",
-    "Post-Termination Services": "Termination",
-    "Price Restrictions": "Payment Terms",
-    "Renewal Term": "Term and Renewal",
-    "Revenue/Profit Sharing": "Payment Terms",
-    "Rofr/Rofo/Rofn": "Assignment",
-    "Source Code Escrow": "Intellectual Property",
-    "Term": "Term and Renewal",
-    "Termination for Convenience": "Termination",
-    "Third Party Beneficiary": "Miscellaneous",
-    "Uncapped Liability": "Limitation of Liability",
-    "Volume Restriction": "Payment Terms",
-    "Warranty Duration": "Warranty",
-    "Drag-Along": "Miscellaneous",
-    "Tag-Along": "Miscellaneous",
-    "Right of First Refusal/Offer": "Assignment",
-    "No-Shop": "Non-Compete / Non-Solicit",
-}
+def _snippet(text: str, answer: str) -> str:
+    text = re.sub(r"\s+", " ", text or "").strip()
+    if len(text) <= MAX_SNIPPET_CHARS:
+        return text
+    answer = (answer or "").strip()
+    if 2 < len(answer) <= 120:
+        idx = text.lower().find(answer.lower())
+        if idx != -1:
+            start = max(0, idx - MAX_SNIPPET_CHARS // 3)
+            return text[start : start + MAX_SNIPPET_CHARS].strip()
+    return text[:MAX_SNIPPET_CHARS].strip()
 
 
 def iter_examples(split_csv: Path) -> Iterator[TrainingExample]:
@@ -70,29 +36,35 @@ def iter_examples(split_csv: Path) -> Iterator[TrainingExample]:
     with split_csv.open(encoding="utf-8", newline="") as fh:
         reader = csv.DictReader(fh)
         for row_idx, row in enumerate(reader):
-            clause_type = row.get("clause_type", "").strip()
-            if not clause_type:
-                continue
-            internal = MAUD_TYPE_TO_INTERNAL.get(clause_type) or map_maud_label(clause_type)
+            text_type = (row.get("text_type") or "").strip()
+            question = (row.get("question") or "").strip()
+            subquestion = (row.get("subquestion") or "").strip()
+            internal = map_maud_label(text_type) or map_maud_label(question)
+            if not internal:
+                internal = map_maud_label(subquestion)
             if not internal:
                 continue
-            clause_text = (row.get("clause_text") or "").strip()
-            if not clause_text:
-                continue
 
-            contract_id = (row.get("contract_id") or row.get("filename") or f"maud_{row_idx}").strip()
-            answer_choices = row.get("answer_choices") or ""
-            answer_label = row.get("answer_label", "").strip()
+            text = _snippet(row.get("text") or "", row.get("answer") or "")
+            if not text:
+                continue
+            contract = (row.get("contract_name") or f"maud_{row_idx}").strip()
+            contract_id = re.sub(r"[^A-Za-z0-9]+", "_", contract).strip("_").lower()
+            row_id = (row.get("id") or row_idx)
             metadata = {
-                "clause_type": clause_type,
-                "answer_label": answer_label,
-                "answer_choices": answer_choices[:400],
+                "text_type": text_type,
+                "question": question,
+                "subquestion": subquestion,
+                "answer": (row.get("answer") or "")[:400],
+                "label": row.get("label", ""),
+                "data_type": row.get("data_type", ""),
+                "category": row.get("category", ""),
             }
             yield TrainingExample(
-                example_id=f"maud_{contract_id}_{clause_type.replace(' ', '_')}_{row_idx}",
+                example_id=f"maud_{contract_id}_{row_id}",
                 source="maud",
-                contract_id=str(contract_id).lower(),
-                text=clause_text,
+                contract_id=contract_id,
+                text=text,
                 category=internal,
                 spans=[],
                 metadata=metadata,

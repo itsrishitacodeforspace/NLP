@@ -1,0 +1,47 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement is made on 15 April 2024 between DTwelve Accommodations Private Limited, a company incorporated under the Companies Act, 2013 having CIN U63040MH2019PTC123456 (the "Provider") and Bluepeak Technologies Limited, a company incorporated under the Companies Act, 2013 having CIN L72200KA2015PLC098765, having its registered office at Bengaluru (the "Customer").
+
+1. Definitions
+
+1.1 "Services" means the software development and support services described in each statement of work. "Effective Date" means 15 April 2024.
+
+2. Term and Renewal
+
+2.1 This Agreement shall commence on the Effective Date and continue for an initial term of two years. Thereafter this Agreement shall automatically renew for successive terms of one year unless either party gives written notice of non-renewal at least 60 days prior to the end of the then-current term.
+
+3. Payment Terms
+
+3.1 The Customer shall pay the fees set out in each statement of work within 30 days of receipt of a valid invoice. All amounts are exclusive of goods and services tax. The Customer must provide a valid GSTIN on each purchase order.
+
+4. Confidentiality
+
+4.1 Each party shall keep the other party's confidential information secret and shall not disclose it to any third party without prior written consent.
+
+5. Indemnification
+
+5.1 The Provider shall indemnify and hold harmless the Customer against any and all claims, losses, damages and expenses arising from the Services. The Customer may notify the Provider of any claim within 10 days of becoming aware of it.
+
+6. Limitation of Liability
+
+6.1 The Provider shall have unlimited liability for all losses arising out of or in connection with this Agreement, including consequential damages.
+
+7. Data Protection
+
+7.1 The Provider shall process personal data only for the purposes of this Agreement. The Provider must notify the Customer of any data breach within 24 hours of becoming aware of it.
+
+8. Intellectual Property
+
+8.1 The Provider hereby assigns to the Customer all right, title and interest in the work product created under this Agreement. The Provider retains ownership of its pre-existing intellectual property.
+
+9. Governing Law and Dispute Resolution
+
+9.1 This Agreement is governed by the laws of India. The seat of arbitration shall be Singapore. The venue of arbitration shall be Mumbai. Any dispute shall be resolved by a sole arbitrator appointed by mutual agreement.
+
+10. Termination
+
+10.1 Either party may terminate this Agreement at any time without cause by giving 30 days written notice. The Customer may terminate this Agreement immediately upon the Provider's material breach.
+
+11. Miscellaneous
+
+11.1 This Agreement constitutes the entire agreement between the parties. No amendment is effective unless made in writing and signed by both parties.

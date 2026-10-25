@@ -161,12 +161,11 @@ def _analyse(
     flags = apply_rules(clauses, summary_draft)
 
     # 5. Annotate clauses with their own risk_score
-    clause_index = {f.clause_id: f for f in flags if f.clause_id}
     for cl in clauses:
         cl_flags = [f for f in flags if f.clause_id == cl.clause_id]
         if cl_flags:
-            top = max(cl_flags, key=lambda f: severity_to_score(f.severity))
-            cl.risk_score = severity_to_score(top.severity)
+            top = max(cl_flags, key=lambda f: f.score)
+            cl.risk_score = top.score
             cl.risk_level = top.severity
             cl.risk_reasons = [f.name for f in cl_flags]
         else:
@@ -184,7 +183,9 @@ def _analyse(
         1 for c in clauses if c.risk_level in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
     )
     summary_draft.missing_clauses = [
-        f.name for f in flags if f.rule_id.startswith("MISSING_CLAUSE_")
+        f.name
+        for f in flags
+        if f.rule_id.startswith("MISSING_CLAUSE_") or f.rule_id == "RISK_DATA_MISSING"
     ]
     summary_draft.top_risks = sorted(
         flags, key=lambda f: severity_to_score(f.severity), reverse=True,
@@ -234,6 +235,8 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
             "annexure", "annexed", "schedule", "section", "clause",
             "services", "company", "agent", "customer", "resident", "client",
             "party", "parties", "provider", "recipient",
+            "january", "february", "march", "april", "may", "june", "july",
+            "august", "september", "october", "november", "december",
         }
         pan_noise = re.compile(r"^[A-Z]{5}\d{4}[A-Z],?\s*(?:and\s+)?", re.IGNORECASE)
         # Also catch "DTwelve Accommodations Private Limited" style names

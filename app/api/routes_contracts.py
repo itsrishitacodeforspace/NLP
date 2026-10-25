@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from starlette.concurrency import run_in_threadpool
 
 from app.core.config import get_settings
 from app.core.exceptions import DocumentParseError, UnsupportedFormatError
@@ -35,7 +36,7 @@ def _ext_of(name: str) -> str:
 async def upload_contract(
     file: UploadFile = File(...),
     contract_type: ContractType = Form(ContractType.OTHER),
-    user_role: PartySide = Form(ContractType.CUSTOMER.value if False else PartySide.CUSTOMER.value),
+    user_role: PartySide = Form(PartySide.CUSTOMER.value),
     jurisdiction: str = Form("India"),
     playbook_id: Optional[str] = Form(None),
 ):
@@ -47,7 +48,12 @@ async def upload_contract(
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
 
     max_bytes = settings.max_upload_mb * 1024 * 1024
-    contents = await file.read()
+    if getattr(file, "size", None) is not None and file.size > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File exceeds the {settings.max_upload_mb} MB limit.",
+        )
+    contents = await file.read(max_bytes + 1)
     if len(contents) > max_bytes:
         raise HTTPException(
             status_code=413,
@@ -55,10 +61,11 @@ async def upload_contract(
         )
 
     contract_id = _contract_id_for(filename, contents)
-    job = create_job(contract_id)
+    job = await run_in_threadpool(create_job, contract_id)
 
     def worker(info: JobInfo) -> AnalysisResult:
-        update_progress = lambda p, msg: _update(info.job_id, progress=p, message=msg)
+        def update_progress(p: float, msg: str) -> None:
+            _update(info.job_id, progress=p, message=msg)
         update_progress(0.1, "Parsing document")
         try:
             result = analyse_bytes(

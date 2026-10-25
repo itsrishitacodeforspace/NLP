@@ -1,0 +1,15 @@
+﻿__pycache__/
+*.py[cod]
+.venv/
+.git/
+.pytest_cache/
+.ruff_cache/
+logs/
+uploads/
+data/datasets/
+data/processed/
+models/*.joblib
+models/hf/
+*.7z
+!models/tfidf_classifier.7z
+.env

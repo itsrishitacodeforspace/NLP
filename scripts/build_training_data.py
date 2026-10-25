@@ -7,10 +7,12 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from nlp.datasets.cuad import build_corpus as build_cuad, collect_keyword_bank, iter_examples as iter_cuad
+from nlp.datasets.cuad import build_corpus as build_cuad
+from nlp.datasets.cuad import collect_keyword_bank
+from nlp.datasets.cuad import iter_examples as iter_cuad
 from nlp.datasets.maud import build_corpus as build_maud
+from nlp.datasets.maud import iter_examples as iter_maud
 from nlp.datasets.unified import write_jsonl
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,8 +35,6 @@ def build_unified_corpus() -> Path:
         path = ROOT / f"data/datasets/maud/data/MAUD_{split}.csv"
         if not path.exists():
             continue
-        from nlp.datasets.maud import iter_examples as iter_maud
-
         examples.extend(iter_maud(path))
     out = ROOT / "data/processed/unified_examples.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -55,12 +55,24 @@ def write_clause_classifier_csv() -> Path:
     out = ROOT / "data/processed/clause_classifier.csv"
     examples = list(iter_cuad(ROOT / "data/datasets/cuad/CUADv1.json"))
     out.parent.mkdir(parents=True, exist_ok=True)
+    seen: set[tuple[str, str]] = set()
+    written = 0
     with out.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh)
         writer.writerow(["text", "category", "source"])
         for ex in examples:
-            writer.writerow([ex.text.replace("\n", " ").strip(), ex.category, ex.source])
-    print(f"Wrote {len(examples)} rows to {out}")
+            # CUAD impossible-label rows carry the whole contract as context;
+            # they are not clause-level classification samples.
+            if ex.metadata.get("label") != "present":
+                continue
+            text = ex.text.replace("\n", " ").strip()
+            key = (text, ex.category)
+            if not text or key in seen:
+                continue
+            seen.add(key)
+            writer.writerow([text, ex.category, ex.source])
+            written += 1
+    print(f"Wrote {written} rows to {out}")
     return out
 
 

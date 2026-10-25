@@ -72,7 +72,9 @@ class Settings(BaseSettings):
     default_jurisdiction: str = Field(default="India")
 
     # CORS
-    cors_origins: List[str] = Field(default_factory=lambda: ["*"])
+    cors_origins: List[str] = Field(
+        default_factory=lambda: ["http://localhost:8501", "http://127.0.0.1:8501"]
+    )
 
     # Internal toggles
     enable_background_jobs: bool = Field(default=True)

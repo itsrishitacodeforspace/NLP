@@ -1,7 +1,7 @@
 # BharatContract AI — Living Plan & Execution Checklist
 
-> Status: ✅ **Phases 1–5 complete + dataset integration.**
-> Last update: 2026-08-18
+> Status: ✅ **Phases 1–6 complete + hardening pass.**
+> Last update: 2026-10-22
 
 This document is the **single source of truth**. Items prefixed `[ ]` are pending,
 `[x]` are completed, `[~]` are partially done.
@@ -93,7 +93,8 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 - [x] `scripts/build_training_data.py` — orchestrator that materialises
       `cuad_examples.jsonl`, `maud_examples.jsonl`, `unified_examples.jsonl`,
       `clause_classifier.csv`, and `cuad_keyword_bank.json`.
-- [x] **26,726** unified training rows covering 13 internal categories.
+- [x] **66,514** unified training rows covering 15 populated internal categories
+      (11,508 positive clause-classifier rows after filtering/deduplication).
 - [x] `nlp/clause_classification/classifier.py`:
       - Auto-loads CUAD keyword bank on import (top 80 keywords/category).
       - Hybrid pipeline: TF-IDF + Logistic Regression ML model + rule-based fallback.
@@ -104,7 +105,21 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 
 ---
 
-## 6. Architectural Notes (auto-populated)
+## 6. Hardening Pass (2026-10-22)
+- [x] Single taxonomy source (`nlp/taxonomy.py`); CUAD/MAUD loaders emit canonical labels.
+- [x] MAUD loader rewritten for the real CSV schema; CUAD retains negative examples for the keyword bank.
+- [x] Bundled model loader (`nlp/clause_classification/tfidf_model.py`) extracts the 7z archive with `py7zr` and suppresses sklearn version warnings.
+- [x] Keyword classifier uses letter-boundary matching; evaluation precision fixed.
+- [x] NER: valid CIN/LLPIN/GSTIN regexes, raw-text offsets, seat/venue/law detection.
+- [x] Obligations: prohibition/right/obligation precedence, first-modal subject, hours-aware deadlines, descriptive `seat/venue/governed` sentences ignored.
+- [x] Risk playbook: contract-level Indian rules execute, auto-renewal context, breach hours, liability-cap guard, arbitration mismatch guards.
+- [x] Backend: JSON-safe job persistence, DB fallbacks, bounded in-memory jobs, upload size pre-check, Neo4j lazy availability, unique graph IDs, strict CORS defaults.
+- [x] Docker: correct build context, project install, `.dockerignore`, healthchecks, ordered startup, renderer/UI fixes.
+- [x] Regression tests for obligation subjects and job serialisation; full pytest + ruff pass.
+
+---
+
+## 7. Architectural Notes (auto-populated)
 - 2026-08-18: Chose `pdfplumber` (primary) + `PyMuPDF` (fallback) + `pytesseract` (OCR fallback triggered when < 50 chars on a page).
 - 2026-08-18: Chose `microsoft/deberta-v3-base` for both classification and NER — wrapped behind lazy import so the stack runs without ML deps. Regex fallback covers CIN/PAN/GSTIN/dates.
 - 2026-08-18: Risk engine is rule-first; ML risk classifier deferred to post-MVP.
@@ -115,7 +130,7 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 
 ---
 
-## 7. Deferred / Post-MVP
+## 8. Deferred / Post-MVP
 - OCR with `surya-ocr` or `docTR` (pytesseract is enough for MVP).
 - Hindi / regional language support (Indic-BERT / MuRIL).
 - LLM-based redline generation (Llama-3 / Qwen).

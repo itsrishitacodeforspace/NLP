@@ -41,18 +41,15 @@ def normalise_whitespace(text: str) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = _CONTROL_RE.sub("", text)
     cleaned_lines: list[str] = []
-    blank_groups: list[int] = []  # how many consecutive blanks at each position
-    run: list[str] = []
     blanks = 0
     for line in text.split("\n"):
         normalised = _WS_RE.sub(" ", line).strip()
         if not normalised:
             blanks += 1
             continue
-        if blanks > 0 and run:
+        if blanks > 0 and cleaned_lines:
             # separator — keep as a single blank line between paragraphs.
             cleaned_lines.append("")
-        run.append(normalised)
         cleaned_lines.append(normalised)
         blanks = 0
     return _NL_RE.sub("\n\n", "\n".join(cleaned_lines)).strip()

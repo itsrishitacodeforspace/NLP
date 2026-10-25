@@ -71,6 +71,8 @@ class Neo4jConnection:
 
     @property
     def available(self) -> bool:
+        if self._driver is None:
+            self._connect()
         return self._available
 
     def close(self) -> None:

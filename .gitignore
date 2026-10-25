@@ -21,6 +21,7 @@ uploads/*
 !uploads/.gitkeep
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/sample_msa.txt
 data/processed/*
 !data/processed/.gitkeep
 data/annotated/*
@@ -40,5 +41,6 @@ htmlcov/
 *.egg-info/
 build/
 dist/
-
-C:\Users\RishitaB\OneDrive\Desktop\opencode\NLP\models\tfidf_classifier.joblib
+models/*.joblib
+models/*.7z
+!models/tfidf_classifier.7z

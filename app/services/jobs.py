@@ -24,10 +24,20 @@ _jobs: Dict[str, JobInfo] = {}
 _jobs_lock = threading.Lock()
 
 
+MAX_IN_MEMORY_JOBS = 200
+
+
 def create_job(contract_id: str) -> JobInfo:
     job_id = unique_id("job")
     info = JobInfo(job_id=job_id, contract_id=contract_id, status=JobStatus.QUEUED)
     with _jobs_lock:
+        if len(_jobs) >= MAX_IN_MEMORY_JOBS:
+            finished = sorted(
+                (j for j in _jobs.values() if j.status in {JobStatus.SUCCEEDED, JobStatus.FAILED}),
+                key=lambda j: j.created_at,
+            )
+            for old in finished[: max(1, len(_jobs) - MAX_IN_MEMORY_JOBS + 1)]:
+                _jobs.pop(old.job_id, None)
         _jobs[job_id] = info
     _persist(info)
     return info
@@ -45,7 +55,7 @@ def update_job(
     with _jobs_lock:
         info = _jobs.get(job_id)
         if info is None:
-            info = JobInfo(job_id=job_id, contract_id="")
+            raise KeyError(f"Unknown job: {job_id}")
         if status is not None:
             info.status = status
         if progress is not None:
@@ -74,12 +84,19 @@ def get_job(job_id: str) -> Optional[JobInfo]:
     record = pg_get_job(job_id)
     if not record:
         return None
+    result = None
+    if record.get("result"):
+        try:
+            result = AnalysisResult.model_validate(record["result"])
+        except Exception:
+            result = None
     return JobInfo(
         job_id=record["job_id"],
         contract_id=record["contract_id"] or "",
         status=JobStatus(record["status"]) if record["status"] else JobStatus.QUEUED,
         progress=record["progress"] or 0.0,
-        message=record["message"] or "",
+        message=record["message"] or None,
+        result=result,
         error=record["error"] or None,
         created_at=datetime.fromisoformat(record["created_at"]) if record["created_at"] else datetime.utcnow(),
         finished_at=datetime.fromisoformat(record["finished_at"]) if record["finished_at"] else None,
@@ -88,7 +105,17 @@ def get_job(job_id: str) -> Optional[JobInfo]:
 
 def list_jobs() -> list[JobInfo]:
     with _jobs_lock:
-        return list(_jobs.values())
+        jobs = list(_jobs.values())
+    if jobs:
+        return jobs
+    from app.db.postgres import list_jobs as pg_list_jobs
+
+    out: list[JobInfo] = []
+    for record in pg_list_jobs():
+        job = get_job(record["job_id"])
+        if job is not None:
+            out.append(job)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +166,10 @@ def _persist(info: JobInfo) -> None:
         "status": info.status.value if isinstance(info.status, JobStatus) else str(info.status),
         "progress": info.progress,
         "message": info.message or "",
-        "result": info.result.model_dump() if info.result else {},
+        "result": info.result.model_dump(mode="json") if info.result else {},
         "error": info.error or "",
     }
-    upsert_job(payload)
+    try:
+        upsert_job(payload)
+    except Exception as exc:
+        logger.warning("Job {} could not be persisted: {}", info.job_id, exc)

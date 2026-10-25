@@ -1,9 +1,11 @@
 """Page 4 — Graph explorer."""
 from __future__ import annotations
 
+import html
+
 import streamlit as st
 
-from streamlit_app.api_client import current_contract_id, get_graph
+from streamlit_app.api_client import current_contract_id, get_graph, local_result
 
 st.set_page_config(page_title="Graph · BharatContract AI", page_icon="🕸️", layout="wide")
 
@@ -39,8 +41,8 @@ def main() -> None:
         st.warning("No contract analyzed yet.")
         return
 
-    local = st.session_state.get("last_result")
-    if local:
+    local = local_result(cid)
+    if local is not None:
         graph = _local_to_graph(cid, local)
     else:
         try:
@@ -102,7 +104,10 @@ def main() -> None:
     for n in filtered_nodes:
         style = PALETTE.get(n["label"], {"fill": "#9CA3AF", "border": "#6B7280", "font": "#FFFFFF", "size": 20})
         props = n.get("properties", {})
-        tooltip = f"<b>{n['label']}</b><br/>{props.get('heading') or props.get('name') or n['id']}"
+        tooltip = (
+            f"<b>{html.escape(str(n['label']))}</b><br/>"
+            f"{html.escape(str(props.get('heading') or props.get('name') or n['id']))}"
+        )
         g_nodes.append(
             Node(
                 id=n["id"],

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import streamlit as st
 
-from streamlit_app.api_client import current_contract_id, get_clauses
-from streamlit_app.components.risk_card import clause_card, risk_badge
+from streamlit_app.api_client import current_contract_id, get_clauses, local_result
+from streamlit_app.components.risk_card import clause_card
 
 st.set_page_config(page_title="Clause explorer · BharatContract AI", page_icon="📑", layout="wide")
 
@@ -16,8 +16,8 @@ def main() -> None:
         st.warning("No contract analyzed yet.")
         return
 
-    local = st.session_state.get("last_result")
-    if local:
+    local = local_result(cid)
+    if local is not None:
         clauses = local.get("clauses", [])
     else:
         try:

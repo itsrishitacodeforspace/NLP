@@ -114,6 +114,14 @@ def current_contract_id() -> Optional[str]:
     return st.session_state.get("contract_id")
 
 
+def local_result(cid: Optional[str]) -> Optional[dict]:
+    """Return the in-process result only when it belongs to the active contract."""
+    result = st.session_state.get("last_result")
+    if result and result.get("contract", {}).get("contract_id") == cid:
+        return result
+    return None
+
+
 def set_current_contract_id(cid: Optional[str], title: Optional[str] = None) -> None:
     st.session_state["contract_id"] = cid
     if title:

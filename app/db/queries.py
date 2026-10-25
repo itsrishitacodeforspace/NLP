@@ -220,7 +220,7 @@ def fetch_graph(contract_id: str) -> GraphSnapshot:
     WHERE (n.contract_id = $cid) OR
           (n)-[:HAS_CLAUSE|IMPOSES|TRIGGERS|HAS_PARTY]-({contract_id: $cid})
     RETURN DISTINCT
-        coalesce(n.contract_id, n.clause_id, n.obligation_id, n.risk_id, n.name) AS id,
+        coalesce(n.clause_id, n.obligation_id, n.risk_id, n.contract_id, n.name) AS id,
         labels(n)[0] AS label,
         properties(n) AS properties
     """
@@ -229,8 +229,8 @@ def fetch_graph(contract_id: str) -> GraphSnapshot:
     WHERE (a.contract_id = $cid OR b.contract_id = $cid OR
            a.clause_id IN $clause_ids OR b.clause_id IN $clause_ids)
     RETURN DISTINCT
-        coalesce(a.contract_id, a.clause_id, a.obligation_id, a.risk_id, a.name) AS source,
-        coalesce(b.contract_id, b.clause_id, b.obligation_id, b.risk_id, b.name) AS target,
+        coalesce(a.clause_id, a.obligation_id, a.risk_id, a.contract_id, a.name) AS source,
+        coalesce(b.clause_id, b.obligation_id, b.risk_id, b.contract_id, b.name) AS target,
         type(r) AS type
     """
 

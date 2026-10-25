@@ -4,6 +4,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from streamlit_app.api_client import local_result
+
 st.set_page_config(page_title="Obligations · BharatContract AI", page_icon="✅", layout="wide")
 
 
@@ -29,9 +31,9 @@ def main() -> None:
         st.warning("No contract analyzed yet.")
         return
 
-    local = st.session_state.get("last_result")
-    obligations = (local or {}).get("obligations", []) if local else []
-    if not obligations:
+    local = local_result(cid)
+    obligations = (local or {}).get("obligations", []) if local is not None else []
+    if local is None:
         try:
             from streamlit_app.api_client import get_obligations
 
@@ -98,7 +100,7 @@ def main() -> None:
         view = view.copy()
         view["Type"] = view["Type"].apply(lambda t: f"{_TYPE_ICON.get(t, '')} {t}" if pd.notna(t) else t)
 
-    st.dataframe(view, width="stretch", hide_index=True, height=420)
+    st.dataframe(view, use_container_width=True, hide_index=True, height=420)
 
     st.download_button(
         "📥 Download CSV",

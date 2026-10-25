@@ -1,6 +1,5 @@
 """Per-category top-1 evaluation of the rule-based classifier."""
 import csv
-import sys
 from collections import defaultdict
 from pathlib import Path
 

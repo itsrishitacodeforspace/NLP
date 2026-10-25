@@ -1,9 +1,11 @@
 """Page 5 — Risk review."""
 from __future__ import annotations
 
+import json
+
 import streamlit as st
 
-from streamlit_app.api_client import current_contract_id, get_risks
+from streamlit_app.api_client import current_contract_id, get_risks, local_result
 from streamlit_app.components.risk_card import risk_card
 
 st.set_page_config(page_title="Risk review · BharatContract AI", page_icon="⚠️", layout="wide")
@@ -16,8 +18,8 @@ def main() -> None:
         st.warning("No contract analyzed yet.")
         return
 
-    local = st.session_state.get("last_result")
-    if local:
+    local = local_result(cid)
+    if local is not None:
         risks = local.get("risks", [])
     else:
         try:
@@ -67,7 +69,7 @@ def main() -> None:
     if shown:
         st.download_button(
             "📥 Download risks JSON",
-            str(risks).encode("utf-8"),
+            json.dumps(risks, indent=2, default=str).encode("utf-8"),
             file_name=f"risks_{cid}.json",
             mime="application/json",
         )

@@ -53,7 +53,7 @@ def enrich_entities_with_deberta(text: str, *, existing: List[Entity]) -> List[E
             text, return_offsets_mapping=True, truncation=True, max_length=512,
         )["offset_mapping"][0]
         seen = {(e.label, e.text.lower()) for e in existing}
-        for pred, (start, end) in zip(predictions, offsets):
+        for pred, (start, end) in zip(predictions, offsets, strict=False):
             if start == end:
                 continue
             label = id2label.get(pred, "O")

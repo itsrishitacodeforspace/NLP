@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import sys
-from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Tuple
 
@@ -21,34 +19,9 @@ from sklearn.metrics import classification_report  # type: ignore
 from sklearn.model_selection import train_test_split  # type: ignore
 from sklearn.pipeline import Pipeline  # type: ignore
 
+from nlp.clause_classification.tfidf_model import TrainedClassifier
 
 ROOT = Path(__file__).resolve().parents[1]
-
-
-@dataclass
-class TrainedClassifier:
-    pipeline: Pipeline
-    labels: List[str]
-
-    def predict_one(self, text: str) -> List[str]:
-        if not text:
-            return []
-        proba = self.pipeline.predict_proba([text])[0]
-        classes = list(self.pipeline.classes_)
-        ranked = sorted(zip(classes, proba), key=lambda kv: -kv[1])
-        out: List[str] = []
-        for label, p in ranked:
-            # Multi-label threshold tuned on CUAD val.
-            if p >= 0.15:
-                out.append(label)
-            if len(out) >= 5:
-                break
-        return out or [ranked[0][0]] if ranked else []
-
-    def predict_top1(self, text: str) -> str:
-        if not text:
-            return "Miscellaneous"
-        return self.pipeline.predict([text])[0]
 
 
 def load_corpus(csv_path: Path) -> Tuple[List[str], List[str]]:
@@ -107,8 +80,12 @@ def train(corpus_path: Path, model_path: Path) -> TrainedClassifier:
 
 
 def load_trained(model_path: Path) -> TrainedClassifier:
-    blob = joblib.load(model_path)
-    return TrainedClassifier(pipeline=blob["pipeline"], labels=blob["labels"])
+    from nlp.clause_classification.tfidf_model import load_trained as _load
+
+    model = _load(model_path)
+    if model is None:
+        raise FileNotFoundError(model_path)
+    return model
 
 
 def main() -> int:

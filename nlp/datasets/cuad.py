@@ -7,17 +7,14 @@ single, uniform format.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
-from typing import Iterable, Iterator, List, Optional
+from typing import Iterable, Iterator, List
 
-from nlp.datasets.unified import (
-    TrainingExample,
-    map_cuad_label,
-    write_jsonl,
-)
-
+from nlp.datasets.unified import TrainingExample, write_jsonl
+from nlp.taxonomy import map_cuad_label
 
 CATEGORY_QUESTION_RE = re.compile(r'related to "([^"]+)"', re.IGNORECASE)
 
@@ -30,7 +27,9 @@ def iter_examples(cuad_path: Path) -> Iterator[TrainingExample]:
 
     for doc_idx, doc in enumerate(data["data"]):
         title = doc.get("title", f"cuad_doc_{doc_idx}")
-        contract_id = re.sub(r"[^A-Za-z0-9]+", "_", title)[:60].strip("_").lower() or f"cuad_{doc_idx}"
+        slug = re.sub(r"[^A-Za-z0-9]+", "_", title)[:48].strip("_").lower() or f"cuad_{doc_idx}"
+        digest = hashlib.sha1(title.encode("utf-8")).hexdigest()[:8]
+        contract_id = f"{slug}_{digest}"
 
         for para in doc["paragraphs"]:
             context = para["context"]
@@ -67,7 +66,7 @@ def iter_examples(cuad_path: Path) -> Iterator[TrainingExample]:
                         example_id=f"{contract_id}_q{q_idx}_neg",
                         source="cuad",
                         contract_id=contract_id,
-                        text=context,
+                        text=context[:2000],
                         category=internal_category,
                         spans=[],
                         metadata={"cuad_label": cuad_label, "label": "absent", "is_impossible": True},

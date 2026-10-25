@@ -169,26 +169,8 @@ def _group_paragraphs_into_clauses(paragraphs: List[str]) -> List[tuple[Optional
 
     for idx, para in enumerate(normalised):
         first_line = para.split("\n", 1)[0].strip()
-        # Strong heading: section-number prefix OR ALL-CAPS legal title.
-        is_strong_heading = bool(detect_section_number(first_line)) or (
-            first_line == first_line.upper()
-            and len(first_line) <= 100
-            and any(c.isalpha() for c in first_line)
-            and any(
-                kw in first_line.lower()
-                for kw in (
-                    "agreement",
-                    "terms",
-                    "conditions",
-                    "section",
-                    "article",
-                    "clause",
-                    "schedule",
-                    "annexure",
-                    "chapter",
-                )
-            )
-        )
+        # Strong heading only — not every numbered body paragraph.
+        is_strong_heading = _looks_like_heading_line(first_line)
         if idx == 0 and not buffer:
             # Force-start the first group with whatever we see.
             buffer.append(para)
@@ -216,9 +198,14 @@ def _looks_like_heading_line(line: str) -> bool:
         return False
     if len(line) > 120:
         return False
-    # Section number ("1.", "1.1", "(a)", "Article 5", etc.)
+    # Section number ("1.", "1.1", "(a)", "Article 5", etc.). Numbered body
+    # sentences also match this regex, so reject terminal punctuation and
+    # long lines; those are clause text, not headings.
     if detect_section_number(line):
-        return True
+        stripped = line.strip()
+        if stripped.endswith((".", ",", ";", ":")):
+            return False
+        return len(stripped.split()) <= 12
     stripped = line.strip()
     # Strip out parenthetical / quoted segments before checking case so
     # 'RESIDENT ACCOMMODATION SERVICE AGREEMENT ("Agreement")' is treated as

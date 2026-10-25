@@ -7,7 +7,6 @@ import pytest
 
 from nlp.clause_classification.classifier import classify_clause, load_cuad_keyword_bank
 
-
 # Make sure the bank is loaded regardless of import order in other tests.
 load_cuad_keyword_bank()
 

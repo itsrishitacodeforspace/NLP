@@ -25,5 +25,5 @@ def test_long_clause_is_split():
 def test_segment_offsets_monotonic():
     text = "1. A\n" + ("a " * 300) + "\n\n2. B\n" + ("b " * 300) + "\n\n3. C\n" + ("c " * 300)
     clauses = segment_clauses(text, contract_id="off")
-    for prev, curr in zip(clauses, clauses[1:]):
+    for prev, curr in zip(clauses, clauses[1:], strict=False):
         assert curr.char_start >= prev.char_end - 4  # allow small overlap from separator

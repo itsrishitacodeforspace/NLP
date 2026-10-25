@@ -1,6 +1,8 @@
 """Page 1 — Executive summary."""
 from __future__ import annotations
 
+import html
+
 import streamlit as st
 
 from streamlit_app.api_client import (
@@ -9,6 +11,7 @@ from streamlit_app.api_client import (
     get_obligations,
     get_risks,
     get_summary,
+    local_result,
 )
 from streamlit_app.components.risk_card import contract_header, risk_card
 
@@ -16,7 +19,7 @@ st.set_page_config(page_title="Summary · BharatContract AI", page_icon="📊", 
 
 
 def _local_result():
-    return st.session_state.get("last_result")
+    return local_result(current_contract_id())
 
 
 _SEVERITY_ICON = {
@@ -38,14 +41,14 @@ def _render_parties(parties: list) -> None:
     chips = " ".join(
         f"<span style='background:#EEF2FF;color:#1E40AF;padding:4px 10px;"
         f"border-radius:14px;margin:2px;display:inline-block;font-size:13px;'>"
-        f"{p}</span>"
+        f"{html.escape(str(p))}</span>"
         for p in parties
     )
     st.markdown(chips, unsafe_allow_html=True)
 
 
 def _kv(label: str, value: str, *, empty: str = "—") -> None:
-    safe = (value or "").strip()
+    safe = html.escape((value or "").strip())
     body = (
         f"<span style='color:#111827;'>{safe}</span>"
         if safe
@@ -136,7 +139,7 @@ def main() -> None:
                 st.markdown(
                     f"<div style='background:#FEF2F2;border-left:3px solid #EF4444;"
                     f"padding:6px 10px;margin:4px 0;border-radius:4px;color:#7F1D1D;'>"
-                    f"{m}</div>",
+                    f"{html.escape(str(m))}</div>",
                     unsafe_allow_html=True,
                 )
         else:

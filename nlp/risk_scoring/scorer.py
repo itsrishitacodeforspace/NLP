@@ -23,43 +23,29 @@ def _level_for(score: float) -> RiskSeverity:
     return RiskSeverity.LOW
 
 
-def score_clauses(clauses: List[Clause]) -> List[Clause]:
-    """Annotate each clause with risk_score / risk_level based on its own risks."""
-    for cl in clauses:
-        cl.risk_score = 0.0
-        cl.risk_reasons = []
-    return clauses
-
-
 def score_contract(
     clauses: List[Clause],
     risks: List[RiskFlag],
 ) -> tuple[float, RiskSeverity]:
-    """Compute a single contract risk score.
+    """Compute the contract score from the risk flags.
 
     Formula:
-        contract_risk = max(clause_score) * 0.4
-                      + avg(top 5 clause scores) * 0.3
-                      + #critical_risks * 0.2
-                      + #missing_clauses * 0.1
+        highest flag score
+        + 2 points per additional flag (max 20)
+        + severity mass / 100 (max 10)
+    capped at 100. This keeps a single critical finding in the critical band
+    (>= 76) and prevents volume alone from inflating a low-risk contract.
     """
-    if not clauses and not risks:
+    if not risks:
         return 0.0, RiskSeverity.LOW
 
-    clause_scores = sorted([c.risk_score for c in clauses], reverse=True)[:5] or [0.0]
-    top = clause_scores[0]
-    top5_avg = sum(clause_scores) / len(clause_scores)
-
-    critical_count = sum(1 for r in risks if r.severity == RiskSeverity.CRITICAL)
-    missing = sum(1 for r in risks if r.rule_id.startswith("MISSING_CLAUSE_") or r.rule_id.startswith("RISK_DATA_MISSING"))
-
-    score = (
-        top * 0.4
-        + top5_avg * 0.3
-        + min(critical_count, 10) * 4  # up to 40 pts
-        + min(missing, 6) * 4           # up to 24 pts
+    top = max((r.score for r in risks), default=0.0)
+    volume = min(20.0, max(0, len(risks) - 1) * 2.0)
+    severity_mass = min(
+        10.0,
+        sum(severity_to_score(r.severity) for r in risks) / 100.0,
     )
-    score = min(100.0, round(score, 1))
+    score = min(100.0, round(top + volume + severity_mass, 1))
     return score, _level_for(score)
 
 

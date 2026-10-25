@@ -84,8 +84,10 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
             ),
             score=85.0,
         )
-    if not _has_label(clause.entities, "PAYMENT_AMOUNT"):
-        # missing liability cap entity
+    has_cap_language = any(
+        t in text for t in ("liability cap", "shall not exceed", "limited to", "maximum liability")
+    )
+    if not has_cap_language and not _has_label(clause.entities, "PAYMENT_AMOUNT"):
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_LIABILITY_002",
             clause_id=clause.clause_id,
@@ -127,14 +129,24 @@ def rule_auto_renewal(clause: Clause, summary: ContractSummary) -> Optional[Risk
     if not _any_clause_type(clause, "Term and Renewal"):
         return None
     if "automatic" in text and "renew" in text:
-        notice = next(
-            (e for e in clause.entities if e.label in {"NOTICE_PERIOD", "CURE_PERIOD"}),
-            None,
+        notice = re.search(
+            r"notice[^.]{0,100}?(?:non-renewal|renewal|terminate)[^.]{0,100}?"
+            r"(\d+)\s+(hour|hours|day|days|week|weeks|month|months)\b",
+            text,
+            re.IGNORECASE,
         )
-        severity = RiskSeverity.HIGH if not notice else RiskSeverity.MEDIUM
+        severity = RiskSeverity.MEDIUM
         explanation = "Contract auto-renews unless timely notice is given."
         if not notice:
+            severity = RiskSeverity.HIGH
             explanation += " No notice period detected — risk of being locked in."
+        else:
+            value = int(notice.group(1))
+            unit = notice.group(2)
+            days = value / 24 if "hour" in unit else value * 7 if "week" in unit else value * 30 if "month" in unit else value
+            if days < 30:
+                severity = RiskSeverity.HIGH
+                explanation += f" Only {value} {unit} notice required."
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_RENEWAL_001",
             clause_id=clause.clause_id,
@@ -172,10 +184,18 @@ def rule_data_breach_window(clause: Clause, summary: ContractSummary) -> Optiona
     if not _any_clause_type(clause, "Data Protection"):
         return None
     if "data breach" in text or "breach notification" in text or "security incident" in text:
-        notice = next(
-            (e for e in clause.entities if e.label in {"NOTICE_PERIOD"}), None,
+        notice = re.search(
+            r"(?:within|no\s+later\s+than)\s+(\d+)\s+(hour|hours|day|days)\b",
+            text,
+            re.IGNORECASE,
         )
-        if notice and notice.text.lower().startswith(("within 24", "within 12", "within 6")):
+        if notice:
+            value = int(notice.group(1))
+            unit = notice.group(2)
+            hours = value if "hour" in unit else value * 24
+        else:
+            hours = None
+        if hours is not None and hours <= 24:
             return RiskFlag(
                 risk_id=f"{clause.clause_id}_RISK_DATA_001",
                 clause_id=clause.clause_id,
@@ -226,11 +246,14 @@ def rule_arbitration_seat_mismatch(clause: Clause, summary: ContractSummary) -> 
     has_foreign_seat = any(
         e.label == "ARBITRATION_SEAT_FOREIGN" for e in clause.entities
     )
-    has_indian_venue = any(
-        re.search(r"\b(new delhi|mumbai|bengaluru|chennai|kolkata|hyderabad)\b", text)
-        for _ in [None]
+    has_indian_venue = bool(
+        re.search(
+            r"\b(new delhi|mumbai|bengaluru|bangalore|chennai|kolkata|hyderabad|pune|ahmedabad)\b",
+            text,
+        )
     )
-    if has_foreign_seat and has_indian_venue and summary.jurisdiction.lower() in {"india", "indian"}:
+    is_indian = (summary.jurisdiction or "").lower() in {"india", "indian"}
+    if has_foreign_seat and has_indian_venue and is_indian:
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_ARB_001",
             clause_id=clause.clause_id,
@@ -252,22 +275,19 @@ def rule_missing_stamp_duty(clause: Clause, summary: ContractSummary) -> Optiona
         return None
     if summary.stamp_duty_mentioned:
         return None
-    # Stamp duty should appear on Governing Law / Miscellaneous / first page
-    if _any_clause_type(clause, "Governing Law", "Miscellaneous"):
-        return RiskFlag(
-            risk_id=f"{clause.clause_id}_RISK_STAMP_001",
-            clause_id=clause.clause_id,
-            rule_id="RISK_STAMP_001",
-            name="Missing stamp duty provision",
-            severity=RiskSeverity.CRITICAL,
-            explanation=(
-                "Indian Stamp Act, 1899 requires adequate stamping. "
-                "Unstamped / inadequately stamped agreements are inadmissible in Indian courts."
-            ),
-            recommendation="Add an explicit stamp duty clause and execute on e-stamp paper of appropriate value.",
-            score=92.0,
-        )
-    return None
+    return RiskFlag(
+        risk_id="contract_RISK_STAMP_001",
+        clause_id=None,
+        rule_id="RISK_STAMP_001",
+        name="Missing stamp duty provision",
+        severity=RiskSeverity.CRITICAL,
+        explanation=(
+            "Indian Stamp Act, 1899 requires adequate stamping. "
+            "Unstamped / inadequately stamped agreements are inadmissible in Indian courts."
+        ),
+        recommendation="Add an explicit stamp duty clause and execute on e-stamp paper of appropriate value.",
+        score=92.0,
+    )
 
 
 def rule_tds_missing(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:
@@ -438,5 +458,20 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
                 score=70.0,
             )
         )
+
+    # Indian-statutory checks run once against the whole contract.
+    synthetic = Clause(clause_id="contract", text=text_corpus, clause_types=sorted(detected_types))
+    for rule in RISK_RULES:
+        if not rule.is_contract_level or rule.check is None:
+            continue
+        if rule.requires_indian and (summary.jurisdiction or "").lower() not in {"india", "indian"}:
+            continue
+        try:
+            flag = rule.check(synthetic, summary)
+        except Exception:
+            continue
+        if flag is not None:
+            flag.clause_id = None
+            flags.append(flag)
 
     return flags

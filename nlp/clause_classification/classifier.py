@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from nlp.taxonomy import CUAD_TO_INTERNAL
 
 # Mapping: (category -> list of keyword/phrase patterns (lowercased))
 CLAUSE_RULES: Dict[str, List[str]] = {
@@ -196,52 +197,6 @@ HEADING_HINTS: Dict[str, str] = {
     "stamp duty": "Stamp Duty",
 }
 
-# CUAD label -> our internal category. Used when loading the keyword bank.
-CUAD_LABEL_TO_INTERNAL = {
-    "Document Name": "Definitions",
-    "Parties": "Definitions",
-    "Agreement Date": "Definitions",
-    "Effective Date": "Definitions",
-    "Expiration Date": "Term and Renewal",
-    "Renewal Term": "Term and Renewal",
-    "Notice Period To Terminate Renewal": "Term and Renewal",
-    "Governing Law": "Governing Law",
-    "Most Favored Nation": "Non-Compete / Non-Solicit",
-    "Non-Compete": "Non-Compete / Non-Solicit",
-    "Exclusivity": "Non-Compete / Non-Solicit",
-    "No-Solicit Of Customers": "Non-Compete / Non-Solicit",
-    "Competitive Restriction Exception": "Non-Compete / Non-Solicit",
-    "No-Solicit Of Employees": "Non-Compete / Non-Solicit",
-    "Non-Disparagement": "Confidentiality",
-    "Termination For Convenience": "Termination",
-    "Rofr/Rofo/Rofn": "Assignment",
-    "Change Of Control": "Assignment",
-    "Anti-Assignment": "Assignment",
-    "Revenue/Profit Sharing": "Payment Terms",
-    "Price Restrictions": "Payment Terms",
-    "Minimum Commitment": "Payment Terms",
-    "Volume Restriction": "Payment Terms",
-    "Ip Ownership Assignment": "Intellectual Property",
-    "Joint Ip Ownership": "Intellectual Property",
-    "License Grant": "Intellectual Property",
-    "Non-Transferable License": "Intellectual Property",
-    "Affiliate License-Licensor": "Intellectual Property",
-    "Affiliate License-Licensee": "Intellectual Property",
-    "Unlimited/All-You-Can-Eat-License": "Intellectual Property",
-    "Irrevocable Or Perpetual License": "Intellectual Property",
-    "Source Code Escrow": "Intellectual Property",
-    "Post-Termination Services": "Termination",
-    "Audit Rights": "Audit Rights",
-    "Uncapped Liability": "Limitation of Liability",
-    "Cap On Liability": "Limitation of Liability",
-    "Liquidated Damages": "Limitation of Liability",
-    "Warranty Duration": "Warranty",
-    "Insurance": "Insurance",
-    "Covenant Not To Sue": "Miscellaneous",
-    "Third Party Beneficiary": "Miscellaneous",
-}
-
-
 @dataclass
 class ClassificationResult:
     labels: List[str]
@@ -313,6 +268,7 @@ def load_cuad_keyword_bank(path: Optional[Path] = None, *, max_keywords_per_cate
     if path is None:
         path = Path(__file__).resolve().parents[2] / "data" / "processed" / "cuad_keyword_bank.json"
     if not Path(path).exists():
+        _compile_keyword_patterns()
         return 0
     with Path(path).open(encoding="utf-8") as fh:
         bank = json.load(fh)
@@ -329,7 +285,7 @@ def load_cuad_keyword_bank(path: Optional[Path] = None, *, max_keywords_per_cate
 
     added = 0
     for cuad_label, samples in bank.items():
-        target = CUAD_LABEL_TO_INTERNAL.get(cuad_label)
+        target = CUAD_TO_INTERNAL.get(cuad_label)
         if not target:
             continue
         existing = set(CLAUSE_RULES.get(target, []))
@@ -355,14 +311,31 @@ def load_cuad_keyword_bank(path: Optional[Path] = None, *, max_keywords_per_cate
                         added += 1
                         per_category_added += 1
                         break
+    _compile_keyword_patterns()
     return added
+
+
+_KEYWORD_PATTERNS: Dict[str, re.Pattern] = {}
+
+
+def _compile_keyword_patterns() -> None:
+    """Compile letter-boundary regexes so `term` never matches `terminate`."""
+    global _KEYWORD_PATTERNS
+    patterns: Dict[str, re.Pattern] = {}
+    for keywords in CLAUSE_RULES.values():
+        for raw in keywords:
+            kw = raw.strip().lower()
+            if not kw or kw in patterns:
+                continue
+            patterns[kw] = re.compile(rf"(?<![a-z0-9]){re.escape(kw)}(?![a-z0-9])")
+    _KEYWORD_PATTERNS = patterns
 
 
 # Auto-load on import (silent skip if bank file is missing).
 try:
     load_cuad_keyword_bank()
 except Exception:
-    pass
+    _compile_keyword_patterns()
 
 
 # ---------------------------------------------------------------------------
@@ -375,14 +348,13 @@ _TFIDF_MODEL_LOADED = False
 
 def _classify_with_tfidf(text: str) -> Optional[ClassificationResult]:
     global _TFIDF_MODEL, _TFIDF_MODEL_LOADED
-    model_path = Path(__file__).resolve().parents[2] / "models" / "tfidf_classifier.joblib"
-    if not model_path.exists():
+    from nlp.clause_classification.tfidf_model import ensure_model_file, load_trained
+
+    if ensure_model_file() is None:
         return None
     if not _TFIDF_MODEL_LOADED:
         try:
-            from scripts.train_tfidf_classifier import load_trained  # type: ignore
-
-            _TFIDF_MODEL = load_trained(model_path)
+            _TFIDF_MODEL = load_trained()
         except Exception:
             _TFIDF_MODEL = None
         _TFIDF_MODEL_LOADED = True
@@ -418,12 +390,11 @@ def _rule_classify(text: str, heading: Optional[str] = None) -> ClassificationRe
             if k in heading_low:
                 scores[v] = scores.get(v, 0.0) + 5.0
 
-    # Build an IDF weight: rarer keywords are more informative.
-    total_keywords = sum(len(v) for v in CLAUSE_RULES.values()) or 1
     for label, keywords in CLAUSE_RULES.items():
         for kw in keywords:
-            if kw in lowered:
-                # Long phrases are more discriminative; rare keywords too.
+            pattern = _KEYWORD_PATTERNS.get(kw.strip().lower())
+            if pattern is not None and pattern.search(lowered):
+                # Long phrases are more discriminative.
                 weight = 1.0 + min(2.0, len(kw) / 20.0)
                 scores[label] = scores.get(label, 0.0) + weight
 
@@ -474,7 +445,6 @@ def evaluate_against_csv(
     Expects columns: text, category.
     """
     import csv as _csv
-    import sys
     import random
 
     _csv.field_size_limit(2**31 - 1)
@@ -494,14 +464,13 @@ def evaluate_against_csv(
         gold = row.get("category", "").strip()
         if not text or not gold:
             continue
-        pred = classify_clause(text).labels
+        pred = set(classify_clause(text).labels)
         if not pred:
-            pred = ["Miscellaneous"]
-        if gold in pred:
-            tp += 1
-        else:
-            fn += 1
-            fp += len([p for p in pred if p != gold])
+            pred = {"Miscellaneous"}
+        gold_set = {gold}
+        tp += len(pred & gold_set)
+        fp += len(pred - gold_set)
+        fn += len(gold_set - pred)
     precision = tp / max(1, tp + fp)
     recall = tp / max(1, tp + fn)
     f1 = 2 * precision * recall / max(1, precision + recall)

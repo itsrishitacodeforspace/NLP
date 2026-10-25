@@ -74,6 +74,7 @@ def get_engine():
                 pool_size=5,
                 max_overflow=5,
                 future=True,
+                connect_args={"connect_timeout": 3},
             )
             # Probe connection with a short timeout; do not block on cold start.
             with _engine.connect() as conn:
@@ -129,10 +130,10 @@ def set_postgres_unavailable() -> None:
 def upsert_contract_metadata(record: dict) -> bool:
     if not postgres_available():
         return False
-    with session_scope() as session:
-        if session is None:
-            return False
-        try:
+    try:
+        with session_scope() as session:
+            if session is None:
+                return False
             obj = session.get(ContractRecord, record["contract_id"])
             if obj is None:
                 obj = ContractRecord(contract_id=record["contract_id"])
@@ -149,18 +150,18 @@ def upsert_contract_metadata(record: dict) -> bool:
                 if key in record:
                     setattr(obj, key, record[key])
             return True
-        except Exception as exc:
-            logger.warning("Contract metadata write failed: {}", exc)
-            return False
+    except Exception as exc:
+        logger.warning("Contract metadata write failed: {}", exc)
+        return False
 
 
 def upsert_job(record: dict) -> bool:
     if not postgres_available():
         return False
-    with session_scope() as session:
-        if session is None:
-            return False
-        try:
+    try:
+        with session_scope() as session:
+            if session is None:
+                return False
             obj = session.get(JobRecord, record["job_id"])
             if obj is None:
                 obj = JobRecord(job_id=record["job_id"])
@@ -178,9 +179,9 @@ def upsert_job(record: dict) -> bool:
             if record.get("status") in {"succeeded", "failed"}:
                 obj.finished_at = datetime.utcnow()
             return True
-        except Exception as exc:
-            logger.warning("Job write failed: {}", exc)
-            return False
+    except Exception as exc:
+        logger.warning("Job write failed: {}", exc)
+        return False
 
 
 def get_job(job_id: str) -> Optional[dict]:
@@ -203,6 +204,21 @@ def get_job(job_id: str) -> Optional[dict]:
             "created_at": obj.created_at.isoformat() if obj.created_at else None,
             "finished_at": obj.finished_at.isoformat() if obj.finished_at else None,
         }
+
+
+def list_jobs(limit: int = 200) -> list[dict]:
+    if not postgres_available():
+        return []
+    with session_scope() as session:
+        if session is None:
+            return []
+        rows = (
+            session.query(JobRecord)
+            .order_by(JobRecord.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [{"job_id": r.job_id} for r in rows]
 
 
 def list_contracts(limit: int = 100) -> list[dict]:

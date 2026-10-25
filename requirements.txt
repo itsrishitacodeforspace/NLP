@@ -36,6 +36,11 @@ pyvis==0.3.2
 plotly==5.18.0
 pandas==2.2.0
 numpy==1.26.4
+scikit-learn==1.9.0
+joblib==1.5.3
+
+# Bundled model archive extraction
+py7zr==1.1.4
 
 # Document parsing
 pdfplumber==0.10.3

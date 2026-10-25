@@ -13,23 +13,47 @@ from typing import List, Optional
 
 from app.models.schemas import Obligation, ObligationType, RiskSeverity
 
-# Modal verbs used to detect obligation flavour
-OBLIGATION_MODALS = {"shall", "must", "agrees to", "is required to", "will", "undertakes to"}
-RIGHT_MODALS = {"may", "is entitled to", "has the right to", "can", "reserves the right to"}
-PROHIBITION_MODALS = {"shall not", "may not", "must not", "is prohibited from", "will not"}
+# Modal patterns are checked in priority order: prohibition, right, obligation.
+_DEONTIC_PATTERNS = (
+    (
+        ObligationType.PROHIBITION,
+        re.compile(
+            r"\b(?:shall|may|must|will)\s+not\b|\bis\s+prohibited\s+from\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        ObligationType.RIGHT,
+        re.compile(
+            r"\b(?:is\s+entitled\s+to|has\s+the\s+right\s+to|reserves\s+the\s+right\s+to)\b"
+            r"|\b(?:may|can)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        ObligationType.OBLIGATION,
+        re.compile(
+            r"\b(?:agrees\s+to|is\s+required\s+to|undertakes\s+to)\b|\b(?:shall|must|will)\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
 
 DEADLINE_RE = re.compile(
-    r"\b(?:within|no later than|at least|prior to|after|by|on)\s+(\d+\s+(?:day|days|week|weeks|month|months|year|years|business days))\b",
+    r"\b(?:within|no later than|at least|prior to|after|by|on)\s+"
+    r"(\d+\s+(?:hour|hours|day|days|week|weeks|month|months|year|years|business\s+days))\b",
     re.IGNORECASE,
 )
 DATE_DEADLINE_RE = re.compile(
-    r"\b(?:by|on|before|after)\s+(\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4})\b",
+    r"\b(?:on\s+or\s+before|by|on|before|after)\s+"
+    r"(\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4})\b",
     re.IGNORECASE,
 )
 
-# Subject detection — first noun-chunk near the modal
-SUBJECT_RE = re.compile(
-    r"\b([A-Z][A-Za-z0-9&,'.\-_ ]{1,40}(?:Pvt\.?\s+Ltd\.?|Limited|LLP|Inc\.?|Corp(?:oration)?|LLC|PLC|Company|Co\.?)?)\b"
+OBJECT_CUT_RE = re.compile(
+    r"\b(?:within|by|no\s+later\s+than|prior\s+to|on\s+or\s+before|if|unless|subject\s+to|"
+    r"pursuant\s+to|under\s+this|in\s+accordance\s+with)\b|[.;]",
+    re.IGNORECASE,
 )
 
 CONDITIONAL_RE = re.compile(
@@ -134,45 +158,53 @@ def _split_sentences(text: str) -> List[str]:
 
 
 def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
-    s_low = sentence.lower()
-
-    obligation_type: Optional[ObligationType] = None
-    risk_level = RiskSeverity.LOW
-    confidence = 0.7
-
-    for modal in OBLIGATION_MODALS:
-        if modal in s_low:
-            obligation_type = ObligationType.OBLIGATION
-            confidence = 0.85
-            break
-    if obligation_type is None:
-        for modal in RIGHT_MODALS:
-            if modal in s_low:
-                obligation_type = ObligationType.RIGHT
-                confidence = 0.7
-                break
-    if obligation_type is None:
-        for modal in PROHIBITION_MODALS:
-            if modal in s_low:
-                obligation_type = ObligationType.PROHIBITION
-                confidence = 0.8
-                risk_level = RiskSeverity.MEDIUM
-                break
-    if obligation_type is None:
+    sentence = sentence.strip()
+    if not sentence:
         return None
 
-    subject, counterparty = _extract_subjects(sentence)
-    action = _extract_action(s_low)
-    obj = _extract_object(sentence)
+    obligation_type: Optional[ObligationType] = None
+    modal_match: Optional[re.Match] = None
+    for candidate_type, pattern in _DEONTIC_PATTERNS:
+        match = pattern.search(sentence)
+        if match:
+            obligation_type = candidate_type
+            modal_match = match
+            break
+    if obligation_type is None or modal_match is None:
+        return None
+
+    confidence = {
+        ObligationType.OBLIGATION: 0.85,
+        ObligationType.RIGHT: 0.7,
+        ObligationType.PROHIBITION: 0.8,
+    }[obligation_type]
+
+    # The subject belongs to the first deontic verb, even when the sentence
+    # later contains a prohibition ("shall keep ... and shall not disclose").
+    first_modal_start = min(
+        (match.start() for _, pattern in _DEONTIC_PATTERNS if (match := pattern.search(sentence))),
+        default=modal_match.start(),
+    )
+    subject = _extract_subject(sentence[:first_modal_start])
+    raw_tail = sentence[modal_match.end() :].strip()
+    if re.match(r"be\s+", raw_tail, re.IGNORECASE) and re.search(
+        r"\b(seat|venue)\b", subject or "", re.IGNORECASE
+    ):
+        return None
+    action, obj = _extract_action_object(raw_tail)
+    if action == "governed":
+        return None
+    if action == "resolved" and subject and re.search(r"\b(seat|venue|dispute)\b", subject):
+        return None
     condition = _extract_condition(sentence)
     deadline_expr = _extract_deadline(sentence)
-    risk_level = _derive_risk_level(obligation_type, deadline_expr, s_low)
+    risk_level = _derive_risk_level(obligation_type, deadline_expr, sentence.lower())
 
     return ObligationHit(
         text=sentence,
         obligation_type=obligation_type,
         subject=subject,
-        counterparty=counterparty,
+        counterparty=None,
         action=action,
         object=obj,
         condition=condition,
@@ -183,86 +215,54 @@ def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
     )
 
 
-def _extract_subjects(sentence: str) -> tuple[Optional[str], Optional[str]]:
-    stripped = re.sub(r"^\s*\(?[a-z0-9]+[.)]\s*", "", sentence)
-    stripped = re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+", "", stripped)
-    # If the sentence starts with a heading-like title (no verb yet), drop it.
-    parts = stripped.split("\n", 1)
-    if len(parts) > 1:
-        first = parts[0].strip()
-        second = parts[1].strip()
-        # Heading detection: short title-cased chunk without a modal verb.
-        if (
-            0 < len(first) <= 100
-            and not re.search(r"\b(shall|must|may|will|agrees)\b", first, re.IGNORECASE)
-            and len(second) > len(first)
-        ):
-            stripped = second
-
-    # Find subject — up to the first modal verb or preposition.
-    cut_match = re.search(
-        r"\b(?:shall|must|may|will|agrees to|undertakes to|hereby)\b",
-        stripped,
-        re.IGNORECASE,
+def _extract_subject(prefix: str) -> Optional[str]:
+    subject = re.sub(r"^\s*\(?[a-z0-9]+[.)]\s*", "", prefix)
+    subject = re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+", "", subject)
+    subject = re.sub(
+        r"^(?:thereafter|however|notwithstanding(?:\s+the\s+foregoing)?|further|additionally)\s+",
+        "",
+        subject.strip(),
+        flags=re.IGNORECASE,
     )
-    subject = stripped[: cut_match.start()].strip().rstrip(",") if cut_match else stripped[:60].strip()
+    subject = subject.strip().rstrip(",;:")
+    if len(subject) > 100:
+        subject = re.split(r"[,;]", subject)[-1].strip()
+    subject = re.sub(r"^(?:the|this|that|a|an)\s+", "", subject, flags=re.IGNORECASE)
+    subject = re.sub(r"\s+(?:to|of|from|in|under|pursuant|for|by)\s*$", "", subject)
+    subject = subject.strip().rstrip(",;:")
+    if len(subject) < 2:
+        return None
+    return subject[:120]
 
-    # Remove trailing prepositions or leading "the/this".
-    subject = re.sub(r"\s+(to|of|from|in|under|pursuant|for|by)\s*$", "", subject)
-    subject = re.sub(r"^(the|this|that|a|an)\s+", "", subject, flags=re.IGNORECASE).strip()
 
-    if len(subject) < 3 or subject.lower() in {"the", "this", "that", "a", "an"}:
+def _extract_action_object(rest: str) -> tuple[Optional[str], Optional[str]]:
+    rest = rest.strip().lstrip(",;: ")
+    rest = re.sub(r"^(?:not|hereby|also)\s+", "", rest, flags=re.IGNORECASE)
+    unlimited = re.match(r"have\s+(unlimited|no|full)\s+liability\b", rest, re.IGNORECASE)
+    if unlimited:
+        return "bear", f"{unlimited.group(1).lower()} liability{rest[unlimited.end():]}".strip()
+    rest = re.sub(r"^(?:be|have)\s+", "", rest, flags=re.IGNORECASE)
+    if not rest:
         return None, None
 
-    # Counterparty — find the next noun phrase after the modal.
-    counterparty = None
-    if cut_match:
-        rest = stripped[cut_match.end():].strip()
-        m = re.match(r"^([A-Z][A-Za-z0-9&,'.\-_ ]{2,60}?)", rest)
-        if m:
-            counterparty = m.group(1).strip().rstrip(",.;:")
-    return subject, counterparty
+    match = re.match(r"([A-Za-z][A-Za-z-]{1,40})\b", rest)
+    if not match:
+        return None, None
+    action = match.group(1).lower()
 
-
-def _extract_action(sentence_low: str) -> Optional[str]:
-    candidates = [
-        "pay", "notify", "indemnify", "terminate", "renew", "deliver",
-        "provide", "submit", "comply", "maintain", "return", "execute",
-        "perform", "reimburse", "refund", "transfer", "assign", "audit",
-        "report", "ensure", "warrant", "represent", "disclose", "file",
-        "cure", "remediate", "give notice", "make payment", "withdraw",
-    ]
-    for verb in candidates:
-        if verb in sentence_low:
-            return verb
-    # Try lemmatised verbs near "shall/must"
-    m = re.search(r"\b(?:shall|must|may|will)\s+(?:not\s+)?([a-z]+)\b", sentence_low)
-    if m:
-        return m.group(1)
-    return None
-
-
-def _extract_object(sentence: str) -> Optional[str]:
-    # Take the substring after the verb up to next punctuation.
-    m = re.search(
-        r"(?:shall|must|may|will|agrees to|undertakes to)\s+(?:not\s+)?"
-        r"([a-zA-Z][a-zA-Z\s,'.\-_/]{1,80}?)(?:within|by|no later than|prior|on|under|pursuant|if|unless|subject|where|$)",
-        sentence,
-        re.IGNORECASE,
-    )
-    if m:
-        obj = m.group(1).strip().rstrip(",.;:")
-        if obj:
-            return obj
-    return None
+    remainder = rest[match.end() :].strip()
+    cut = OBJECT_CUT_RE.search(remainder)
+    if cut:
+        remainder = remainder[: cut.start()]
+    obj = remainder.strip(" ,;:.-")
+    return action, obj[:160] or None
 
 
 def _extract_condition(sentence: str) -> Optional[str]:
     m = CONDITIONAL_RE.search(sentence)
     if not m:
         return None
-    start = m.start()
-    cond = sentence[start:].strip().rstrip(".")
+    cond = sentence[m.start() :].strip().rstrip(".")
     return cond[:280]
 
 
@@ -278,16 +278,25 @@ def _extract_deadline(sentence: str) -> Optional[str]:
 
 def _derive_risk_level(typ: ObligationType, deadline: Optional[str], sentence_low: str) -> RiskSeverity:
     text = sentence_low
-    risk = RiskSeverity.LOW
-    if typ == ObligationType.PROHIBITION:
-        risk = RiskSeverity.MEDIUM
+    risk = RiskSeverity.MEDIUM if typ == ObligationType.PROHIBITION else RiskSeverity.LOW
     if deadline:
-        # Tight deadlines (<=7 days) raise risk
-        m = re.match(r"(\d+)\s+(day|days|week|weeks|month|months|year|years)", deadline.lower())
+        m = re.match(
+            r"(\d+)\s+(hour|hours|day|days|week|weeks|month|months|year|years|business\s+days)",
+            deadline.lower(),
+        )
         if m:
             value = int(m.group(1))
             unit = m.group(2)
-            days = value * (1 if "day" in unit else 7 if "week" in unit else 30 if "month" in unit else 365)
+            if "hour" in unit:
+                days = value / 24
+            elif "week" in unit:
+                days = value * 7
+            elif "month" in unit:
+                days = value * 30
+            elif "year" in unit:
+                days = value * 365
+            else:
+                days = value
             if days <= 1:
                 risk = RiskSeverity.CRITICAL
             elif days <= 7:

@@ -2,7 +2,7 @@
 
 > Automated detection of dangerous clauses, missing stamp duties, arbitration risks, and hidden obligations in Indian and global legal contracts — **before you sign**.
 
-![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688) ![Streamlit](https://img.shields.io/badge/Streamlit-1.31-FF4B4B) ![Neo4j](https://img.shields.io/badge/Neo4j-5.18-018bff)
+![Python](https://img.shields.io/badge/python-3.10%E2%80%933.12-blue) ![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688) ![Streamlit](https://img.shields.io/badge/Streamlit-1.31-FF4B4B) ![Neo4j](https://img.shields.io/badge/Neo4j-5.18-018bff)
 
 ---
 
@@ -36,7 +36,7 @@ uv sync --extra dev
 # 2. (Optional) download the spaCy English model
 uv run python -m spacy download en_core_web_sm
 
-# 3. Bring up infra
+# 3. Bring up infra (or run the whole stack with `up --build`)
 docker compose -f docker/docker-compose.yml up -d neo4j postgres redis
 
 # 4. Start the API
@@ -136,6 +136,7 @@ Copy `.env.example` to `.env` and fill in real values. The defaults are local-de
 | `CLAUSE_MODEL` / `NER_MODEL` | HF model names |
 | `UPLOAD_DIR` | Where uploaded contracts are persisted |
 | `MAX_UPLOAD_MB` | Upload size cap |
+| `CORS_ORIGINS` | JSON list of allowed browser origins |
 | `ENABLE_OCR_FALLBACK` | Auto OCR when <50 chars/page |
 
 ---
@@ -159,7 +160,7 @@ You can run the entire demo (FastAPI + Streamlit + bundled sample) with **zero i
 uv run pytest -v
 ```
 
-Covers parser, segmenter, and end-to-end pipeline against the bundled sample MSA.
+Covers parser, segmenter, long-clause splitting, classifier accuracy on CUAD, obligation/job regressions, and the end-to-end pipeline against the bundled sample MSA.
 
 ---
 
