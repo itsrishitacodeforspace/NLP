@@ -71,11 +71,11 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 
 ## 5. Phase 5 — Tests & Hardening
 - [x] End-to-end smoke test (`tests/test_e2e.py`) on bundled sample MSA.
-- [x] Unit tests for parser + + segmenter.
+- [x] Unit tests for parser + segmenter.
 - [x] Long-clause splitter tests (`tests/test_long_clauses.py`).
 - [x] Hybrid classifier accuracy tests on real CUAD data (`tests/test_classifier_accuracy.py`).
-- [x] Live API smoke test (`bash` end-to-end upload → job poll → summary fetch → graph fetch — verified manually, documented in logs).
-- [x] Streamlit boot test (HTTP 200 confirmed on `/`).
+- [x] API smoke test via FastAPI `TestClient` (upload → job poll → summary fetch → graph fetch; live server not verified).
+- [x] Streamlit `AppTest` smoke check; live HTTP/browser boot not verified.
 - [x] README with run instructions.
 - [x] Sample contract fixture (`data/raw/sample_msa.txt`).
 - [x] Demo script (`scripts/run_demo.py`).
@@ -98,17 +98,17 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 - [x] `nlp/clause_classification/classifier.py`:
       - Auto-loads CUAD keyword bank on import (top 80 keywords/category).
       - Hybrid pipeline: TF-IDF + Logistic Regression ML model + rule-based fallback.
-      - 52.8 % top-1 / 54.2 % top-3 accuracy on CUAD held-out (rule-based: 42.8 %).
+      - Tests enforce top-1 ≥30% and top-3 ≥55% on a fixed CUAD sample; these are regression floors, not an independent benchmark.
 - [x] `scripts/train_tfidf_classifier.py` — sklearn pipeline trainer that
       persists to `models/tfidf_classifier.joblib`.
 - [x] `scripts/eval_classifier.py` — per-category top-1 accuracy report.
 
 ---
 
-## 6. Hardening Pass (2026-10-22)
+## 7. Hardening Pass (2026-10-22)
 - [x] Single taxonomy source (`nlp/taxonomy.py`); CUAD/MAUD loaders emit canonical labels.
 - [x] MAUD loader rewritten for the real CSV schema; CUAD retains negative examples for the keyword bank.
-- [x] Bundled model loader (`nlp/clause_classification/tfidf_model.py`) extracts the 7z archive with `py7zr` and suppresses sklearn version warnings.
+- [x] Bundled model loader (`nlp/clause_classification/tfidf_model.py`) extracts the 7z archive with `py7zr`, maps legacy `Pricing Terms` to `Payment Terms`, drops non-canonical labels, and suppresses sklearn version warnings.
 - [x] Keyword classifier uses letter-boundary matching; evaluation precision fixed.
 - [x] NER: valid CIN/LLPIN/GSTIN regexes, raw-text offsets, seat/venue/law detection.
 - [x] Obligations: prohibition/right/obligation precedence, first-modal subject, hours-aware deadlines, descriptive `seat/venue/governed` sentences ignored.
@@ -119,7 +119,7 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 
 ---
 
-## 7. Architectural Notes (auto-populated)
+## 8. Architectural Notes (auto-populated)
 - 2026-08-18: Chose `pdfplumber` (primary) + `PyMuPDF` (fallback) + `pytesseract` (OCR fallback triggered when < 50 chars on a page).
 - 2026-08-18: Chose `microsoft/deberta-v3-base` for both classification and NER — wrapped behind lazy import so the stack runs without ML deps. Regex fallback covers CIN/PAN/GSTIN/dates.
 - 2026-08-18: Risk engine is rule-first; ML risk classifier deferred to post-MVP.

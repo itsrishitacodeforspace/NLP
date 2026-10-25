@@ -14,9 +14,20 @@ from typing import List, Optional
 
 import joblib  # type: ignore
 
+from nlp.taxonomy import INTERNAL_LABELS
+
 MODEL_DIR = Path(__file__).resolve().parents[2] / "models"
 ARCHIVE_PATH = MODEL_DIR / "tfidf_classifier.7z"
 MODEL_PATH = MODEL_DIR / "tfidf_classifier.joblib"
+
+MODEL_LABEL_ALIASES = {"Pricing Terms": "Payment Terms"}
+_CANONICAL_LABELS = frozenset(INTERNAL_LABELS)
+
+
+def canonical_label(label: str) -> Optional[str]:
+    """Map a legacy model label into the canonical taxonomy, or drop it."""
+    mapped = MODEL_LABEL_ALIASES.get(label, label)
+    return mapped if mapped in _CANONICAL_LABELS else None
 
 
 @dataclass
@@ -32,16 +43,25 @@ class TrainedClassifier:
         ranked = sorted(zip(classes, proba, strict=False), key=lambda kv: -kv[1])
         out: List[str] = []
         for label, p in ranked:
-            if p >= 0.15:
+            if p < 0.15:
+                continue
+            label = canonical_label(label)
+            if label and label not in out:
                 out.append(label)
             if len(out) >= 5:
                 break
-        return out or [ranked[0][0]] if ranked else []
+        if out:
+            return out
+        if ranked:
+            top = canonical_label(ranked[0][0])
+            return [top] if top else []
+        return []
 
     def predict_top1(self, text: str) -> str:
         if not text:
             return "Miscellaneous"
-        return self.pipeline.predict([text])[0]
+        label = canonical_label(self.pipeline.predict([text])[0])
+        return label or "Miscellaneous"
 
 
 def ensure_model_file() -> Optional[Path]:

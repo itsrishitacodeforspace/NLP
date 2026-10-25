@@ -11,6 +11,7 @@ from app.models.schemas import (
     ObligationType,
 )
 from app.services import jobs
+from nlp.clause_classification.tfidf_model import TrainedClassifier
 from nlp.obligation_extraction.extractor import extract_obligations_from_clause
 
 
@@ -46,3 +47,31 @@ def test_job_persistence_serialises_datetimes(monkeypatch):
     )
     jobs._persist(JobInfo(job_id="j1", contract_id="c1", status=JobStatus.SUCCEEDED, result=result))
     assert captured[0]["result"]["contract"]["analyzed_at"] == "2026-10-22T12:00:00"
+
+
+def test_tfidf_outputs_are_canonicalised():
+    class FakePipeline:
+        classes_ = ["Pricing Terms", "Unknown Label"]
+
+        def predict_proba(self, texts):
+            return [[0.8, 0.2] for _ in texts]
+
+        def predict(self, texts):
+            return ["Pricing Terms" for _ in texts]
+
+    model = TrainedClassifier(pipeline=FakePipeline(), labels=list(FakePipeline.classes_))
+    assert model.predict_one("payment clause") == ["Payment Terms"]
+    assert model.predict_top1("payment clause") == "Payment Terms"
+
+    class UnknownPipeline(FakePipeline):
+        classes_ = ["Unknown Label"]
+
+        def predict_proba(self, texts):
+            return [[1.0] for _ in texts]
+
+        def predict(self, texts):
+            return ["Unknown Label" for _ in texts]
+
+    unknown = TrainedClassifier(pipeline=UnknownPipeline(), labels=["Unknown Label"])
+    assert unknown.predict_one("unknown clause") == []
+    assert unknown.predict_top1("unknown clause") == "Miscellaneous"

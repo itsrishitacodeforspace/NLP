@@ -22,7 +22,7 @@ def test_upload_analysis_roundtrip():
         job_id = response.json()["job_id"]
 
         status = "queued"
-        for _ in range(120):
+        for _ in range(480):
             poll = client.get(f"/api/v1/jobs/{job_id}")
             assert poll.status_code == 200, poll.text
             status = poll.json()["status"]

@@ -12,7 +12,7 @@ BharatContract AI is an end-to-end contract intelligence platform tuned for the 
 
 1. **Upload** any contract (PDF, DOCX, TXT). OCR fallback for scanned PDFs.
 2. **Segment** clauses using rule-based heading detection.
-3. **Classify** each clause (rule-based + optional DeBERTa-v3).
+3. **Classify** each clause (rule-based + TF-IDF, optional DeBERTa-v3).
 4. **Extract entities** (parties, dates, **CIN/PAN/GSTIN**, INR amounts, notice periods, jurisdictions, arbitration seats).
 5. **Detect obligations** (subject / action / object / deadline) using modal-verb pattern matching.
 6. **Score risk** with an Indian-statutory-aware playbook:
@@ -75,19 +75,19 @@ app/                          FastAPI backend
   services/                   parser, segmenter, analyzer, jobs
   utils/                      text + filesystem helpers
 nlp/                          NLP modules
-  clause_classification/      rule-based + DeBERTa-v3 classifier
-  ner/                        regex-first NER + DeBERTa enrichment
+  clause_classification/      rule-based + TF-IDF classifier
+  ner/                        regex-first NER + optional DeBERTa enrichment
   obligation_extraction/      modal-verb pattern extractor
   risk_scoring/               rule engine + aggregator
 streamlit_app/                Dashboard
   pages/                      1_Summary, 2_Clause_Explorer, ...
   components/                 risk_card, clause_card, header
-data/                         raw / processed / templates / playbooks
+data/                         raw / processed
 docker/                       Dockerfile + docker-compose.yml
 scripts/                      run_demo.py
 tests/                        unit + integration tests
 uploads/                      uploaded files (gitignored)
-models/                       model cache (gitignored)
+models/                       bundled TF-IDF archive + local cache
 logs/                         runtime logs
 ```
 
@@ -97,7 +97,7 @@ logs/                         runtime logs
 
 ```
 Streamlit UI ──┐
-               │ REST (httpx) / WebSockets
+               │ REST (httpx)
 FastAPI API ───┤
                │
    ┌───────────┼───────────┐
@@ -110,8 +110,8 @@ Parser       Pipeline    Queries
 │  Core processing layer         │
 │  1. pdfplumber / PyMuPDF / OCR │
 │  2. Regex segmenter            │
-│  3. Rule + DeBERTa classifier  │
-│  4. Regex + DeBERTa NER        │
+│  3. Rule + TF-IDF classifier   │
+│  4. Regex-first NER            │
 │  5. Modal-verb obligations     │
 │  6. Indian + global rule engine│
 └────────────────────────────────┘
@@ -147,7 +147,7 @@ The pipeline is engineered to **degrade gracefully**:
 
 - **No Neo4j?** Writes log a warning; the dashboard graph page rebuilds the graph from the in-memory `AnalysisResult`.
 - **No Postgres?** Job & contract metadata writes become no-ops (cached after first failed probe).
-- **No torch/transformers?** Rule-based classifier + regex NER handle every clause; ML enrichment is a silent no-op.
+- **No torch/transformers?** Rule-based classifier, regex NER, and the bundled TF-IDF model still work; DeBERTa enrichment is a silent no-op.
 - **No OCR?** pdfplumber + PyMuPDF text extraction still works on digital PDFs.
 
 You can run the entire demo (FastAPI + Streamlit + bundled sample) with **zero infra** other than Python.
@@ -160,7 +160,7 @@ You can run the entire demo (FastAPI + Streamlit + bundled sample) with **zero i
 uv run pytest -v
 ```
 
-Covers parser, segmenter, long-clause splitting, classifier accuracy on CUAD, obligation/job regressions, and the end-to-end pipeline against the bundled sample MSA.
+Covers parser, segmenter, long-clause splitting, classifier regression thresholds on CUAD, obligation/job regressions, and the end-to-end pipeline against the bundled sample MSA.
 
 ---
 
