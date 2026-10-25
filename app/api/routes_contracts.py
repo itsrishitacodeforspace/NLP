@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from app.api.deps import Principal, require_role
+from app.api.deps import Principal, get_current_principal, require_role
 from app.core.config import get_settings
 from app.core.exceptions import DocumentParseError, UnsupportedFormatError
 from app.core.logging import get_logger
@@ -68,7 +68,8 @@ async def upload_contract(
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
 
     contract_id = _contract_id_for(filename, contents)
-    job = await run_in_threadpool(create_job, contract_id)
+    owner = principal.username if principal.authenticated else ""
+    job = await run_in_threadpool(create_job, contract_id, owner)
 
     def worker(info: JobInfo) -> AnalysisResult:
         def update_progress(p: float, msg: str) -> None:
@@ -95,6 +96,7 @@ async def upload_contract(
                 "title": result.contract.title,
                 "file_name": result.contract.file_name,
                 "contract_type": result.contract.contract_type.value,
+                "owner": owner,
                 "status": "succeeded",
                 "overall_risk_score": result.contract.overall_risk_score,
                 "overall_risk_level": result.contract.overall_risk_level.value,
@@ -109,32 +111,32 @@ async def upload_contract(
 
 
 @router.get("/{contract_id}/summary")
-def contract_summary(contract_id: str):
-    job = _latest_job_for(contract_id)
+def contract_summary(contract_id: str, principal: Principal = Depends(get_current_principal)):
+    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
     if not job or not job.result:
         raise HTTPException(status_code=404, detail="Contract not found or still processing")
     return job.result.contract
 
 
 @router.get("/{contract_id}/clauses")
-def contract_clauses(contract_id: str):
-    job = _latest_job_for(contract_id)
+def contract_clauses(contract_id: str, principal: Principal = Depends(get_current_principal)):
+    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
     if not job or not job.result:
         raise HTTPException(status_code=404, detail="Contract not found")
     return {"clauses": job.result.clauses}
 
 
 @router.get("/{contract_id}/obligations")
-def contract_obligations(contract_id: str):
-    job = _latest_job_for(contract_id)
+def contract_obligations(contract_id: str, principal: Principal = Depends(get_current_principal)):
+    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
     if not job or not job.result:
         raise HTTPException(status_code=404, detail="Contract not found")
     return {"obligations": job.result.obligations}
 
 
 @router.get("/{contract_id}/risks")
-def contract_risks(contract_id: str):
-    job = _latest_job_for(contract_id)
+def contract_risks(contract_id: str, principal: Principal = Depends(get_current_principal)):
+    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
     if not job or not job.result:
         raise HTTPException(status_code=404, detail="Contract not found")
     return {"risks": job.result.risks}
@@ -159,22 +161,34 @@ def _contract_id_for(filename: str, contents: bytes) -> str:
     return f"c_{stamp}_{digest}"
 
 
-def _latest_job_for(contract_id: str) -> Optional[JobInfo]:
+def _owner_scope(principal: Principal) -> Optional[str]:
+    """Owner filter for row-level security.
+
+    Returns the caller's username when authenticated, or ``None`` (no filtering)
+    when auth is disabled — so the open demo keeps seeing every contract.
+    """
+    return principal.username if principal.authenticated else None
+
+
+def _latest_job_for(contract_id: str, owner: Optional[str] = None) -> Optional[JobInfo]:
     """Return the newest completed job for a contract.
 
     Prefers the in-memory job cache, then falls back to PostgreSQL so results
     survive the in-memory eviction cap (``MAX_IN_MEMORY_JOBS``) or a restart.
+    When ``owner`` is given, only that owner's jobs are considered.
     """
     from app.services.jobs import get_job, list_jobs
 
-    candidates = [j for j in list_jobs() if j.contract_id == contract_id and j.result]
+    candidates = [
+        j for j in list_jobs(owner=owner) if j.contract_id == contract_id and j.result
+    ]
     if candidates:
         candidates.sort(key=lambda j: j.created_at, reverse=True)
         return candidates[0]
 
     from app.db.postgres import list_job_ids_for_contract
 
-    for job_id in list_job_ids_for_contract(contract_id):
+    for job_id in list_job_ids_for_contract(contract_id, owner=owner):
         job = get_job(job_id)
         if job and job.result:
             return job

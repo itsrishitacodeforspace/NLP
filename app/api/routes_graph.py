@@ -1,8 +1,9 @@
 """Graph routes."""
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.deps import Principal, get_current_principal
 from app.db.queries import fetch_graph
 from app.services.jobs import list_jobs
 
@@ -10,15 +11,23 @@ router = APIRouter(prefix="/api/v1/graph", tags=["graph"])
 
 
 @router.get("/{contract_id}")
-def get_graph(contract_id: str):
+def get_graph(contract_id: str, principal: Principal = Depends(get_current_principal)):
     """Return the subgraph for a contract. Falls back to in-memory job results
     if Neo4j is unavailable so the UI can still render in the demo.
     """
+    # Row-level security: verify ownership before touching Neo4j, which is not
+    # itself owner-scoped.
+    owner = principal.username if principal.authenticated else None
+    jobs = list_jobs(owner=owner)
+    owned = [j for j in jobs if j.contract_id == contract_id and j.result]
+    if owner is not None and not owned:
+        raise HTTPException(status_code=404, detail="Graph not available")
+
     snapshot = fetch_graph(contract_id)
     if snapshot.nodes:
         return snapshot
     # In-memory fallback
-    for j in list_jobs():
+    for j in (owned or jobs):
         if j.contract_id == contract_id and j.result:
             return _graph_from_result(contract_id, j.result)
     raise HTTPException(status_code=404, detail="Graph not available")

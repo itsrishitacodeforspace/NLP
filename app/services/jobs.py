@@ -28,9 +28,9 @@ _jobs_lock = threading.Lock()
 MAX_IN_MEMORY_JOBS = 200
 
 
-def create_job(contract_id: str) -> JobInfo:
+def create_job(contract_id: str, owner: str = "") -> JobInfo:
     job_id = unique_id("job")
-    info = JobInfo(job_id=job_id, contract_id=contract_id, status=JobStatus.QUEUED)
+    info = JobInfo(job_id=job_id, contract_id=contract_id, owner=owner, status=JobStatus.QUEUED)
     with _jobs_lock:
         if len(_jobs) >= MAX_IN_MEMORY_JOBS:
             finished = sorted(
@@ -94,6 +94,7 @@ def get_job(job_id: str) -> Optional[JobInfo]:
     return JobInfo(
         job_id=record["job_id"],
         contract_id=record["contract_id"] or "",
+        owner=record.get("owner") or "",
         status=JobStatus(record["status"]) if record["status"] else JobStatus.QUEUED,
         progress=record["progress"] or 0.0,
         message=record["message"] or None,
@@ -104,19 +105,17 @@ def get_job(job_id: str) -> Optional[JobInfo]:
     )
 
 
-def list_jobs() -> list[JobInfo]:
+def list_jobs(owner: Optional[str] = None) -> list[JobInfo]:
+    """List jobs, optionally scoped to a single owner (row-level security)."""
     with _jobs_lock:
         jobs = list(_jobs.values())
-    if jobs:
-        return jobs
-    from app.db.postgres import list_jobs as pg_list_jobs
+    if not jobs:
+        from app.db.postgres import list_jobs as pg_list_jobs
 
-    out: list[JobInfo] = []
-    for record in pg_list_jobs():
-        job = get_job(record["job_id"])
-        if job is not None:
-            out.append(job)
-    return out
+        jobs = [job for record in pg_list_jobs() if (job := get_job(record["job_id"])) is not None]
+    if owner is not None:
+        jobs = [j for j in jobs if j.owner == owner]
+    return jobs
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +163,7 @@ def _persist(info: JobInfo) -> None:
     payload = {
         "job_id": info.job_id,
         "contract_id": info.contract_id,
+        "owner": info.owner,
         "status": info.status.value if isinstance(info.status, JobStatus) else str(info.status),
         "progress": info.progress,
         "message": info.message or "",

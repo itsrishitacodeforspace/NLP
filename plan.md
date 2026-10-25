@@ -148,14 +148,21 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 - [x] **Authentication & RBAC**: optional JWT bearer auth (`AUTH_ENABLED`), bcrypt hashing with a
       stdlib PBKDF2 fallback, ranked roles `viewer < analyst < admin`, `/api/v1/auth/token` +
       `/api/v1/auth/me`, and role-gated upload.
+- [x] **Row-level security**: contracts/jobs carry an `owner`; reads (`summary`/`clauses`/
+      `obligations`/`risks`/`graph`/`jobs`) are scoped to the caller (404 for others) when auth is
+      enabled, and unfiltered when it is disabled.
+- [x] **ML risk classifier**: weakly-supervised TF-IDF + LogisticRegression severity model
+      (`nlp/risk_scoring/risk_model.py`, trained by `scripts/train_risk_classifier.py`), used as a
+      recall booster (`ML_RISK_001`) for clauses the rules miss; bundled as `models/risk_classifier.7z`.
 
 ---
 
 ## 9. Deferred / Post-MVP
 - OCR with `surya-ocr` or `docTR` (pytesseract is enough for MVP).
 - Hindi / regional language support (Indic-BERT / MuRIL).
-- LLM-based redline generation (Llama-3 / Qwen).
-- Case-law link augmentation.
+- LLM-based redline generation (Llama-3 / Qwen) — needs an external LLM.
 - Workflow approval / Slack / Jira integrations.
-- ML-driven risk classifier (today is rule-only).
-- Per-user authentication & row-level security in Postgres.
+- Dashboard support for bearer tokens (the API enforces auth; the Streamlit UI does not yet send one).
+
+> Delivered in §8: case-law link augmentation, per-user authentication + row-level security,
+> and the (weakly-supervised) ML risk classifier.

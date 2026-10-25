@@ -23,6 +23,7 @@ BharatContract AI is an end-to-end contract intelligence platform tuned for the 
    - TDS / GST compliance signals
    - Plus global playbook: uncapped liability, auto-renewal, broad indemnity, one-sided termination, missing mandatory clauses.
    - Each finding carries **statutory / case-law pointers** (Indian Stamp Act ss. 33 & 35, *BALCO*, *BGS SGS Soma*, Contract Act ss. 124–125, DPDP Act 2023, …).
+   - A **weakly-supervised ML risk classifier** acts as a recall booster for clauses the rules miss.
 7. **Persist** the full picture in **Neo4j** (graph) + **PostgreSQL** (metadata).
 8. **Authenticate** optionally with JWT bearer tokens and role-based access (`admin` / `analyst` / `viewer`).
 9. **Visualise** in a Streamlit dashboard with summary, clause explorer, obligation tracker, risk review, and graph view.
@@ -80,7 +81,7 @@ nlp/                          NLP modules
   clause_classification/      rule-based + TF-IDF classifier
   ner/                        regex-first NER + optional DeBERTa enrichment
   obligation_extraction/      modal-verb pattern extractor
-  risk_scoring/               rule engine + aggregator + case-law pointers
+  risk_scoring/               rule engine + aggregator + case-law + ML risk model
 streamlit_app/                Dashboard
   pages/                      1_Summary, 2_Clause_Explorer, ...
   components/                 risk_card, clause_card, header
@@ -176,6 +177,30 @@ Roles are ranked `viewer < analyst < admin`; `POST /api/v1/contracts/upload`
 needs `analyst` or above. Passwords are hashed with bcrypt (stdlib PBKDF2
 fallback); tokens are HS256 JWTs. If `AUTH_USERS` is not set and auth is
 enabled, an `admin` account is seeded from `AUTH_ADMIN_PASSWORD` with a warning.
+
+When auth is enabled the API also enforces **row-level security**: a user only
+sees the contracts and jobs they uploaded (others return `404`, so existence is
+not leaked).
+
+---
+
+## ML risk classifier (optional)
+
+Alongside the rule playbook, `nlp/risk_scoring/risk_model.py` exposes a
+**weakly-supervised** TF-IDF + Logistic Regression severity classifier. Its
+labels are generated offline by the rule engine itself, so the model mainly
+generalises to phrasings the rules do not encode; it is applied only as a
+*recall booster* for clauses with no rule hit, emitting an explainable
+`ML_RISK_001` finding.
+
+A pre-trained artefact is bundled at `models/risk_classifier.7z` (extracted on
+first use). To retrain it:
+
+```bash
+uv run python scripts/train_risk_classifier.py --limit 6000
+```
+
+Everything degrades to a no-op if the artefact is absent.
 
 ---
 

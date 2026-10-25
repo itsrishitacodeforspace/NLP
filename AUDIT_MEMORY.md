@@ -262,3 +262,37 @@ an explicit go-ahead. The `audit/repo-hardening` branch still exists (points at 
 same commit) in case a PR is preferred over a direct push.
 
 ---
+
+## 2026-10-25T~19:10Z — Round 2: pushed, then RLS + ML risk classifier
+
+User authorised the push and picked **Row-level security** + **ML risk classifier**.
+- `git push origin main` → `3f9c49f..abef0bd main -> main` (origin now in sync).
+
+**1. Row-level security**
+- `owner` added to `JobRecord` + `ContractRecord` (+ `_ensure_owner_columns` best-effort
+  `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` so pre-existing DBs keep working — no migration tool).
+- `JobInfo.owner`; `create_job(contract_id, owner)`; `_persist` carries it; `get_job` restores it.
+- `list_jobs(owner=...)` filters; `list_job_ids_for_contract(contract_id, owner=...)` filters.
+- Routes: upload stamps `owner`; summary/clauses/obligations/risks use `_owner_scope(principal)`;
+  jobs routes filter; graph verifies ownership *before* hitting Neo4j (which isn't owner-scoped).
+- Disabled auth ⇒ owner filter is `None` ⇒ unfiltered (demo unchanged). Others → **404**, not 403.
+- `tests/test_rls.py` (2 cases).
+
+**2. ML risk classifier** (`nlp/risk_scoring/risk_model.py`)
+- Weakly-supervised: labels come from the rule engine **plus clause-type severity priors**
+  (the pure rule labels were degenerate — 5422 low / 576 high / 2 medium, and liblinear can't
+  do 3 classes). Switched solver to `lbfgs`, added priors → low 3522 / medium 1769 / high 709.
+- Trained TF-IDF(unigram+bigram) + LogisticRegression → hold-out **90% acc** (indicative only:
+  labels are rule-derived, so this measures memorisation of rule patterns, not true accuracy).
+- Used as a **recall booster** only: `_augment_with_ml_risks` adds `ML_RISK_001` for clauses with
+  no rule hit (score by severity; conf ≥ 0.55; never overrides a rule). No-op if artefact absent.
+- Bundled as `models/risk_classifier.7z` (0.78 MB) extracted on first use; `.gitignore` /
+  `.dockerignore` updated to keep the archive but ignore the raw joblib.
+- `scripts/train_risk_classifier.py` to retrain; `tests/test_risk_model.py` (7 cases).
+
+**Final verification:** `ruff` clean; `pytest` → **38 passed**; live API probe → risks 10→**11**
+(the ML finding) and graph 35→**36** nodes; all 6 Streamlit pages still execute.
+
+Next: commit + push round 2.
+
+---

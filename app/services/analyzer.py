@@ -13,6 +13,7 @@ from app.models.schemas import (
     ContractType,
     Obligation,
     PartySide,
+    RiskFlag,
     RiskSeverity,
 )
 from app.services.parser import parse_bytes, parse_document
@@ -157,8 +158,9 @@ def _analyse(
     summary_draft.clause_count = len(clauses)
     summary_draft.obligation_count = len(all_obligations)
 
-    # 4. Risk rules -> flags
+    # 4. Risk rules -> flags, then ML recall booster for unflagged clauses
     flags = apply_rules(clauses, summary_draft)
+    flags = _augment_with_ml_risks(clauses, flags)
 
     # 5. Annotate clauses with their own risk_score
     for cl in clauses:
@@ -203,6 +205,50 @@ def _analyse(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+_ML_FALLBACK_SCORE = {"medium": 45.0, "high": 60.0, "critical": 75.0}
+
+
+def _augment_with_ml_risks(clauses: List[Clause], flags: List[RiskFlag]) -> List[RiskFlag]:
+    """Add model-predicted findings for clauses the rules did not flag.
+
+    The ML risk classifier is a *recall booster*: it never overrides a rule, it
+    only surfaces additional candidates for human review. A no-op when no
+    trained model artefact is present, so the rule-only pipeline is unaffected.
+    """
+    from nlp.risk_scoring.risk_model import load_cached, predict_clause_risk
+
+    if load_cached() is None:
+        return flags
+
+    flagged = {f.clause_id for f in flags if f.clause_id}
+    extra: List[RiskFlag] = []
+    for clause in clauses:
+        if clause.clause_id in flagged:
+            continue
+        prediction = predict_clause_risk(clause.text)
+        if prediction is None:
+            continue
+        extra.append(
+            RiskFlag(
+                risk_id=f"{clause.clause_id}_ML_RISK_001",
+                clause_id=clause.clause_id,
+                rule_id="ML_RISK_001",
+                name=f"Model-detected {prediction.severity.value} risk",
+                severity=prediction.severity,
+                explanation=(
+                    f"The ML risk classifier predicts {prediction.severity.value} severity "
+                    f"(confidence {prediction.confidence:.0%}) from the clause wording, although "
+                    "no explicit rule matched. Treat as a review prompt, not a definitive finding."
+                ),
+                recommendation="Manually review this clause against the standard playbook.",
+                score=_ML_FALLBACK_SCORE.get(prediction.severity.value, 45.0),
+            )
+        )
+    if extra:
+        logger.info("ML risk classifier added {} extra finding(s)", len(extra))
+    return flags + extra
 
 
 def _detect_parties(clauses: List[Clause]) -> List[str]:

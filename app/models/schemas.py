@@ -164,6 +164,7 @@ class AnalysisResult(BaseModel):
 class JobInfo(BaseModel):
     job_id: str
     contract_id: str
+    owner: str = ""
     status: JobStatus = JobStatus.QUEUED
     progress: float = 0.0
     message: Optional[str] = None

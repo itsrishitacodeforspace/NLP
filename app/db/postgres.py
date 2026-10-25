@@ -37,6 +37,7 @@ class ContractRecord(Base):
     title = Column(String, default="")
     file_name = Column(String, default="")
     contract_type = Column(String, default="OTHER")
+    owner = Column(String, default="")
     status = Column(String, default="processing")
     overall_risk_score = Column(Float, default=0.0)
     overall_risk_level = Column(String, default="low")
@@ -50,6 +51,7 @@ class JobRecord(Base):
 
     job_id = Column(String, primary_key=True)
     contract_id = Column(String, index=True)
+    owner = Column(String, default="", index=True)
     status = Column(String, default="queued")
     progress = Column(Float, default=0.0)
     message = Column(Text, default="")
@@ -61,6 +63,22 @@ class JobRecord(Base):
 
 _engine: Optional[object] = None
 _SessionLocal: Optional[sessionmaker] = None
+
+
+def _ensure_owner_columns(engine) -> None:
+    """Add the `owner` column to pre-existing tables (no migration tooling).
+
+    `create_all` only creates missing tables, not missing columns, so a database
+    created before row-level security existed would otherwise lack `owner`.
+    """
+    from sqlalchemy import text
+
+    for table in ("contracts", "jobs"):
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS owner VARCHAR DEFAULT ''"))
+        except Exception as exc:
+            logger.warning("Could not ensure owner column on {}: {}", table, exc)
 
 
 def get_engine():
@@ -80,6 +98,7 @@ def get_engine():
             with _engine.connect() as conn:
                 conn.execute(__import__("sqlalchemy").text("SELECT 1"))
             Base.metadata.create_all(_engine)
+            _ensure_owner_columns(_engine)
             logger.info("Postgres engine initialised at {}", settings.database_url)
         except Exception as exc:
             logger.warning("Postgres unavailable ({}). Metadata writes will be no-ops.", exc)
@@ -142,6 +161,7 @@ def upsert_contract_metadata(record: dict) -> bool:
                 "title",
                 "file_name",
                 "contract_type",
+                "owner",
                 "status",
                 "overall_risk_score",
                 "overall_risk_level",
@@ -168,6 +188,7 @@ def upsert_job(record: dict) -> bool:
                 session.add(obj)
             for key in (
                 "contract_id",
+                "owner",
                 "status",
                 "progress",
                 "message",
@@ -196,6 +217,7 @@ def get_job(job_id: str) -> Optional[dict]:
         return {
             "job_id": obj.job_id,
             "contract_id": obj.contract_id,
+            "owner": obj.owner or "",
             "status": obj.status,
             "progress": obj.progress,
             "message": obj.message,
@@ -206,20 +228,26 @@ def get_job(job_id: str) -> Optional[dict]:
         }
 
 
-def list_job_ids_for_contract(contract_id: str, limit: int = 20) -> list[str]:
-    """Return recent job ids for a contract, newest first."""
+def list_job_ids_for_contract(
+    contract_id: str,
+    *,
+    owner: Optional[str] = None,
+    limit: int = 20,
+) -> list[str]:
+    """Return recent job ids for a contract, newest first.
+
+    When ``owner`` is given the query is additionally scoped to that owner
+    (row-level security). ``owner=None`` means "any owner".
+    """
     if not postgres_available():
         return []
     with session_scope() as session:
         if session is None:
             return []
-        rows = (
-            session.query(JobRecord.job_id)
-            .filter(JobRecord.contract_id == contract_id)
-            .order_by(JobRecord.created_at.desc())
-            .limit(limit)
-            .all()
-        )
+        query = session.query(JobRecord.job_id).filter(JobRecord.contract_id == contract_id)
+        if owner is not None:
+            query = query.filter(JobRecord.owner == owner)
+        rows = query.order_by(JobRecord.created_at.desc()).limit(limit).all()
         return [r[0] for r in rows]
 
 

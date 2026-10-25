@@ -12,4 +12,5 @@ models/*.joblib
 models/hf/
 *.7z
 !models/tfidf_classifier.7z
+!models/risk_classifier.7z
 .env

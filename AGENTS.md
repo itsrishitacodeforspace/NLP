@@ -40,8 +40,13 @@ optional `[ml]` extra — the stack runs fully without it.
 - **Risk engine:** rule-first and explainable (`nlp/risk_scoring/rules.py`);
   Indian-statutory rules run once per contract (stamp duty, TDS, §124 indemnity),
   others per clause and are de-duplicated by `rule_id`.
-- **Bundled classifier:** `models/tfidf_classifier.7z` is extracted on first use by
-  `nlp/clause_classification/tfidf_model.py` (no 7-Zip binary required).
+- **Bundled classifiers:** `models/tfidf_classifier.7z` and `models/risk_classifier.7z` are
+  extracted on first use by `tfidf_model.py` / `risk_model.py` (no 7-Zip binary required).
+- **Auth + row-level security:** `AUTH_ENABLED` (default off) gates bearer-token auth
+  (`app/core/security.py`, `app/api/deps.py`, `routes_auth.py`). When on, jobs/contracts carry an
+  `owner` and reads are scoped to the caller (404, not 403, for others). Off ⇒ everything is open.
+- **ML risk classifier:** `nlp/risk_scoring/risk_model.py` is a *recall booster* only — it adds
+  `ML_RISK_001` findings for clauses with no rule hit, and no-ops when the artefact is missing.
 
 ## Common Workflows
 ```bash
