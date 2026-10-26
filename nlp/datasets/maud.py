@@ -12,10 +12,19 @@ import re
 from pathlib import Path
 from typing import Iterable, Iterator, List
 
+from nlp.datasets.splits import ProvenanceError, resolve_source
 from nlp.datasets.unified import TrainingExample, write_jsonl
 from nlp.taxonomy import map_maud_label
 
 MAX_SNIPPET_CHARS = 1500
+
+
+def split_for(split_csv: Path) -> str:
+    """Split derived from file identity; ``unknown`` when not allowlisted."""
+    try:
+        return resolve_source(split_csv).split
+    except ProvenanceError:
+        return "unknown"
 
 
 def _snippet(text: str, answer: str) -> str:
@@ -33,6 +42,7 @@ def _snippet(text: str, answer: str) -> str:
 
 def iter_examples(split_csv: Path) -> Iterator[TrainingExample]:
     split_csv = Path(split_csv)
+    split = split_for(split_csv)
     with split_csv.open(encoding="utf-8", newline="") as fh:
         reader = csv.DictReader(fh)
         for row_idx, row in enumerate(reader):
@@ -59,6 +69,7 @@ def iter_examples(split_csv: Path) -> Iterator[TrainingExample]:
                 "label": row.get("label", ""),
                 "data_type": row.get("data_type", ""),
                 "category": row.get("category", ""),
+                "split": split,
             }
             yield TrainingExample(
                 example_id=f"maud_{contract_id}_{row_id}",
@@ -74,6 +85,11 @@ def iter_examples(split_csv: Path) -> Iterator[TrainingExample]:
 def build_corpus(split_csvs: Iterable[Path], out_path: Path) -> int:
     rows: List[TrainingExample] = []
     for csv_path in split_csvs:
+        spec = resolve_source(csv_path)
+        if spec.split in {"test", "mixed"}:
+            raise ProvenanceError(
+                f"refusing to build a training corpus from MAUD split '{spec.split}': {spec.path}"
+            )
         rows.extend(iter_examples(csv_path))
     return write_jsonl(rows, out_path)
 

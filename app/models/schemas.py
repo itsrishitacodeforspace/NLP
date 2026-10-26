@@ -90,6 +90,8 @@ class Clause(BaseModel):
     risk_level: RiskSeverity = RiskSeverity.LOW
     risk_reasons: List[str] = Field(default_factory=list)
     entities: List[Entity] = Field(default_factory=list)
+    # P1: deterministic cross-reference / context bundle (additive, optional).
+    context: Optional[Dict[str, Any]] = None
 
 
 class Obligation(BaseModel):
@@ -117,6 +119,22 @@ class CaseLawReference(BaseModel):
     jurisdiction: str = "India"
 
 
+class EvidenceSpan(BaseModel):
+    """A passage supporting a finding.
+
+    ``locator="clause_text"`` means ``char_start``/``char_end`` are offsets into the
+    *clause text as stored in ``Clause.text``* (cleaned/segmented text), NOT raw file
+    bytes. Offsets are therefore only meaningful together with ``clause_id``.
+    """
+
+    text: str
+    char_start: int
+    char_end: int
+    clause_id: Optional[str] = None
+    role: str = "direct"  # "direct" | "contextual"
+    locator: str = "clause_text"
+
+
 class RiskFlag(BaseModel):
     risk_id: str
     clause_id: Optional[str] = None
@@ -127,6 +145,12 @@ class RiskFlag(BaseModel):
     recommendation: Optional[str] = None
     score: float = 0.0
     case_law: List[CaseLawReference] = Field(default_factory=list)
+    # P2: evidence binding (additive; defaults keep older payloads valid).
+    source: str = "rule"  # "rule" | "model"
+    evidence_status: str = "unavailable"  # direct | contextual | unverified | unavailable
+    evidence_spans: List[EvidenceSpan] = Field(default_factory=list)
+    search_scope: Optional[str] = None
+    related_clause_ids: List[str] = Field(default_factory=list)
 
 
 class ContractSummary(BaseModel):

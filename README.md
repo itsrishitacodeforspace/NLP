@@ -204,6 +204,35 @@ Everything degrades to a no-op if the artefact is absent.
 
 ---
 
+## Provenance (data lineage)
+
+Generated artifacts under `data/processed/` carry an `<artifact>.manifest.json` recording the source
+files with their SHA-256 and split identity, the build command, the code revision and the artifact hash.
+Source identity is **hash-pinned** against an allowlist (`nlp/datasets/splits.py`); those hashes were
+computed locally and validated only by *internal* partition consistency, so they are **not authenticated
+against the upstream CUAD release** (`upstream_authenticated: false`).
+
+```bash
+uv run python scripts/verify_provenance.py   # exit 0 only when every artifact verifies
+```
+
+**CI/release policy:** this readiness check must exit 0 before a release. On a checkout whose
+`data/processed/` predates provenance it exits 1 and reports the missing manifests — an honest
+"not verified", never a pass. **The current artefacts are not verified.**
+
+`/healthz` exposes a machine-readable `provenance` block, and analysis warnings carry
+`PROVENANCE_UNVERIFIED[artifact=…]` / `PROVENANCE_ABSENT[artifact=…]` tokens. Loaded model status is tied
+to the exact `.joblib` bytes executed, with archive/cache hashes and drift detection.
+
+**Three distinct things — do not conflate:** *artifact provenance* (where the bytes came from) ≠
+*evaluation* (metrics on a held-out, family-grouped set) ≠ *predictive validity* (real-world correctness).
+A manifest proves only the first. Both bundled `models/*.7z` are marked `provenance-unverified` in
+`models/PROVENANCE_STATUS.json` because they were trained on a corpus that overlaps the held-out CUAD
+documents; no leakage-free or generalization claim is made for them, and any accuracy figure computed on
+`data/processed/clause_classifier.csv` is **training-overlapping**.
+
+---
+
 ## Running without external services
 
 The pipeline is engineered to **degrade gracefully**:

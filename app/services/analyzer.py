@@ -19,6 +19,7 @@ from app.models.schemas import (
 from app.services.parser import parse_bytes, parse_document
 from app.services.segmenter import segment_clauses
 from nlp.clause_classification.classifier import classify_clause
+from nlp.context import resolve_context
 from nlp.ner.ner import (
     detect_arbitration_seat,
     detect_governing_law,
@@ -110,6 +111,9 @@ def _analyse(
     # 1. Clause segmentation
     raw_clauses = segment_clauses(full_text, contract_id=contract_id)
     logger.info("Segmented into {} clauses", len(raw_clauses))
+    # P1: resolve cross-references/definitions/precedence (read-only enrichment;
+    # no rule, severity or trigger behaviour is changed).
+    context_bundle = resolve_context(raw_clauses)
 
     # 2. Classification + NER + obligation + risk
     clauses: List[Clause] = []
@@ -137,6 +141,7 @@ def _analyse(
             char_end=raw.char_end,
             clause_types=cls.labels,
             entities=extraction.entities,
+            context=context_bundle.get(raw.clause_id),
         )
         clauses.append(clause)
 
@@ -193,12 +198,21 @@ def _analyse(
         flags, key=lambda f: severity_to_score(f.severity), reverse=True,
     )[:5]
 
+    # 7. Surface runtime provenance verdicts (data-lineage only, not accuracy).
+    analysis_warnings = list(warnings)
+    try:
+        from nlp import provenance as _provenance
+
+        analysis_warnings.extend(_provenance.warnings())
+    except Exception:  # pragma: no cover - provenance must never break analysis
+        pass
+
     return AnalysisResult(
         contract=summary_draft,
         clauses=clauses,
         obligations=all_obligations,
         risks=flags,
-        warnings=warnings,
+        warnings=analysis_warnings,
     )
 
 
@@ -217,6 +231,7 @@ def _augment_with_ml_risks(clauses: List[Clause], flags: List[RiskFlag]) -> List
     only surfaces additional candidates for human review. A no-op when no
     trained model artefact is present, so the rule-only pipeline is unaffected.
     """
+    from app.models.schemas import EvidenceSpan
     from nlp.risk_scoring.risk_model import load_cached, predict_clause_risk
 
     if load_cached() is None:
@@ -244,6 +259,19 @@ def _augment_with_ml_risks(clauses: List[Clause], flags: List[RiskFlag]) -> List
                 ),
                 recommendation="Manually review this clause against the standard playbook.",
                 score=_ML_FALLBACK_SCORE.get(prediction.severity.value, 45.0),
+                # P2: model-only suggestion - distinguishable and NOT evidence-backed.
+                source="model",
+                evidence_status="unverified",
+                evidence_spans=[
+                    EvidenceSpan(
+                        text=clause.text,
+                        char_start=0,
+                        char_end=len(clause.text),
+                        clause_id=clause.clause_id,
+                        role="contextual",
+                        locator="clause_text",
+                    )
+                ],
             )
         )
     if extra:

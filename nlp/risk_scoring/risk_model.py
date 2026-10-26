@@ -153,6 +153,9 @@ def load(path: Optional[Path] = None) -> Optional[RiskClassifier]:
     path = Path(path) if path else ensure_model_file()
     if path is None or not path.exists():
         return None
+    from nlp import provenance
+
+    provenance.record_loaded_model("risk_classifier.7z", path)
     try:
         from sklearn.exceptions import InconsistentVersionWarning
 

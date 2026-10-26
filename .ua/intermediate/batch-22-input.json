@@ -1,0 +1,35 @@
+{
+  "projectRoot": "C:\\Users\\Ivermectin\\Desktop\\NLP\\NLP",
+  "batchFiles": [
+    {"path": ".commandcode/taste/taste-—-general-preferences/taste.md", "language": "markdown", "sizeLines": 19, "fileCategory": "docs"},
+    {"path": ".commandcode/taste/taste.md", "language": "markdown", "sizeLines": 2, "fileCategory": "docs"},
+    {"path": "app/__init__.py", "language": "python", "sizeLines": 2, "fileCategory": "code"},
+    {"path": "app/core/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "app/models/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "app/utils/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "data/raw/sample_msa.txt", "language": "txt", "sizeLines": 47, "fileCategory": "docs"},
+    {"path": "models/PROVENANCE_STATUS.json", "language": "json", "sizeLines": 23, "fileCategory": "config"},
+    {"path": "models/risk_classifier.7z", "language": "7z", "sizeLines": 3257, "fileCategory": "code"},
+    {"path": "models/tfidf_classifier.7z", "language": "7z", "sizeLines": 113443, "fileCategory": "code"},
+    {"path": "scripts/debug_caps.py", "language": "python", "sizeLines": 14, "fileCategory": "code"},
+    {"path": "scripts/inspect_classifier_corpus.py", "language": "python", "sizeLines": 29, "fileCategory": "code"},
+    {"path": "scripts/inspect_cuad.py", "language": "python", "sizeLines": 33, "fileCategory": "code"},
+    {"path": "streamlit_app/__init__.py", "language": "python", "sizeLines": 11, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    ".commandcode/taste/taste-—-general-preferences/taste.md": [],
+    ".commandcode/taste/taste.md": [],
+    "app/__init__.py": [],
+    "app/core/__init__.py": [],
+    "app/models/__init__.py": [],
+    "app/utils/__init__.py": [],
+    "data/raw/sample_msa.txt": [],
+    "models/PROVENANCE_STATUS.json": [],
+    "models/risk_classifier.7z": [],
+    "models/tfidf_classifier.7z": [],
+    "scripts/debug_caps.py": [],
+    "scripts/inspect_classifier_corpus.py": [],
+    "scripts/inspect_cuad.py": [],
+    "streamlit_app/__init__.py": []
+  }
+}

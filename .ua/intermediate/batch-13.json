@@ -1,0 +1,305 @@
+{
+  "nodes": [
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_116.txt",
+      "type": "document",
+      "name": "contract_116.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_116.txt",
+      "summary": "MAUD M&A merger agreement document (contract_116) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_117.txt",
+      "type": "document",
+      "name": "contract_117.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_117.txt",
+      "summary": "MAUD M&A merger agreement document (contract_117) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_118.txt",
+      "type": "document",
+      "name": "contract_118.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_118.txt",
+      "summary": "MAUD M&A merger agreement document (contract_118) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_119.txt",
+      "type": "document",
+      "name": "contract_119.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_119.txt",
+      "summary": "MAUD M&A merger agreement document (contract_119) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_12.txt",
+      "type": "document",
+      "name": "contract_12.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_12.txt",
+      "summary": "MAUD M&A merger agreement document (contract_12) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_120.txt",
+      "type": "document",
+      "name": "contract_120.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_120.txt",
+      "summary": "MAUD M&A merger agreement document (contract_120) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_121.txt",
+      "type": "document",
+      "name": "contract_121.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_121.txt",
+      "summary": "MAUD M&A merger agreement document (contract_121) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_122.txt",
+      "type": "document",
+      "name": "contract_122.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_122.txt",
+      "summary": "MAUD M&A merger agreement document (contract_122) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_123.txt",
+      "type": "document",
+      "name": "contract_123.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_123.txt",
+      "summary": "MAUD M&A merger agreement document (contract_123) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_124.txt",
+      "type": "document",
+      "name": "contract_124.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_124.txt",
+      "summary": "MAUD M&A merger agreement document (contract_124) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_125.txt",
+      "type": "document",
+      "name": "contract_125.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_125.txt",
+      "summary": "MAUD M&A merger agreement document (contract_125) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_126.txt",
+      "type": "document",
+      "name": "contract_126.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_126.txt",
+      "summary": "MAUD M&A merger agreement document (contract_126) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_127.txt",
+      "type": "document",
+      "name": "contract_127.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_127.txt",
+      "summary": "MAUD M&A merger agreement document (contract_127) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_128.txt",
+      "type": "document",
+      "name": "contract_128.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_128.txt",
+      "summary": "MAUD M&A merger agreement document (contract_128) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_129.txt",
+      "type": "document",
+      "name": "contract_129.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_129.txt",
+      "summary": "MAUD M&A merger agreement document (contract_129) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_13.txt",
+      "type": "document",
+      "name": "contract_13.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_13.txt",
+      "summary": "MAUD M&A merger agreement document (contract_13) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_130.txt",
+      "type": "document",
+      "name": "contract_130.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_130.txt",
+      "summary": "MAUD M&A merger agreement document (contract_130) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_131.txt",
+      "type": "document",
+      "name": "contract_131.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_131.txt",
+      "summary": "MAUD M&A merger agreement document (contract_131) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_132.txt",
+      "type": "document",
+      "name": "contract_132.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_132.txt",
+      "summary": "MAUD M&A merger agreement document (contract_132) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_133.txt",
+      "type": "document",
+      "name": "contract_133.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_133.txt",
+      "summary": "MAUD M&A merger agreement document (contract_133) used as held-out evaluation corpus for obligation/risk analysis.",
+      "tags": [
+        "maud",
+        "merger-agreement",
+        "contract",
+        "data",
+        "evaluation-corpus"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": []
+}

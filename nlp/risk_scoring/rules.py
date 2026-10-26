@@ -416,7 +416,47 @@ def apply_rules(
     for flag in flags:
         if not flag.case_law:
             flag.case_law = lookup_case_law(flag.rule_id)
+    # 5. P2 evidence binding (additive; does not alter triggers/severity).
+    _bind_evidence(flags, clauses)
     return flags
+
+
+def _bind_evidence(flags: List[RiskFlag], clauses: List[Clause]) -> None:
+    """Attach traceable evidence without inventing spans.
+
+    Clause-level findings get the owning clause's full text with offsets into
+    ``Clause.text`` (locator="clause_text") and ``evidence_status="direct"``.
+    Contract-level findings (no clause) get an explicit ``search_scope`` and
+    ``evidence_status="unverified"`` - never a fabricated nearby clause.
+    """
+    from app.models.schemas import EvidenceSpan
+
+    by_id = {c.clause_id: c for c in clauses}
+    for flag in flags:
+        if flag.source == "model":
+            continue  # ML findings are bound by the analyzer (unverified by design)
+        if flag.clause_id:
+            clause = by_id.get(flag.clause_id)
+            if clause is not None and (clause.text or "").strip():
+                flag.evidence_spans = [
+                    EvidenceSpan(
+                        text=clause.text,
+                        char_start=0,
+                        char_end=len(clause.text),
+                        clause_id=clause.clause_id,
+                        role="direct",
+                        locator="clause_text",
+                    )
+                ]
+                flag.evidence_status = "direct"
+            elif clause is None:
+                flag.evidence_status = "unverified"
+        else:
+            flag.search_scope = (
+                f"document-wide scan across {len(clauses)} clause(s); "
+                "keyword-presence rule - no single supporting span"
+            )
+            flag.evidence_status = "unverified"
 
 
 def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> List[RiskFlag]:

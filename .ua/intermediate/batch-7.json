@@ -1,0 +1,163 @@
+{
+  "nodes": [
+    {
+      "id": "service:docker/Dockerfile",
+      "type": "service",
+      "name": "Dockerfile",
+      "filePath": "docker/Dockerfile",
+      "summary": "Multi-stage Docker build producing a Python 3.12 slim image with system dependencies for PDF/DOCX/OCR and the FastAPI/Streamlit application entry point.",
+      "tags": ["containerization", "infrastructure", "deployment"],
+      "complexity": "simple",
+      "languageNotes": "Single-stage build installs build-essential, libpq-dev, tesseract-ocr, poppler-utils, then pip-installs the project and runs uvicorn on port 8000."
+    },
+    {
+      "id": "service:docker/Dockerfile:python",
+      "type": "service",
+      "name": "python",
+      "filePath": "docker/Dockerfile",
+      "summary": "Runtime stage based on python:3.12-slim that builds the application and exposes ports 8000 and 8501.",
+      "tags": ["containerization", "runtime", "python"],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:docker/docker-compose.yml",
+      "type": "service",
+      "name": "docker-compose.yml",
+      "filePath": "docker/docker-compose.yml",
+      "summary": "Docker Compose orchestration defining Neo4j, Postgres, Redis, API, and Streamlit services with health checks and dependency ordering.",
+      "tags": ["orchestration", "infrastructure", "deployment"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "service:docker/docker-compose.yml:neo4j",
+      "type": "service",
+      "name": "neo4j",
+      "filePath": "docker/docker-compose.yml",
+      "summary": "Neo4j 5.18 graph database service with APOC plugin, persistent data/logs volumes, and a cypher-shell health check.",
+      "tags": ["database", "graph", "infrastructure"],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:docker/docker-compose.yml:postgres",
+      "type": "service",
+      "name": "postgres",
+      "filePath": "docker/docker-compose.yml",
+      "summary": "PostgreSQL 16 service with bharatcontract database and a pg_isready health check.",
+      "tags": ["database", "infrastructure", "storage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:docker/docker-compose.yml:redis",
+      "type": "service",
+      "name": "redis",
+      "filePath": "docker/docker-compose.yml",
+      "summary": "Redis 7 (alpine) cache service with a redis-cli ping health check.",
+      "tags": ["cache", "infrastructure", "storage"],
+      "complexity": "simple"
+    },
+    {
+      "id": "service:docker/docker-compose.yml:api",
+      "type": "service",
+      "name": "api",
+      "filePath": "docker/docker-compose.yml",
+      "summary": "FastAPI application service built from docker/Dockerfile, exposing port 8000 and depending on healthy Neo4j, Postgres, and Redis.",
+      "tags": ["api", "deployment", "orchestration"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "service:docker/docker-compose.yml:streamlit",
+      "type": "service",
+      "name": "streamlit",
+      "filePath": "docker/docker-compose.yml",
+      "summary": "Streamlit UI service built from docker/Dockerfile, running streamlit_app/Home.py on port 8501 and depending on the healthy API.",
+      "tags": ["ui", "deployment", "orchestration"],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "service:docker/Dockerfile",
+      "target": "service:docker/Dockerfile:python",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:docker/docker-compose.yml",
+      "target": "service:docker/docker-compose.yml:neo4j",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:docker/docker-compose.yml",
+      "target": "service:docker/docker-compose.yml:postgres",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:docker/docker-compose.yml",
+      "target": "service:docker/docker-compose.yml:redis",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:docker/docker-compose.yml",
+      "target": "service:docker/docker-compose.yml:api",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:docker/docker-compose.yml",
+      "target": "service:docker/docker-compose.yml:streamlit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "service:docker/docker-compose.yml",
+      "target": "service:docker/Dockerfile",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:docker/Dockerfile",
+      "target": "file:app/main.py",
+      "type": "deploys",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "service:docker/docker-compose.yml:api",
+      "target": "service:docker/docker-compose.yml:neo4j",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:docker/docker-compose.yml:api",
+      "target": "service:docker/docker-compose.yml:postgres",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:docker/docker-compose.yml:api",
+      "target": "service:docker/docker-compose.yml:redis",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "service:docker/docker-compose.yml:streamlit",
+      "target": "service:docker/docker-compose.yml:api",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

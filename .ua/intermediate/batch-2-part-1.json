@@ -1,0 +1,901 @@
+{
+  "nodes": [
+    {
+      "id": "file:nlp/clause_classification/classifier.py",
+      "type": "file",
+      "name": "classifier.py",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "summary": "Clause classifier \u2014 rule-based keyword matcher enriched by CUAD keyword bank, with TF-IDF ML fallback; exposes classify_clause and classify_clauses.",
+      "tags": [
+        "classification",
+        "nlp",
+        "clause-typing",
+        "rule-based",
+        "tfidf"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:nlp/clause_classification/classifier_ml.py",
+      "type": "file",
+      "name": "classifier_ml.py",
+      "filePath": "nlp/clause_classification/classifier_ml.py",
+      "summary": "Lazy DeBERTa-v3 clause classifier wrapper; classify_with_deberta returns ClassificationResult or None.",
+      "tags": [
+        "classification",
+        "ml",
+        "deberta",
+        "optional-deps"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:nlp/clause_classification/tfidf_model.py",
+      "type": "file",
+      "name": "tfidf_model.py",
+      "filePath": "nlp/clause_classification/tfidf_model.py",
+      "summary": "Runtime loader for bundled TF-IDF clause classifier (7z extraction + joblib) with TrainedClassifier.predict_one/top1.",
+      "tags": [
+        "tfidf",
+        "model-loading",
+        "classification"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:nlp/datasets/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "nlp/datasets/__init__.py",
+      "summary": "Package barrel re-exporting CUAD and MAUD dataset loaders.",
+      "tags": [
+        "barrel",
+        "package",
+        "dataset"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:nlp/datasets/cuad.py",
+      "type": "file",
+      "name": "cuad.py",
+      "filePath": "nlp/datasets/cuad.py",
+      "summary": "CUAD dataset loader: iter_examples, build_corpus, category_counts, collect_keyword_bank.",
+      "tags": [
+        "dataset",
+        "cuad",
+        "corpus",
+        "provenance"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:nlp/clause_classification/classifier.py:ClassificationResult",
+      "type": "class",
+      "name": "ClassificationResult",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        201,
+        204
+      ],
+      "summary": "Class ClassificationResult in classifier.py.",
+      "tags": [
+        "class",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:classify_clause",
+      "type": "function",
+      "name": "classify_clause",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        207,
+        249
+      ],
+      "summary": "Function classify_clause in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:_record_keyword_bank_provenance",
+      "type": "function",
+      "name": "_record_keyword_bank_provenance",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        262,
+        282
+      ],
+      "summary": "Function _record_keyword_bank_provenance in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:load_cuad_keyword_bank",
+      "type": "function",
+      "name": "load_cuad_keyword_bank",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        285,
+        343
+      ],
+      "summary": "Function load_cuad_keyword_bank in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:_compile_keyword_patterns",
+      "type": "function",
+      "name": "_compile_keyword_patterns",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        349,
+        359
+      ],
+      "summary": "Function _compile_keyword_patterns in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:_classify_with_tfidf",
+      "type": "function",
+      "name": "_classify_with_tfidf",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        377,
+        403
+      ],
+      "summary": "Function _classify_with_tfidf in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:_rule_classify",
+      "type": "function",
+      "name": "_rule_classify",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        411,
+        439
+      ],
+      "summary": "Function _rule_classify in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:classify_clauses",
+      "type": "function",
+      "name": "classify_clauses",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        447,
+        458
+      ],
+      "summary": "Function classify_clauses in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier.py:evaluate_against_csv",
+      "type": "function",
+      "name": "evaluate_against_csv",
+      "filePath": "nlp/clause_classification/classifier.py",
+      "lineRange": [
+        466,
+        513
+      ],
+      "summary": "Function evaluate_against_csv in classifier.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier_ml.py:_load_model",
+      "type": "function",
+      "name": "_load_model",
+      "filePath": "nlp/clause_classification/classifier_ml.py",
+      "lineRange": [
+        25,
+        42
+      ],
+      "summary": "Function _load_model in classifier_ml.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/classifier_ml.py:classify_with_deberta",
+      "type": "function",
+      "name": "classify_with_deberta",
+      "filePath": "nlp/clause_classification/classifier_ml.py",
+      "lineRange": [
+        45,
+        73
+      ],
+      "summary": "Function classify_with_deberta in classifier_ml.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:nlp/clause_classification/tfidf_model.py:TrainedClassifier",
+      "type": "class",
+      "name": "TrainedClassifier",
+      "filePath": "nlp/clause_classification/tfidf_model.py",
+      "lineRange": [
+        34,
+        64
+      ],
+      "summary": "Class TrainedClassifier in tfidf_model.py.",
+      "tags": [
+        "class",
+        "type-definition"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/tfidf_model.py:canonical_label",
+      "type": "function",
+      "name": "canonical_label",
+      "filePath": "nlp/clause_classification/tfidf_model.py",
+      "lineRange": [
+        27,
+        30
+      ],
+      "summary": "Function canonical_label in tfidf_model.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/tfidf_model.py:ensure_model_file",
+      "type": "function",
+      "name": "ensure_model_file",
+      "filePath": "nlp/clause_classification/tfidf_model.py",
+      "lineRange": [
+        67,
+        87
+      ],
+      "summary": "Function ensure_model_file in tfidf_model.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/tfidf_model.py:_suppress_version_warning",
+      "type": "function",
+      "name": "_suppress_version_warning",
+      "filePath": "nlp/clause_classification/tfidf_model.py",
+      "lineRange": [
+        90,
+        96
+      ],
+      "summary": "Function _suppress_version_warning in tfidf_model.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/clause_classification/tfidf_model.py:load_trained",
+      "type": "function",
+      "name": "load_trained",
+      "filePath": "nlp/clause_classification/tfidf_model.py",
+      "lineRange": [
+        99,
+        112
+      ],
+      "summary": "Function load_trained in tfidf_model.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:normalised_context",
+      "type": "function",
+      "name": "normalised_context",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        23,
+        26
+      ],
+      "summary": "Function normalised_context in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:context_hash",
+      "type": "function",
+      "name": "context_hash",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        29,
+        30
+      ],
+      "summary": "Function context_hash in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:split_for",
+      "type": "function",
+      "name": "split_for",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        33,
+        38
+      ],
+      "summary": "Function split_for in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:doc_ids",
+      "type": "function",
+      "name": "doc_ids",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        41,
+        48
+      ],
+      "summary": "Function doc_ids in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:iter_examples",
+      "type": "function",
+      "name": "iter_examples",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        51,
+        124
+      ],
+      "summary": "Function iter_examples in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:_surrounding_sentence",
+      "type": "function",
+      "name": "_surrounding_sentence",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        127,
+        143
+      ],
+      "summary": "Function _surrounding_sentence in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:build_corpus",
+      "type": "function",
+      "name": "build_corpus",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        146,
+        148
+      ],
+      "summary": "Function build_corpus in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:category_counts",
+      "type": "function",
+      "name": "category_counts",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        151,
+        155
+      ],
+      "summary": "Function category_counts in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:collect_keyword_bank",
+      "type": "function",
+      "name": "collect_keyword_bank",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        158,
+        168
+      ],
+      "summary": "Function collect_keyword_bank in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:nlp/datasets/cuad.py:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "nlp/datasets/cuad.py",
+      "lineRange": [
+        171,
+        193
+      ],
+      "summary": "Function main in cuad.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "class:nlp/clause_classification/classifier.py:ClassificationResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "class:nlp/clause_classification/classifier.py:ClassificationResult",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:classify_clause",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:classify_clause",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_record_keyword_bank_provenance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_record_keyword_bank_provenance",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:load_cuad_keyword_bank",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:load_cuad_keyword_bank",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_compile_keyword_patterns",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_compile_keyword_patterns",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_classify_with_tfidf",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_classify_with_tfidf",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_rule_classify",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:_rule_classify",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:classify_clauses",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:classify_clauses",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:evaluate_against_csv",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "function:nlp/clause_classification/classifier.py:evaluate_against_csv",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier_ml.py",
+      "target": "function:nlp/clause_classification/classifier_ml.py:_load_model",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier_ml.py",
+      "target": "function:nlp/clause_classification/classifier_ml.py:_load_model",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier_ml.py",
+      "target": "function:nlp/clause_classification/classifier_ml.py:classify_with_deberta",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier_ml.py",
+      "target": "function:nlp/clause_classification/classifier_ml.py:classify_with_deberta",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "class:nlp/clause_classification/tfidf_model.py:TrainedClassifier",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "class:nlp/clause_classification/tfidf_model.py:TrainedClassifier",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:canonical_label",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:canonical_label",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:ensure_model_file",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:ensure_model_file",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:_suppress_version_warning",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:_suppress_version_warning",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:load_trained",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "function:nlp/clause_classification/tfidf_model.py:load_trained",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:normalised_context",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:normalised_context",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:context_hash",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:context_hash",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:split_for",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:split_for",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:doc_ids",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:doc_ids",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:iter_examples",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:iter_examples",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:_surrounding_sentence",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:_surrounding_sentence",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:build_corpus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:build_corpus",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:category_counts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:category_counts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:collect_keyword_bank",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:collect_keyword_bank",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "function:nlp/datasets/cuad.py:main",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "file:nlp/taxonomy.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier_ml.py",
+      "target": "file:nlp/clause_classification/classifier.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/clause_classification/tfidf_model.py",
+      "target": "file:nlp/taxonomy.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/datasets/__init__.py",
+      "target": "file:nlp/datasets/cuad.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/datasets/__init__.py",
+      "target": "file:nlp/datasets/maud.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "file:nlp/datasets/splits.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "file:nlp/datasets/unified.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/datasets/cuad.py",
+      "target": "file:nlp/taxonomy.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:nlp/clause_classification/classifier.py",
+      "target": "file:tests/test_classifier_accuracy.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:nlp/datasets/__init__.py",
+      "target": "file:tests/test_no_leakage.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

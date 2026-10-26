@@ -1,0 +1,1466 @@
+{
+  "nodes": [
+    {
+      "id": "file:tests/test_classifier_accuracy.py",
+      "type": "file",
+      "name": "test_classifier_accuracy.py",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "summary": "Tests classifier accuracy on CUAD gold data (top-1/top-3).",
+      "tags": [
+        "test",
+        "classifier",
+        "accuracy"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:tests/test_no_leakage.py",
+      "type": "file",
+      "name": "test_no_leakage.py",
+      "filePath": "tests/test_no_leakage.py",
+      "summary": "Provenance/no-leakage tests for training corpus and manifests.",
+      "tags": [
+        "test",
+        "provenance",
+        "no-leakage"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:cuad_corpus",
+      "type": "function",
+      "name": "cuad_corpus",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        16,
+        38
+      ],
+      "summary": "Function cuad_corpus in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_governing_law",
+      "type": "function",
+      "name": "test_classifier_handles_governing_law",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        41,
+        45
+      ],
+      "summary": "Function test_classifier_handles_governing_law in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_indemnification",
+      "type": "function",
+      "name": "test_classifier_handles_indemnification",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        48,
+        52
+      ],
+      "summary": "Function test_classifier_handles_indemnification in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_termination",
+      "type": "function",
+      "name": "test_classifier_handles_termination",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        55,
+        59
+      ],
+      "summary": "Function test_classifier_handles_termination in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_payment_terms",
+      "type": "function",
+      "name": "test_classifier_handles_payment_terms",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        62,
+        66
+      ],
+      "summary": "Function test_classifier_handles_payment_terms in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_intellectual_property",
+      "type": "function",
+      "name": "test_classifier_handles_intellectual_property",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        69,
+        73
+      ],
+      "summary": "Function test_classifier_handles_intellectual_property in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_limitation_of_liability",
+      "type": "function",
+      "name": "test_classifier_handles_limitation_of_liability",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        76,
+        80
+      ],
+      "summary": "Function test_classifier_handles_limitation_of_liability in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_renewal",
+      "type": "function",
+      "name": "test_classifier_handles_renewal",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        83,
+        87
+      ],
+      "summary": "Function test_classifier_handles_renewal in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_force_majeure",
+      "type": "function",
+      "name": "test_classifier_handles_force_majeure",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        90,
+        95
+      ],
+      "summary": "Function test_classifier_handles_force_majeure in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_handles_indian_stamp_duty",
+      "type": "function",
+      "name": "test_classifier_handles_indian_stamp_duty",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        98,
+        102
+      ],
+      "summary": "Function test_classifier_handles_indian_stamp_duty in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_top1_accuracy_on_cuad",
+      "type": "function",
+      "name": "test_classifier_top1_accuracy_on_cuad",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        105,
+        116
+      ],
+      "summary": "Function test_classifier_top1_accuracy_on_cuad in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_classifier_accuracy.py:test_classifier_top3_accuracy_on_cuad",
+      "type": "function",
+      "name": "test_classifier_top3_accuracy_on_cuad",
+      "filePath": "tests/test_classifier_accuracy.py",
+      "lineRange": [
+        119,
+        127
+      ],
+      "summary": "Function test_classifier_top3_accuracy_on_cuad in test_classifier_accuracy.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_require",
+      "type": "function",
+      "name": "_require",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        49,
+        54
+      ],
+      "summary": "Function _require in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_norm",
+      "type": "function",
+      "name": "_norm",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        57,
+        58
+      ],
+      "summary": "Function _norm in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_held_docs",
+      "type": "function",
+      "name": "_held_docs",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        62,
+        68
+      ],
+      "summary": "Function _held_docs in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_held_concat",
+      "type": "function",
+      "name": "_held_concat",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        72,
+        74
+      ],
+      "summary": "Function _held_concat in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_shingles",
+      "type": "function",
+      "name": "_shingles",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        77,
+        79
+      ],
+      "summary": "Function _shingles in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_held_index",
+      "type": "function",
+      "name": "_held_index",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        83,
+        84
+      ],
+      "summary": "Function _held_index in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_corpus_rows",
+      "type": "function",
+      "name": "_corpus_rows",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        87,
+        91
+      ],
+      "summary": "Function _corpus_rows in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t1a_training_corpus_has_train_only_provenance",
+      "type": "function",
+      "name": "test_t1a_training_corpus_has_train_only_provenance",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        96,
+        99
+      ],
+      "summary": "Function test_t1a_training_corpus_has_train_only_provenance in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t1b_full_corpus_has_no_exact_held_out_text",
+      "type": "function",
+      "name": "test_t1b_full_corpus_has_no_exact_held_out_text",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        102,
+        126
+      ],
+      "summary": "Function test_t1b_full_corpus_has_no_exact_held_out_text in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t1c_near_duplicate_heuristic_is_reported_not_asserted",
+      "type": "function",
+      "name": "test_t1c_near_duplicate_heuristic_is_reported_not_asserted",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        129,
+        150
+      ],
+      "summary": "Function test_t1c_near_duplicate_heuristic_is_reported_not_asserted in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t1d_source_lineage_train_and_held_out_are_disjoint",
+      "type": "function",
+      "name": "test_t1d_source_lineage_train_and_held_out_are_disjoint",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        153,
+        161
+      ],
+      "summary": "Function test_t1d_source_lineage_train_and_held_out_are_disjoint in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t2a_keyword_bank_is_provenance_verified",
+      "type": "function",
+      "name": "test_t2a_keyword_bank_is_provenance_verified",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        166,
+        168
+      ],
+      "summary": "Function test_t2a_keyword_bank_is_provenance_verified in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t2b_keyword_bank_manifest_declares_train_only",
+      "type": "function",
+      "name": "test_t2b_keyword_bank_manifest_declares_train_only",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        171,
+        178
+      ],
+      "summary": "Function test_t2b_keyword_bank_manifest_declares_train_only in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t3a_maud_artifacts_have_manifests",
+      "type": "function",
+      "name": "test_t3a_maud_artifacts_have_manifests",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        183,
+        186
+      ],
+      "summary": "Function test_t3a_maud_artifacts_have_manifests in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t3b_maud_artifacts_exclude_test_split",
+      "type": "function",
+      "name": "test_t3b_maud_artifacts_exclude_test_split",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        189,
+        195
+      ],
+      "summary": "Function test_t3b_maud_artifacts_exclude_test_split in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t8_cuad_examples_provenance",
+      "type": "function",
+      "name": "test_t8_cuad_examples_provenance",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        200,
+        202
+      ],
+      "summary": "Function test_t8_cuad_examples_provenance in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t4_whole_corpus_requires_explicit_flag",
+      "type": "function",
+      "name": "test_t4_whole_corpus_requires_explicit_flag",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        207,
+        223
+      ],
+      "summary": "Function test_t4_whole_corpus_requires_explicit_flag in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t5_missing_source_fails_closed",
+      "type": "function",
+      "name": "test_t5_missing_source_fails_closed",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        226,
+        229
+      ],
+      "summary": "Function test_t5_missing_source_fails_closed in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t6_drifted_source_fails_closed",
+      "type": "function",
+      "name": "test_t6_drifted_source_fails_closed",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        232,
+        240
+      ],
+      "summary": "Function test_t6_drifted_source_fails_closed in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_load_eval_module",
+      "type": "function",
+      "name": "_load_eval_module",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        243,
+        248
+      ],
+      "summary": "Function _load_eval_module in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_t7_evaluation_cannot_claim_benchmark_without_provenance",
+      "type": "function",
+      "name": "test_t7_evaluation_cannot_claim_benchmark_without_provenance",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        251,
+        260
+      ],
+      "summary": "Function test_t7_evaluation_cannot_claim_benchmark_without_provenance in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_tmp_artifact_with_manifest",
+      "type": "function",
+      "name": "_tmp_artifact_with_manifest",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        265,
+        271
+      ],
+      "summary": "Function _tmp_artifact_with_manifest in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_f1_valid_manifest_passes",
+      "type": "function",
+      "name": "test_f1_valid_manifest_passes",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        274,
+        276
+      ],
+      "summary": "Function test_f1_valid_manifest_passes in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_f2_test_split_source_is_rejected",
+      "type": "function",
+      "name": "test_f2_test_split_source_is_rejected",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        279,
+        282
+      ],
+      "summary": "Function test_f2_test_split_source_is_rejected in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_f3_verification_never_extracts_archives",
+      "type": "function",
+      "name": "test_f3_verification_never_extracts_archives",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        285,
+        303
+      ],
+      "summary": "Function test_f3_verification_never_extracts_archives in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_f4_loaded_model_status_tracks_exact_joblib_bytes",
+      "type": "function",
+      "name": "test_f4_loaded_model_status_tracks_exact_joblib_bytes",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        306,
+        316
+      ],
+      "summary": "Function test_f4_loaded_model_status_tracks_exact_joblib_bytes in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_provenance_registry_surfaces_absent_artifacts",
+      "type": "function",
+      "name": "test_provenance_registry_surfaces_absent_artifacts",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        319,
+        325
+      ],
+      "summary": "Function test_provenance_registry_surfaces_absent_artifacts in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_load_verify_module",
+      "type": "function",
+      "name": "_load_verify_module",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        332,
+        337
+      ],
+      "summary": "Function _load_verify_module in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_write_csv",
+      "type": "function",
+      "name": "_write_csv",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        340,
+        347
+      ],
+      "summary": "Function _write_csv in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_train_title",
+      "type": "function",
+      "name": "_train_title",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        350,
+        351
+      ],
+      "summary": "Function _train_title in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:_held_title",
+      "type": "function",
+      "name": "_held_title",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        354,
+        355
+      ],
+      "summary": "Function _held_title in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_l1_lineage_accepts_training_rows",
+      "type": "function",
+      "name": "test_l1_lineage_accepts_training_rows",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        358,
+        365
+      ],
+      "summary": "Function test_l1_lineage_accepts_training_rows in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_l2_lineage_rejects_injected_held_out_document",
+      "type": "function",
+      "name": "test_l2_lineage_rejects_injected_held_out_document",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        368,
+        376
+      ],
+      "summary": "Function test_l2_lineage_rejects_injected_held_out_document in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_l3_lineage_rejects_missing_columns",
+      "type": "function",
+      "name": "test_l3_lineage_rejects_missing_columns",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        379,
+        384
+      ],
+      "summary": "Function test_l3_lineage_rejects_missing_columns in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_l4_lineage_rejects_non_training_split",
+      "type": "function",
+      "name": "test_l4_lineage_rejects_non_training_split",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        387,
+        395
+      ],
+      "summary": "Function test_l4_lineage_rejects_non_training_split in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:tests/test_no_leakage.py:test_l5_forged_manifest_cannot_rescue_invalid_artifact",
+      "type": "function",
+      "name": "test_l5_forged_manifest_cannot_rescue_invalid_artifact",
+      "filePath": "tests/test_no_leakage.py",
+      "lineRange": [
+        398,
+        418
+      ],
+      "summary": "Function test_l5_forged_manifest_cannot_rescue_invalid_artifact in test_no_leakage.py.",
+      "tags": [
+        "function"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:cuad_corpus",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:cuad_corpus",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_governing_law",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_governing_law",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_indemnification",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_indemnification",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_termination",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_termination",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_payment_terms",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_payment_terms",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_intellectual_property",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_intellectual_property",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_limitation_of_liability",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_limitation_of_liability",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_renewal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_renewal",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_force_majeure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_force_majeure",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_indian_stamp_duty",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_handles_indian_stamp_duty",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_top1_accuracy_on_cuad",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_top1_accuracy_on_cuad",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_top3_accuracy_on_cuad",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "function:tests/test_classifier_accuracy.py:test_classifier_top3_accuracy_on_cuad",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_require",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_require",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_norm",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_norm",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_docs",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_docs",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_concat",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_concat",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_shingles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_shingles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_index",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_index",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_corpus_rows",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_corpus_rows",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1a_training_corpus_has_train_only_provenance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1a_training_corpus_has_train_only_provenance",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1b_full_corpus_has_no_exact_held_out_text",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1b_full_corpus_has_no_exact_held_out_text",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1c_near_duplicate_heuristic_is_reported_not_asserted",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1c_near_duplicate_heuristic_is_reported_not_asserted",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1d_source_lineage_train_and_held_out_are_disjoint",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t1d_source_lineage_train_and_held_out_are_disjoint",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t2a_keyword_bank_is_provenance_verified",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t2a_keyword_bank_is_provenance_verified",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t2b_keyword_bank_manifest_declares_train_only",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t2b_keyword_bank_manifest_declares_train_only",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t3a_maud_artifacts_have_manifests",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t3a_maud_artifacts_have_manifests",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t3b_maud_artifacts_exclude_test_split",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t3b_maud_artifacts_exclude_test_split",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t8_cuad_examples_provenance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t8_cuad_examples_provenance",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t4_whole_corpus_requires_explicit_flag",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t4_whole_corpus_requires_explicit_flag",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t5_missing_source_fails_closed",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t5_missing_source_fails_closed",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t6_drifted_source_fails_closed",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t6_drifted_source_fails_closed",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_load_eval_module",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_load_eval_module",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t7_evaluation_cannot_claim_benchmark_without_provenance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_t7_evaluation_cannot_claim_benchmark_without_provenance",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_tmp_artifact_with_manifest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_tmp_artifact_with_manifest",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f1_valid_manifest_passes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f1_valid_manifest_passes",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f2_test_split_source_is_rejected",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f2_test_split_source_is_rejected",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f3_verification_never_extracts_archives",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f3_verification_never_extracts_archives",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f4_loaded_model_status_tracks_exact_joblib_bytes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_f4_loaded_model_status_tracks_exact_joblib_bytes",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_provenance_registry_surfaces_absent_artifacts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_provenance_registry_surfaces_absent_artifacts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_load_verify_module",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_load_verify_module",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_write_csv",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_write_csv",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_train_title",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_train_title",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_title",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:_held_title",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l1_lineage_accepts_training_rows",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l1_lineage_accepts_training_rows",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l2_lineage_rejects_injected_held_out_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l2_lineage_rejects_injected_held_out_document",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l3_lineage_rejects_missing_columns",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l3_lineage_rejects_missing_columns",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l4_lineage_rejects_non_training_split",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l4_lineage_rejects_non_training_split",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l5_forged_manifest_cannot_rescue_invalid_artifact",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "function:tests/test_no_leakage.py:test_l5_forged_manifest_cannot_rescue_invalid_artifact",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:tests/test_classifier_accuracy.py",
+      "target": "file:nlp/clause_classification/classifier.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "file:nlp/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "file:nlp/datasets/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "file:nlp/datasets/manifest.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "file:nlp/datasets/splits.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:tests/test_no_leakage.py",
+      "target": "file:nlp/provenance.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

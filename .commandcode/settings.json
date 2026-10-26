@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(uv:*)",
+      "Shell(uv run python -c \"import app.main; print('API import OK')\" && uv run python -c \"import ast,pathlib; [ast.parse(p.read_text(encoding='utf-8')) for p in pathlib.Path('streamlit_app').rglob('*.py')]; print('Streamlit parse OK')\" && type .env 2>nul || echo NO_ENV_FILE)",
+      "Shell(kill:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

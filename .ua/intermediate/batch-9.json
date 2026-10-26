@@ -1,0 +1,142 @@
+{
+  "nodes": [
+    {
+      "id": "config:.dockerignore",
+      "type": "config",
+      "name": ".dockerignore",
+      "filePath": ".dockerignore",
+      "summary": "Docker build ignore rules listing files and directories excluded from the container build context.",
+      "tags": ["configuration", "containerization", "infrastructure"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": ".env.example",
+      "summary": "Template of all environment variables consumed by the app (database, Redis, Neo4j, API, auth, models, logging) for local setup.",
+      "tags": ["configuration", "environment", "setup"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Agent memory and orientation notes covering project overview, code style, architecture, and common workflows.",
+      "tags": ["documentation", "agent-memory", "orientation"],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:AUDIT_MEMORY.md",
+      "type": "document",
+      "name": "AUDIT_MEMORY.md",
+      "filePath": "AUDIT_MEMORY.md",
+      "summary": "Continuous audit memory log recording session history, file maps, observations, fixes, and verification results.",
+      "tags": ["documentation", "audit", "history"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:BharatContract_AI_Agent_Master_Prompt.md",
+      "type": "document",
+      "name": "BharatContract_AI_Agent_Master_Prompt.md",
+      "filePath": "BharatContract_AI_Agent_Master_Prompt.md",
+      "summary": "Master prompt defining the AI agent's role, mission, integrity rules, and staged execution plan for the project.",
+      "tags": ["documentation", "agent-prompt", "specification"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:BharatContract_AI_Project_Charter.md",
+      "type": "document",
+      "name": "BharatContract_AI_Project_Charter.md",
+      "filePath": "BharatContract_AI_Project_Charter.md",
+      "summary": "Comprehensive project charter covering vision, scope, capabilities, evaluation methodology, pipeline, and roadmap.",
+      "tags": ["documentation", "charter", "requirements"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Project overview with quick start, repository layout, architecture, environment variables, auth, ML classifier, and tests.",
+      "tags": ["documentation", "entry-point", "overview"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:command-code-session-242f357f.html",
+      "type": "file",
+      "name": "command-code-session-242f357f.html",
+      "filePath": "command-code-session-242f357f.html",
+      "summary": "Exported command-code session transcript rendered as a large HTML page.",
+      "tags": ["markup", "session-export", "transcript"],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:plan.md",
+      "type": "document",
+      "name": "plan.md",
+      "filePath": "plan.md",
+      "summary": "Living plan and execution checklist tracking phases, hardening, architectural notes, and deferred items.",
+      "tags": ["documentation", "plan", "roadmap"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "config:pyproject.toml",
+      "type": "config",
+      "name": "pyproject.toml",
+      "filePath": "pyproject.toml",
+      "summary": "Python project metadata, dependencies, optional extras, pytest/ruff config, and hatch build settings.",
+      "tags": ["configuration", "python", "build-system"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:requirements.txt",
+      "type": "document",
+      "name": "requirements.txt",
+      "filePath": "requirements.txt",
+      "summary": "Pinned runtime dependency list for installing the project's Python packages.",
+      "tags": ["documentation", "dependencies", "requirements"],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:uv.toml",
+      "type": "config",
+      "name": "uv.toml",
+      "filePath": "uv.toml",
+      "summary": "uv package manager configuration (empty/default settings).",
+      "tags": ["configuration", "python", "tooling"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:.env.example",
+      "target": "file:app/core/config.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:pyproject.toml",
+      "target": "file:app/main.py",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:app/main.py",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:plan.md",
+      "target": "document:README.md",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

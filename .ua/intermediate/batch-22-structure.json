@@ -1,0 +1,431 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 11,
+  "filesSkipped": [
+    "data/raw/sample_msa.txt",
+    "models/risk_classifier.7z",
+    "models/tfidf_classifier.7z"
+  ],
+  "filesUnreadable": [],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 11,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 8,
+      "failed": 0,
+      "skipped": 3
+    }
+  },
+  "results": [
+    {
+      "path": ".commandcode/taste/taste-—-general-preferences/taste.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 19,
+      "nonEmptyLines": 19,
+      "sections": [
+        {
+          "heading": "Taste — General Preferences",
+          "level": 1,
+          "line": 1
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": ".commandcode/taste/taste.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "sections": [
+        {
+          "heading": "Taste — General Preferences",
+          "level": 1,
+          "line": 1
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 1
+      }
+    },
+    {
+      "path": "app/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "app/core/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "app/models/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "app/utils/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "models/PROVENANCE_STATUS.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 23,
+      "nonEmptyLines": 23,
+      "sections": [
+        {
+          "heading": "$comment",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "generated_by",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "source_authentication",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "artifacts",
+          "level": 1,
+          "line": 11
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": "scripts/debug_caps.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 14,
+      "nonEmptyLines": 12,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 1,
+          "endLine": 10,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "line": 1,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "main",
+          "callee": "line.strip",
+          "lineNumber": 3
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 4
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 5
+        },
+        {
+          "caller": "main",
+          "callee": "stripped.upper",
+          "lineNumber": 5
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 6
+        },
+        {
+          "caller": "main",
+          "callee": "stripped.upper",
+          "lineNumber": 6
+        },
+        {
+          "caller": "main",
+          "callee": "enumerate",
+          "lineNumber": 7
+        },
+        {
+          "caller": "main",
+          "callee": "zip",
+          "lineNumber": 7
+        },
+        {
+          "caller": "main",
+          "callee": "stripped.upper",
+          "lineNumber": 7
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "scripts/inspect_classifier_corpus.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 22,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 7,
+          "endLine": 25,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "main",
+          "callee": "csv.field_size_limit",
+          "lineNumber": 8
+        },
+        {
+          "caller": "main",
+          "callee": "Path",
+          "lineNumber": 9
+        },
+        {
+          "caller": "main",
+          "callee": "csv_path.open",
+          "lineNumber": 11
+        },
+        {
+          "caller": "main",
+          "callee": "list",
+          "lineNumber": 12
+        },
+        {
+          "caller": "main",
+          "callee": "csv.DictReader",
+          "lineNumber": 12
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 14
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 14
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 15
+        },
+        {
+          "caller": "main",
+          "callee": "list",
+          "lineNumber": 15
+        },
+        {
+          "caller": "main",
+          "callee": "rows[0].keys",
+          "lineNumber": 15
+        },
+        {
+          "caller": "main",
+          "callee": "defaultdict",
+          "lineNumber": 17
+        },
+        {
+          "caller": "main",
+          "callee": "by_cat[r[\"category\"]].append",
+          "lineNumber": 19
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 22
+        },
+        {
+          "caller": "main",
+          "callee": "by_cat.get",
+          "lineNumber": 23
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 24
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "scripts/inspect_cuad.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 33,
+      "nonEmptyLines": 26,
+      "functions": [
+        {
+          "name": "main",
+          "startLine": 9,
+          "endLine": 29,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "main",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "main",
+          "callee": "DATA.open",
+          "lineNumber": 10
+        },
+        {
+          "caller": "main",
+          "callee": "json.load",
+          "lineNumber": 11
+        },
+        {
+          "caller": "main",
+          "callee": "set",
+          "lineNumber": 13
+        },
+        {
+          "caller": "main",
+          "callee": "seen.add",
+          "lineNumber": 21
+        },
+        {
+          "caller": "main",
+          "callee": "re.search",
+          "lineNumber": 22
+        },
+        {
+          "caller": "main",
+          "callee": "order.append",
+          "lineNumber": 24
+        },
+        {
+          "caller": "main",
+          "callee": "m.group",
+          "lineNumber": 24
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 26
+        },
+        {
+          "caller": "main",
+          "callee": "len",
+          "lineNumber": 26
+        },
+        {
+          "caller": "main",
+          "callee": "print",
+          "lineNumber": 28
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "streamlit_app/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 11,
+      "nonEmptyLines": 9,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

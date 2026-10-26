@@ -24,6 +24,10 @@ data/raw/*
 !data/raw/sample_msa.txt
 data/processed/*
 !data/processed/.gitkeep
+# Provenance manifests are reviewable metadata: keep them tracked.
+!data/processed/*.manifest.json
+# Staged rebuild output (A3) must never be committed.
+data/processed.staging/
 data/annotated/*
 !data/annotated/.gitkeep
 models/hf/*

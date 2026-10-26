@@ -94,11 +94,19 @@ def root():
 def healthz():
     settings = get_settings()
     neo4j_ok = Neo4jConnection.instance().available
+    try:
+        from nlp import provenance
+
+        provenance_block = provenance.summary()
+    except Exception:  # pragma: no cover - health must never fail on provenance
+        provenance_block = {}
     return {
         "status": "ok",
         "neo4j": neo4j_ok,
         "env": settings.app_env,
         "auth_enabled": settings.auth_enabled,
+        # Data-lineage only; says nothing about evaluation or predictive validity.
+        "provenance": provenance_block,
     }
 
 

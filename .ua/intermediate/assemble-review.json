@@ -1,0 +1,161 @@
+{
+  "summary": {
+    "assembled_nodes": 680,
+    "assembled_edges": 969,
+    "expected_nodes_from_batches": 680,
+    "expected_edges_from_batches": 960,
+    "output_batch_files": 25,
+    "scan_total_files": 278,
+    "file_nodes": 278
+  },
+  "node_type_counts": {
+    "file": 90,
+    "function": 349,
+    "class": 47,
+    "service": 8,
+    "document": 174,
+    "config": 9,
+    "table": 3
+  },
+  "edge_type_counts": {
+    "contains": 402,
+    "imports": 155,
+    "calls": 201,
+    "exports": 179,
+    "tested_by": 9,
+    "depends_on": 5,
+    "deploys": 1,
+    "related": 13,
+    "configures": 2,
+    "documents": 2
+  },
+  "duplicates": {
+    "nodes": [],
+    "edges": []
+  },
+  "missing_nodes": [],
+  "extra_nodes": [],
+  "missing_edges": [
+    [
+      "file:tests/test_long_clauses.py",
+      "file:app/services/segmenter.py",
+      "tested_by"
+    ],
+    [
+      "file:tests/test_parser.py",
+      "file:app/services/parser.py",
+      "tested_by"
+    ],
+    [
+      "file:tests/test_segmenter.py",
+      "file:app/services/segmenter.py",
+      "tested_by"
+    ]
+  ],
+  "extra_edges": [
+    [
+      "file:app/models/schemas.py",
+      "file:app/core/time.py",
+      "imports"
+    ],
+    [
+      "file:app/services/analyzer.py",
+      "file:app/core/logging.py",
+      "imports"
+    ],
+    [
+      "file:app/services/analyzer.py",
+      "file:app/services/parser.py",
+      "imports"
+    ],
+    [
+      "file:app/services/analyzer.py",
+      "file:app/services/segmenter.py",
+      "imports"
+    ],
+    [
+      "file:app/services/analyzer.py",
+      "file:nlp/clause_classification/classifier.py",
+      "imports"
+    ],
+    [
+      "file:app/services/analyzer.py",
+      "file:nlp/context/__init__.py",
+      "imports"
+    ],
+    [
+      "file:app/services/parser.py",
+      "file:tests/test_parser.py",
+      "tested_by"
+    ],
+    [
+      "file:app/services/segmenter.py",
+      "file:tests/test_long_clauses.py",
+      "tested_by"
+    ],
+    [
+      "file:app/services/segmenter.py",
+      "file:tests/test_segmenter.py",
+      "tested_by"
+    ],
+    [
+      "file:nlp/ner/ner.py",
+      "file:app/utils/text.py",
+      "imports"
+    ],
+    [
+      "file:tests/test_regressions.py",
+      "file:app/services/jobs.py",
+      "imports"
+    ],
+    [
+      "file:tests/test_regressions.py",
+      "file:nlp/clause_classification/tfidf_model.py",
+      "imports"
+    ]
+  ],
+  "dangling_edges": [],
+  "schema_issues": {
+    "bad_nodes": [],
+    "bad_edges": []
+  },
+  "file_coverage": {
+    "missing_file_nodes": [],
+    "extra_file_nodes": []
+  },
+  "dropped_batch_files_note": "6 input/structure dumps dropped by merge script (expected).",
+  "output_batch_file_list": [
+    "batch-1.json",
+    "batch-10.json",
+    "batch-11.json",
+    "batch-12.json",
+    "batch-13.json",
+    "batch-14.json",
+    "batch-15.json",
+    "batch-16.json",
+    "batch-17.json",
+    "batch-18.json",
+    "batch-19.json",
+    "batch-2-part-1.json",
+    "batch-2-part-2.json",
+    "batch-2-part-3.json",
+    "batch-2-part-4.json",
+    "batch-20.json",
+    "batch-21.json",
+    "batch-22.json",
+    "batch-3.json",
+    "batch-4.json",
+    "batch-5.json",
+    "batch-6.json",
+    "batch-7.json",
+    "batch-8.json",
+    "batch-9.json"
+  ],
+  "findings": [
+    "All 680 nodes from batch outputs are present in assembled graph; no duplicates or dangling edges.",
+    "File coverage is complete: all 278 scanned files have a corresponding node.",
+    "3 tested_by edges are missing in their original test->service direction; assembled graph instead contains the reversed service->test direction (normalizing to majority convention).",
+    "9 imports edges were recovered from importMap and are not present in any batch output (intentional enrichment).",
+    "12 extra edges total = 9 recovered imports + 3 normalized tested_by reversals."
+  ]
+}

@@ -81,6 +81,9 @@ dev = [
 testpaths = ["tests"]
 asyncio_mode = "auto"
 addopts = "-ra -q"
+markers = [
+    "provenance: fail-closed provenance / data-lineage checks (see plan.md)",
+]
 
 [tool.ruff]
 line-length = 110

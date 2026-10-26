@@ -13,22 +13,52 @@ import re
 from pathlib import Path
 from typing import Iterable, Iterator, List
 
+from nlp.datasets.splits import ProvenanceError, resolve_split
 from nlp.datasets.unified import TrainingExample, write_jsonl
 from nlp.taxonomy import map_cuad_label
 
 CATEGORY_QUESTION_RE = re.compile(r'related to "([^"]+)"', re.IGNORECASE)
 
 
+def normalised_context(doc: dict) -> str:
+    """Canonical text for a CUAD document (used for hashing and leak checks)."""
+    joined = " ".join(p.get("context", "") for p in doc.get("paragraphs", []))
+    return re.sub(r"\s+", " ", joined).strip().lower()
+
+
+def context_hash(doc: dict) -> str:
+    return hashlib.sha256(normalised_context(doc).encode("utf-8")).hexdigest()
+
+
+def split_for(cuad_path: Path) -> str:
+    """Split derived from file identity; ``unknown`` when not allowlisted."""
+    try:
+        return resolve_split(cuad_path)
+    except ProvenanceError:
+        return "unknown"
+
+
+def doc_ids(cuad_path: Path) -> dict[str, str]:
+    """Map ``title -> sha256(normalised context)`` for every document."""
+    with Path(cuad_path).open(encoding="utf-8") as fh:
+        data = json.load(fh)
+    return {
+        doc.get("title", f"cuad_doc_{idx}"): context_hash(doc)
+        for idx, doc in enumerate(data["data"])
+    }
+
+
 def iter_examples(cuad_path: Path) -> Iterator[TrainingExample]:
     """Yield TrainingExample rows from a CUAD JSON file."""
     cuad_path = Path(cuad_path)
+    split = split_for(cuad_path)
     with cuad_path.open(encoding="utf-8") as fh:
         data = json.load(fh)
 
     for doc_idx, doc in enumerate(data["data"]):
         title = doc.get("title", f"cuad_doc_{doc_idx}")
         slug = re.sub(r"[^A-Za-z0-9]+", "_", title)[:48].strip("_").lower() or f"cuad_{doc_idx}"
-        digest = hashlib.sha1(title.encode("utf-8")).hexdigest()[:8]
+        digest = hashlib.sha256(title.encode("utf-8")).hexdigest()[:16]
         contract_id = f"{slug}_{digest}"
 
         for para in doc["paragraphs"]:
@@ -69,7 +99,7 @@ def iter_examples(cuad_path: Path) -> Iterator[TrainingExample]:
                         text=context[:2000],
                         category=internal_category,
                         spans=[],
-                        metadata={"cuad_label": cuad_label, "label": "absent", "is_impossible": True},
+                        metadata={"cuad_label": cuad_label, "label": "absent", "is_impossible": True, "split": split, "title": title},
                     )
                     continue
 
@@ -90,7 +120,7 @@ def iter_examples(cuad_path: Path) -> Iterator[TrainingExample]:
                         text=snippet,
                         category=internal_category,
                         spans=[span],
-                        metadata={"cuad_label": cuad_label, "label": "present"},
+                        metadata={"cuad_label": cuad_label, "label": "present", "split": split, "title": title},
                     )
 
 

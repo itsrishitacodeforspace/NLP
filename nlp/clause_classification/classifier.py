@@ -255,6 +255,32 @@ def classify_clause(
 
 _cuad_keyword_bank: Optional[Dict[str, List[str]]] = None
 
+# Provenance of the keyword bank actually loaded at runtime (empty until loaded).
+KEYWORD_BANK_PROVENANCE: dict = {}
+
+
+def _record_keyword_bank_provenance(path) -> None:
+    """Register the keyword bank's provenance for runtime surfacing."""
+    global KEYWORD_BANK_PROVENANCE
+    from nlp import provenance
+    from nlp.datasets.manifest import verify
+
+    if path is None or not Path(path).exists():
+        KEYWORD_BANK_PROVENANCE = provenance.record("cuad_keyword_bank.json", path=None, kind="keyword_bank")
+        return
+    status, reason = provenance.STATUS_UNVERIFIED, "provenance not verified"
+    try:
+        result = verify(path, allowed_splits=("train",), require=False, deep=False)
+        if result.get("ok"):
+            status, reason = provenance.STATUS_VERIFIED, ""
+        else:
+            reason = str(result.get("reason", reason))
+    except Exception as exc:  # pragma: no cover - defensive
+        reason = str(exc)
+    KEYWORD_BANK_PROVENANCE = provenance.record(
+        "cuad_keyword_bank.json", path=path, kind="keyword_bank", status=status, reason=reason
+    )
+
 
 def load_cuad_keyword_bank(path: Optional[Path] = None, *, max_keywords_per_category: int = 80) -> int:
     """Load CUAD-derived keywords into CLAUSE_RULES.
@@ -268,6 +294,7 @@ def load_cuad_keyword_bank(path: Optional[Path] = None, *, max_keywords_per_cate
     if path is None:
         path = Path(__file__).resolve().parents[2] / "data" / "processed" / "cuad_keyword_bank.json"
     if not Path(path).exists():
+        _record_keyword_bank_provenance(None)
         _compile_keyword_patterns()
         return 0
     with Path(path).open(encoding="utf-8") as fh:
@@ -311,6 +338,7 @@ def load_cuad_keyword_bank(path: Optional[Path] = None, *, max_keywords_per_cate
                         added += 1
                         per_category_added += 1
                         break
+    _record_keyword_bank_provenance(path)
     _compile_keyword_patterns()
     return added
 

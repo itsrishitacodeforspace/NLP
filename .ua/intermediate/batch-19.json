@@ -1,0 +1,173 @@
+{
+  "nodes": [
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_89.txt",
+      "type": "document",
+      "name": "contract_89.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_89.txt",
+      "summary": "MAUD dataset source contract text: \ufeffAGREEMENT AND PLAN OF MERGER",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_9.txt",
+      "type": "document",
+      "name": "contract_9.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_9.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1 EXECUTION VERSION AMENDED AND RESTATED AGREEMENT AND PLAN OF MERGER by and among Ambience Parent, Inc., Ambience Merger Sub, Inc. and At Home Group Inc. Dated as of June 16, 2021",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_90.txt",
+      "type": "document",
+      "name": "contract_90.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_90.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_91.txt",
+      "type": "document",
+      "name": "contract_91.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_91.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1 EXECUTION COPY",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_92.txt",
+      "type": "document",
+      "name": "contract_92.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_92.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_93.txt",
+      "type": "document",
+      "name": "contract_93.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_93.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_94.txt",
+      "type": "document",
+      "name": "contract_94.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_94.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1     AGREEMENT AND PLAN OF MERGER",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_95.txt",
+      "type": "document",
+      "name": "contract_95.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_95.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_96.txt",
+      "type": "document",
+      "name": "contract_96.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_96.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1   Execution Version   AGREEMENT AND PLAN OF MERGER   among   THE ALLSTATE CORPORATION,   BLUEBIRD ACQUISITION CORP.   and   NATIONAL GENERAL HOLDINGS CORP.   Dated as of July 7, 2020",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_97.txt",
+      "type": "document",
+      "name": "contract_97.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_97.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_98.txt",
+      "type": "document",
+      "name": "contract_98.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_98.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1   EXECUTION VERSION",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_99.txt",
+      "type": "document",
+      "name": "contract_99.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_99.txt",
+      "summary": "MAUD dataset source contract text: \ufeffExhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": []
+}

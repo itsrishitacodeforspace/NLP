@@ -1,0 +1,23 @@
+{
+  "projectRoot": "C:\\Users\\Ivermectin\\Desktop\\NLP\\NLP",
+  "batchFiles": [
+    {"path": "nlp/__init__.py", "language": "python", "sizeLines": 7, "fileCategory": "code"},
+    {"path": "nlp/clause_classification/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "nlp/ner/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "nlp/obligation_extraction/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "nlp/risk_scoring/__init__.py", "language": "python", "sizeLines": 1, "fileCategory": "code"},
+    {"path": "nlp/risk_scoring/risk_model.py", "language": "python", "sizeLines": 247, "fileCategory": "code"},
+    {"path": "scripts/train_risk_classifier.py", "language": "python", "sizeLines": 92, "fileCategory": "code"},
+    {"path": "tests/test_risk_model.py", "language": "python", "sizeLines": 108, "fileCategory": "code"}
+  ],
+  "batchImportData": {
+    "nlp/__init__.py": ["nlp/__init__.py", "nlp/clause_classification/__init__.py", "nlp/ner/__init__.py", "nlp/obligation_extraction/__init__.py", "nlp/risk_scoring/__init__.py"],
+    "nlp/clause_classification/__init__.py": [],
+    "nlp/ner/__init__.py": [],
+    "nlp/obligation_extraction/__init__.py": [],
+    "nlp/risk_scoring/__init__.py": [],
+    "nlp/risk_scoring/risk_model.py": ["app/models/schemas.py"],
+    "scripts/train_risk_classifier.py": ["nlp/risk_scoring/risk_model.py"],
+    "tests/test_risk_model.py": ["app/models/schemas.py", "nlp/risk_scoring/__init__.py", "nlp/risk_scoring/risk_model.py"]
+  }
+}

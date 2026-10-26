@@ -47,6 +47,13 @@ optional `[ml]` extra — the stack runs fully without it.
   `owner` and reads are scoped to the caller (404, not 403, for others). Off ⇒ everything is open.
 - **ML risk classifier:** `nlp/risk_scoring/risk_model.py` is a *recall booster* only — it adds
   `ML_RISK_001` findings for clauses with no rule hit, and no-ops when the artefact is missing.
+- **Provenance:** generated artifacts carry `<artifact>.manifest.json`; source identity is resolved from
+  file path + SHA-256 against `nlp/datasets/splits.py` (hash-pinned, **not** upstream-authenticated).
+  `scripts/verify_provenance.py` is the fail-closed readiness check (exit 0 only when everything verifies).
+  `/healthz` exposes a `provenance` block; analysis warnings carry `PROVENANCE_*` tokens. The bundled
+  `models/*.7z` are `provenance-unverified` (trained on a corpus overlapping held-out CUAD). Keep
+  **artifact provenance / evaluation / predictive validity** strictly separate — a manifest proves
+  lineage only, never accuracy.
 
 ## Common Workflows
 ```bash

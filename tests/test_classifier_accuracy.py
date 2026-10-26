@@ -1,6 +1,7 @@
 """Tests that exercise the hybrid (rule + TF-IDF) clause classifier."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,16 @@ load_cuad_keyword_bank()
 def cuad_corpus():
     path = Path("data/processed/clause_classifier.csv")
     if not path.exists():
-        pytest.skip("CUAD corpus not built — run `python scripts/build_training_data.py`")
+        # Required evaluation input: never a silent skip under CI.
+        if os.environ.get("BCC_EVAL_MODE", "").lower() == "ci":
+            pytest.fail(
+                f"required evaluation corpus missing in CI mode: {path} "
+                "(rebuild with scripts/build_training_data.py under gate A3)"
+            )
+        pytest.skip(
+            "intentional local skip: evaluation corpus absent "
+            f"({path}); set BCC_EVAL_MODE=ci to make this a required failure"
+        )
     import csv
     csv.field_size_limit(2**31 - 1)
     rows: list[dict] = []

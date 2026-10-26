@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "table:data/datasets/maud/data/raw/abridged.csv",
+      "type": "table",
+      "name": "abridged.csv",
+      "filePath": "data/datasets/maud/data/raw/abridged.csv",
+      "summary": "MAUD (Merger Agreement Understanding Dataset) raw annotation file in abridged form, containing question-answer labels over merger agreements across many M&A deals.",
+      "tags": ["data", "dataset", "maud", "merger-agreement", "csv"],
+      "complexity": "complex"
+    },
+    {
+      "id": "table:data/datasets/maud/data/raw/counterfactual.csv",
+      "type": "table",
+      "name": "counterfactual.csv",
+      "filePath": "data/datasets/maud/data/raw/counterfactual.csv",
+      "summary": "MAUD raw annotation file of counterfactual variant labels, capturing alternative answer options for merger-agreement questions across many M&A deals.",
+      "tags": ["data", "dataset", "maud", "counterfactual", "csv"],
+      "complexity": "complex"
+    },
+    {
+      "id": "table:data/datasets/maud/data/raw/main.csv",
+      "type": "table",
+      "name": "main.csv",
+      "filePath": "data/datasets/maud/data/raw/main.csv",
+      "summary": "MAUD raw main annotation file, containing the primary question-answer labels over merger agreements across many M&A deals.",
+      "tags": ["data", "dataset", "maud", "merger-agreement", "csv"],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "table:data/datasets/maud/data/raw/abridged.csv",
+      "target": "table:data/datasets/maud/data/raw/counterfactual.csv",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "table:data/datasets/maud/data/raw/abridged.csv",
+      "target": "table:data/datasets/maud/data/raw/main.csv",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "table:data/datasets/maud/data/raw/counterfactual.csv",
+      "target": "table:data/datasets/maud/data/raw/main.csv",
+      "type": "related",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

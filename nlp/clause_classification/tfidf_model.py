@@ -100,6 +100,9 @@ def load_trained(model_path: Optional[Path] = None) -> Optional[TrainedClassifie
     model_path = Path(model_path) if model_path else ensure_model_file()
     if model_path is None or not model_path.exists():
         return None
+    from nlp import provenance
+
+    provenance.record_loaded_model("tfidf_classifier.7z", model_path)
     _suppress_version_warning()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

@@ -1,0 +1,1703 @@
+{
+  "scriptCompleted": true,
+  "contentDigest": "bf6763928e46380195193a9e234c5a34bc5a84704dce88431c576310e905a71b",
+  "files": [
+    {
+      "path": ".commandcode/BHARATCONTRACT_ARTIFACT_INDEX.md",
+      "language": "markdown",
+      "sizeLines": 112,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".commandcode/BHARATCONTRACT_DECISION_LOG.md",
+      "language": "markdown",
+      "sizeLines": 102,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".commandcode/BHARATCONTRACT_NEXT_SESSION.md",
+      "language": "markdown",
+      "sizeLines": 65,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".commandcode/BHARATCONTRACT_PROJECT_MEMORY.md",
+      "language": "markdown",
+      "sizeLines": 306,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".commandcode/BHARATCONTRACT_SESSION_ARCHIVE.md",
+      "language": "markdown",
+      "sizeLines": 110,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".commandcode/settings.json",
+      "language": "json",
+      "sizeLines": 10,
+      "fileCategory": "config"
+    },
+    {
+      "path": ".commandcode/taste/taste-—-general-preferences/taste.md",
+      "language": "markdown",
+      "sizeLines": 19,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".commandcode/taste/taste.md",
+      "language": "markdown",
+      "sizeLines": 2,
+      "fileCategory": "docs"
+    },
+    {
+      "path": ".dockerignore",
+      "language": "unknown",
+      "sizeLines": 16,
+      "fileCategory": "infra"
+    },
+    {
+      "path": ".env.example",
+      "language": "config",
+      "sizeLines": 55,
+      "fileCategory": "config"
+    },
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 68,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "AUDIT_MEMORY.md",
+      "language": "markdown",
+      "sizeLines": 298,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "BharatContract_AI_Agent_Master_Prompt.md",
+      "language": "markdown",
+      "sizeLines": 432,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "BharatContract_AI_Project_Charter.md",
+      "language": "markdown",
+      "sizeLines": 1180,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 267,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "app/__init__.py",
+      "language": "python",
+      "sizeLines": 2,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/api/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/api/deps.py",
+      "language": "python",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/api/routes_auth.py",
+      "language": "python",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/api/routes_contracts.py",
+      "language": "python",
+      "sizeLines": 195,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/api/routes_graph.py",
+      "language": "python",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/api/routes_jobs.py",
+      "language": "python",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/core/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/core/config.py",
+      "language": "python",
+      "sizeLines": 107,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/core/exceptions.py",
+      "language": "python",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/core/logging.py",
+      "language": "python",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/core/security.py",
+      "language": "python",
+      "sizeLines": 214,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/core/time.py",
+      "language": "python",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/db/__init__.py",
+      "language": "python",
+      "sizeLines": 2,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/db/neo4j.py",
+      "language": "python",
+      "sizeLines": 179,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/db/postgres.py",
+      "language": "python",
+      "sizeLines": 292,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/db/queries.py",
+      "language": "python",
+      "sizeLines": 282,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/main.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/models/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/models/schemas.py",
+      "language": "python",
+      "sizeLines": 243,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/services/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/services/analyzer.py",
+      "language": "python",
+      "sizeLines": 449,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/services/jobs.py",
+      "language": "python",
+      "sizeLines": 176,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/services/parser.py",
+      "language": "python",
+      "sizeLines": 351,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/services/segmenter.py",
+      "language": "python",
+      "sizeLines": 359,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/utils/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/utils/fs.py",
+      "language": "python",
+      "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/utils/text.py",
+      "language": "python",
+      "sizeLines": 105,
+      "fileCategory": "code"
+    },
+    {
+      "path": "command-code-session-242f357f.html",
+      "language": "html",
+      "sizeLines": 35723,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "data/datasets/cuad/CUADv1.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "data/datasets/cuad/category_descriptions.csv",
+      "language": "csv",
+      "sizeLines": 41,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/datasets/cuad/test.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "data/datasets/cuad/train_separate_questions.json",
+      "language": "json",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    },
+    {
+      "path": "data/datasets/maud/data/MAUD_dev.csv",
+      "language": "csv",
+      "sizeLines": 41760,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/datasets/maud/data/MAUD_test.csv",
+      "language": "csv",
+      "sizeLines": 42190,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/datasets/maud/data/MAUD_train.csv",
+      "language": "csv",
+      "sizeLines": 160040,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_0.txt",
+      "language": "txt",
+      "sizeLines": 2874,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_1.txt",
+      "language": "txt",
+      "sizeLines": 1480,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_10.txt",
+      "language": "txt",
+      "sizeLines": 6194,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_100.txt",
+      "language": "txt",
+      "sizeLines": 3777,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_101.txt",
+      "language": "txt",
+      "sizeLines": 1644,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_102.txt",
+      "language": "txt",
+      "sizeLines": 2235,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_103.txt",
+      "language": "txt",
+      "sizeLines": 3180,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_104.txt",
+      "language": "txt",
+      "sizeLines": 1698,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_105.txt",
+      "language": "txt",
+      "sizeLines": 3684,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_106.txt",
+      "language": "txt",
+      "sizeLines": 1024,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_107.txt",
+      "language": "txt",
+      "sizeLines": 2463,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_108.txt",
+      "language": "txt",
+      "sizeLines": 1917,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_109.txt",
+      "language": "txt",
+      "sizeLines": 3054,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_11.txt",
+      "language": "txt",
+      "sizeLines": 1848,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_110.txt",
+      "language": "txt",
+      "sizeLines": 1764,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_111.txt",
+      "language": "txt",
+      "sizeLines": 1404,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_112.txt",
+      "language": "txt",
+      "sizeLines": 2019,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_113.txt",
+      "language": "txt",
+      "sizeLines": 2250,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_114.txt",
+      "language": "txt",
+      "sizeLines": 2010,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_115.txt",
+      "language": "txt",
+      "sizeLines": 1110,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_116.txt",
+      "language": "txt",
+      "sizeLines": 975,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_117.txt",
+      "language": "txt",
+      "sizeLines": 1581,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_118.txt",
+      "language": "txt",
+      "sizeLines": 1516,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_119.txt",
+      "language": "txt",
+      "sizeLines": 1323,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_12.txt",
+      "language": "txt",
+      "sizeLines": 2049,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_120.txt",
+      "language": "txt",
+      "sizeLines": 1491,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_121.txt",
+      "language": "txt",
+      "sizeLines": 1584,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_122.txt",
+      "language": "txt",
+      "sizeLines": 1902,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_123.txt",
+      "language": "txt",
+      "sizeLines": 2835,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_124.txt",
+      "language": "txt",
+      "sizeLines": 855,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_125.txt",
+      "language": "txt",
+      "sizeLines": 2307,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_126.txt",
+      "language": "txt",
+      "sizeLines": 1935,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_127.txt",
+      "language": "txt",
+      "sizeLines": 2232,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_128.txt",
+      "language": "txt",
+      "sizeLines": 1377,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_129.txt",
+      "language": "txt",
+      "sizeLines": 1093,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_13.txt",
+      "language": "txt",
+      "sizeLines": 1171,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_130.txt",
+      "language": "txt",
+      "sizeLines": 1629,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_131.txt",
+      "language": "txt",
+      "sizeLines": 2904,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_132.txt",
+      "language": "txt",
+      "sizeLines": 2703,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_133.txt",
+      "language": "txt",
+      "sizeLines": 3236,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_134.txt",
+      "language": "txt",
+      "sizeLines": 1136,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_135.txt",
+      "language": "txt",
+      "sizeLines": 1229,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_136.txt",
+      "language": "txt",
+      "sizeLines": 1461,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_137.txt",
+      "language": "txt",
+      "sizeLines": 999,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_138.txt",
+      "language": "txt",
+      "sizeLines": 444,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_139.txt",
+      "language": "txt",
+      "sizeLines": 2055,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_14.txt",
+      "language": "txt",
+      "sizeLines": 1680,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_140.txt",
+      "language": "txt",
+      "sizeLines": 2337,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_141.txt",
+      "language": "txt",
+      "sizeLines": 1555,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_142.txt",
+      "language": "txt",
+      "sizeLines": 1431,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_143.txt",
+      "language": "txt",
+      "sizeLines": 2328,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_144.txt",
+      "language": "txt",
+      "sizeLines": 1895,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_145.txt",
+      "language": "txt",
+      "sizeLines": 6350,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_146.txt",
+      "language": "txt",
+      "sizeLines": 1167,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_147.txt",
+      "language": "txt",
+      "sizeLines": 1268,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_148.txt",
+      "language": "txt",
+      "sizeLines": 2418,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_149.txt",
+      "language": "txt",
+      "sizeLines": 2418,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_15.txt",
+      "language": "txt",
+      "sizeLines": 2997,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_150.txt",
+      "language": "txt",
+      "sizeLines": 2207,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_151.txt",
+      "language": "txt",
+      "sizeLines": 707,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_16.txt",
+      "language": "txt",
+      "sizeLines": 972,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_17.txt",
+      "language": "txt",
+      "sizeLines": 2283,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_18.txt",
+      "language": "txt",
+      "sizeLines": 2773,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_19.txt",
+      "language": "txt",
+      "sizeLines": 2163,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_2.txt",
+      "language": "txt",
+      "sizeLines": 1742,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_20.txt",
+      "language": "txt",
+      "sizeLines": 5284,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_21.txt",
+      "language": "txt",
+      "sizeLines": 1026,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_22.txt",
+      "language": "txt",
+      "sizeLines": 2760,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_23.txt",
+      "language": "txt",
+      "sizeLines": 2859,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_24.txt",
+      "language": "txt",
+      "sizeLines": 1373,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_25.txt",
+      "language": "txt",
+      "sizeLines": 2196,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_26.txt",
+      "language": "txt",
+      "sizeLines": 2361,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_27.txt",
+      "language": "txt",
+      "sizeLines": 2595,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_28.txt",
+      "language": "txt",
+      "sizeLines": 1962,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_29.txt",
+      "language": "txt",
+      "sizeLines": 1042,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_3.txt",
+      "language": "txt",
+      "sizeLines": 3202,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_30.txt",
+      "language": "txt",
+      "sizeLines": 1791,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_31.txt",
+      "language": "txt",
+      "sizeLines": 2011,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_32.txt",
+      "language": "txt",
+      "sizeLines": 1476,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_33.txt",
+      "language": "txt",
+      "sizeLines": 9304,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_34.txt",
+      "language": "txt",
+      "sizeLines": 2265,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_35.txt",
+      "language": "txt",
+      "sizeLines": 1815,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_36.txt",
+      "language": "txt",
+      "sizeLines": 2004,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_37.txt",
+      "language": "txt",
+      "sizeLines": 1177,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_38.txt",
+      "language": "txt",
+      "sizeLines": 2292,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_39.txt",
+      "language": "txt",
+      "sizeLines": 1782,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_4.txt",
+      "language": "txt",
+      "sizeLines": 1176,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_40.txt",
+      "language": "txt",
+      "sizeLines": 1809,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_41.txt",
+      "language": "txt",
+      "sizeLines": 2279,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_42.txt",
+      "language": "txt",
+      "sizeLines": 1327,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_43.txt",
+      "language": "txt",
+      "sizeLines": 1626,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_44.txt",
+      "language": "txt",
+      "sizeLines": 2982,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_45.txt",
+      "language": "txt",
+      "sizeLines": 2232,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_46.txt",
+      "language": "txt",
+      "sizeLines": 1551,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_47.txt",
+      "language": "txt",
+      "sizeLines": 915,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_48.txt",
+      "language": "txt",
+      "sizeLines": 2598,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_49.txt",
+      "language": "txt",
+      "sizeLines": 2451,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_5.txt",
+      "language": "txt",
+      "sizeLines": 2964,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_50.txt",
+      "language": "txt",
+      "sizeLines": 2681,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_51.txt",
+      "language": "txt",
+      "sizeLines": 2492,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_52.txt",
+      "language": "txt",
+      "sizeLines": 1881,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_53.txt",
+      "language": "txt",
+      "sizeLines": 3465,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_54.txt",
+      "language": "txt",
+      "sizeLines": 2073,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_55.txt",
+      "language": "txt",
+      "sizeLines": 2106,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_56.txt",
+      "language": "txt",
+      "sizeLines": 2715,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_57.txt",
+      "language": "txt",
+      "sizeLines": 1902,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_58.txt",
+      "language": "txt",
+      "sizeLines": 2544,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_59.txt",
+      "language": "txt",
+      "sizeLines": 1440,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_6.txt",
+      "language": "txt",
+      "sizeLines": 2031,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_60.txt",
+      "language": "txt",
+      "sizeLines": 2972,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_61.txt",
+      "language": "txt",
+      "sizeLines": 2673,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_62.txt",
+      "language": "txt",
+      "sizeLines": 1821,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_63.txt",
+      "language": "txt",
+      "sizeLines": 1058,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_64.txt",
+      "language": "txt",
+      "sizeLines": 905,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_65.txt",
+      "language": "txt",
+      "sizeLines": 1197,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_66.txt",
+      "language": "txt",
+      "sizeLines": 5909,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_67.txt",
+      "language": "txt",
+      "sizeLines": 983,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_68.txt",
+      "language": "txt",
+      "sizeLines": 9640,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_69.txt",
+      "language": "txt",
+      "sizeLines": 1911,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_7.txt",
+      "language": "txt",
+      "sizeLines": 2409,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_70.txt",
+      "language": "txt",
+      "sizeLines": 2730,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_71.txt",
+      "language": "txt",
+      "sizeLines": 1125,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_72.txt",
+      "language": "txt",
+      "sizeLines": 2817,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_73.txt",
+      "language": "txt",
+      "sizeLines": 1611,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_74.txt",
+      "language": "txt",
+      "sizeLines": 2403,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_75.txt",
+      "language": "txt",
+      "sizeLines": 2319,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_76.txt",
+      "language": "txt",
+      "sizeLines": 3525,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_77.txt",
+      "language": "txt",
+      "sizeLines": 2343,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_78.txt",
+      "language": "txt",
+      "sizeLines": 920,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_79.txt",
+      "language": "txt",
+      "sizeLines": 2511,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_8.txt",
+      "language": "txt",
+      "sizeLines": 1693,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_80.txt",
+      "language": "txt",
+      "sizeLines": 1164,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_81.txt",
+      "language": "txt",
+      "sizeLines": 2568,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_82.txt",
+      "language": "txt",
+      "sizeLines": 2004,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_83.txt",
+      "language": "txt",
+      "sizeLines": 947,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_84.txt",
+      "language": "txt",
+      "sizeLines": 4779,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_85.txt",
+      "language": "txt",
+      "sizeLines": 1596,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_86.txt",
+      "language": "txt",
+      "sizeLines": 468,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_87.txt",
+      "language": "txt",
+      "sizeLines": 1668,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_88.txt",
+      "language": "txt",
+      "sizeLines": 270,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_89.txt",
+      "language": "txt",
+      "sizeLines": 2664,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_9.txt",
+      "language": "txt",
+      "sizeLines": 1029,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_90.txt",
+      "language": "txt",
+      "sizeLines": 2373,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_91.txt",
+      "language": "txt",
+      "sizeLines": 2730,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_92.txt",
+      "language": "txt",
+      "sizeLines": 4009,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_93.txt",
+      "language": "txt",
+      "sizeLines": 1656,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_94.txt",
+      "language": "txt",
+      "sizeLines": 2589,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_95.txt",
+      "language": "txt",
+      "sizeLines": 2328,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_96.txt",
+      "language": "txt",
+      "sizeLines": 1643,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_97.txt",
+      "language": "txt",
+      "sizeLines": 2220,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_98.txt",
+      "language": "txt",
+      "sizeLines": 1020,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/contracts/contract_99.txt",
+      "language": "txt",
+      "sizeLines": 2631,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/datasets/maud/data/raw/abridged.csv",
+      "language": "csv",
+      "sizeLines": 34742,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/datasets/maud/data/raw/counterfactual.csv",
+      "language": "csv",
+      "sizeLines": 12940,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/datasets/maud/data/raw/main.csv",
+      "language": "csv",
+      "sizeLines": 13001,
+      "fileCategory": "data"
+    },
+    {
+      "path": "data/raw/sample_msa.txt",
+      "language": "txt",
+      "sizeLines": 47,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docker/Dockerfile",
+      "language": "dockerfile",
+      "sizeLines": 24,
+      "fileCategory": "infra"
+    },
+    {
+      "path": "docker/docker-compose.yml",
+      "language": "yaml",
+      "sizeLines": 112,
+      "fileCategory": "infra"
+    },
+    {
+      "path": "models/PROVENANCE_STATUS.json",
+      "language": "json",
+      "sizeLines": 23,
+      "fileCategory": "config"
+    },
+    {
+      "path": "models/risk_classifier.7z",
+      "language": "7z",
+      "sizeLines": 3257,
+      "fileCategory": "code"
+    },
+    {
+      "path": "models/tfidf_classifier.7z",
+      "language": "7z",
+      "sizeLines": 113443,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/__init__.py",
+      "language": "python",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/clause_classification/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/clause_classification/classifier.py",
+      "language": "python",
+      "sizeLines": 513,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/clause_classification/classifier_ml.py",
+      "language": "python",
+      "sizeLines": 73,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/clause_classification/tfidf_model.py",
+      "language": "python",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/context/__init__.py",
+      "language": "python",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/context/resolver.py",
+      "language": "python",
+      "sizeLines": 176,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/datasets/__init__.py",
+      "language": "python",
+      "sizeLines": 2,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/datasets/cuad.py",
+      "language": "python",
+      "sizeLines": 197,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/datasets/manifest.py",
+      "language": "python",
+      "sizeLines": 161,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/datasets/maud.py",
+      "language": "python",
+      "sizeLines": 122,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/datasets/splits.py",
+      "language": "python",
+      "sizeLines": 193,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/datasets/unified.py",
+      "language": "python",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/ner/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/ner/ner.py",
+      "language": "python",
+      "sizeLines": 328,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/ner/ner_ml.py",
+      "language": "python",
+      "sizeLines": 82,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/obligation_extraction/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/obligation_extraction/extractor.py",
+      "language": "python",
+      "sizeLines": 308,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/provenance.py",
+      "language": "python",
+      "sizeLines": 188,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/risk_scoring/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/risk_scoring/case_law.py",
+      "language": "python",
+      "sizeLines": 142,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/risk_scoring/risk_model.py",
+      "language": "python",
+      "sizeLines": 247,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/risk_scoring/rules.py",
+      "language": "python",
+      "sizeLines": 524,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/risk_scoring/scorer.py",
+      "language": "python",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "nlp/taxonomy.py",
+      "language": "python",
+      "sizeLines": 170,
+      "fileCategory": "code"
+    },
+    {
+      "path": "plan.md",
+      "language": "markdown",
+      "sizeLines": 175,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "pyproject.toml",
+      "language": "toml",
+      "sizeLines": 104,
+      "fileCategory": "config"
+    },
+    {
+      "path": "reports/evaluations/generalizable_analysis_audit.md",
+      "language": "markdown",
+      "sizeLines": 168,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "reports/evaluations/p1_context_resolution_report.md",
+      "language": "markdown",
+      "sizeLines": 122,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "reports/evaluations/p2_evidence_binding_report.md",
+      "language": "markdown",
+      "sizeLines": 117,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "requirements.txt",
+      "language": "txt",
+      "sizeLines": 64,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "scripts/build_training_data.py",
+      "language": "python",
+      "sizeLines": 209,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/debug_caps.py",
+      "language": "python",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/debug_heading.py",
+      "language": "python",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/debug_normalised.py",
+      "language": "python",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/debug_segmenter.py",
+      "language": "python",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/eval_classifier.py",
+      "language": "python",
+      "sizeLines": 129,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/inspect_classifier_corpus.py",
+      "language": "python",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/inspect_cuad.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/run_demo.py",
+      "language": "python",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/train_risk_classifier.py",
+      "language": "python",
+      "sizeLines": 92,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/train_tfidf_classifier.py",
+      "language": "python",
+      "sizeLines": 101,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/verify_provenance.py",
+      "language": "python",
+      "sizeLines": 187,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/Home.py",
+      "language": "python",
+      "sizeLines": 134,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/__init__.py",
+      "language": "python",
+      "sizeLines": 11,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/api_client.py",
+      "language": "python",
+      "sizeLines": 128,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/components/risk_card.py",
+      "language": "python",
+      "sizeLines": 103,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/pages/1_Summary.py",
+      "language": "python",
+      "sizeLines": 199,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/pages/2_Clause_Explorer.py",
+      "language": "python",
+      "sizeLines": 90,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/pages/3_Obligations.py",
+      "language": "python",
+      "sizeLines": 114,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/pages/4_Graph.py",
+      "language": "python",
+      "sizeLines": 239,
+      "fileCategory": "code"
+    },
+    {
+      "path": "streamlit_app/pages/5_Risk_Review.py",
+      "language": "python",
+      "sizeLines": 79,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_api_smoke.py",
+      "language": "python",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_auth.py",
+      "language": "python",
+      "sizeLines": 109,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_classifier_accuracy.py",
+      "language": "python",
+      "sizeLines": 127,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_context_resolution.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_e2e.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_evidence_binding.py",
+      "language": "python",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_long_clauses.py",
+      "language": "python",
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_no_leakage.py",
+      "language": "python",
+      "sizeLines": 418,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_parser.py",
+      "language": "python",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_regressions.py",
+      "language": "python",
+      "sizeLines": 91,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_risk_model.py",
+      "language": "python",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_rls.py",
+      "language": "python",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_segmenter.py",
+      "language": "python",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "uv.toml",
+      "language": "toml",
+      "sizeLines": 0,
+      "fileCategory": "config"
+    }
+  ],
+  "totalFiles": 278,
+  "filteredByIgnore": 0,
+  "estimatedComplexity": "large",
+  "failures": [],
+  "stats": {
+    "filesScanned": 278,
+    "byCategory": {
+      "docs": 170,
+      "config": 8,
+      "infra": 3,
+      "code": 89,
+      "markup": 1,
+      "data": 7
+    },
+    "byLanguage": {
+      "markdown": 16,
+      "json": 5,
+      "unknown": 1,
+      "config": 1,
+      "python": 87,
+      "html": 1,
+      "csv": 7,
+      "txt": 154,
+      "dockerfile": 1,
+      "yaml": 1,
+      "7z": 2,
+      "toml": 2
+    }
+  }
+}

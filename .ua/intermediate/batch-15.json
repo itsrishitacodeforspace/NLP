@@ -1,0 +1,285 @@
+{
+  "nodes": [
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_16.txt",
+      "type": "document",
+      "name": "contract_16.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_16.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_17.txt",
+      "type": "document",
+      "name": "contract_17.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_17.txt",
+      "summary": "MAUD dataset source contract text: AGREEMENT AND PLAN OF MERGER",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_18.txt",
+      "type": "document",
+      "name": "contract_18.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_18.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1 AGREEMENT AND PLAN OF MERGER by and between BANCORPSOUTH BANK and CADENCE BANCORPORATION",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_19.txt",
+      "type": "document",
+      "name": "contract_19.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_19.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1 AGREEMENT AND PLAN OF MERGER by and among STERIS plc, Solar New US Holding Co, LLC, Crystal Merger Sub 1, LLC and Cantel Medical Corp. dated as of January 12, 2021",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_2.txt",
+      "type": "document",
+      "name": "contract_2.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_2.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1 EXECUTION COPY AGREEMENT AND PLAN OF MERGER by and among: ADAMAS PHARMACEUTICALS, INC., SUPERNUS PHARMACEUTICALS, INC., and SUPERNUS REEF, INC. Dated as of October 10, 2021",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_20.txt",
+      "type": "document",
+      "name": "contract_20.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_20.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_21.txt",
+      "type": "document",
+      "name": "contract_21.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_21.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_22.txt",
+      "type": "document",
+      "name": "contract_22.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_22.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_23.txt",
+      "type": "document",
+      "name": "contract_23.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_23.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 99.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_24.txt",
+      "type": "document",
+      "name": "contract_24.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_24.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1 EXECUTION VERSION AGREEMENT AND PLAN OF MERGER among CABOT OIL & GAS CORPORATION, DOUBLE C MERGER SUB, INC. and CIMAREX ENERGY CO. Dated as of May 23, 2021 TABLE OF CONTENTS Page ARTICLE I",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_25.txt",
+      "type": "document",
+      "name": "contract_25.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_25.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_26.txt",
+      "type": "document",
+      "name": "contract_26.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_26.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_27.txt",
+      "type": "document",
+      "name": "contract_27.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_27.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_28.txt",
+      "type": "document",
+      "name": "contract_28.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_28.txt",
+      "summary": "MAUD dataset source contract text: Exhibit (d)(10)",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_29.txt",
+      "type": "document",
+      "name": "contract_29.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_29.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_3.txt",
+      "type": "document",
+      "name": "contract_3.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_3.txt",
+      "summary": "MAUD dataset source contract text: EXHIBIT 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_30.txt",
+      "type": "document",
+      "name": "contract_30.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_30.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_31.txt",
+      "type": "document",
+      "name": "contract_31.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_31.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1 EXECUTION VERSION AGREEMENT AND PLAN OF MERGER among CONOCOPHILLIPS, FALCON MERGER SUB CORP. and CONCHO RESOURCES INC. Dated as of October 18, 2020",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_32.txt",
+      "type": "document",
+      "name": "contract_32.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_32.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1 AGREEMENT AND PLAN OF MERGER",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "document:data/datasets/maud/data/contracts/contract_33.txt",
+      "type": "document",
+      "name": "contract_33.txt",
+      "filePath": "data/datasets/maud/data/contracts/contract_33.txt",
+      "summary": "MAUD dataset source contract text: Exhibit 2.1",
+      "tags": [
+        "documentation",
+        "legal-contract",
+        "maud-dataset",
+        "merger-agreement"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": []
+}

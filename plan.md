@@ -154,6 +154,14 @@ This document is the **single source of truth**. Items prefixed `[ ]` are pendin
 - [x] **ML risk classifier**: weakly-supervised TF-IDF + LogisticRegression severity model
       (`nlp/risk_scoring/risk_model.py`, trained by `scripts/train_risk_classifier.py`), used as a
       recall booster (`ML_RISK_001`) for clauses the rules miss; bundled as `models/risk_classifier.7z`.
+- [x] **Provenance layer**: hash-pinned source allowlist (`nlp/datasets/splits.py`), per-artifact
+      manifests (`nlp/datasets/manifest.py`), runtime surface (`nlp/provenance.py`, `/healthz`), and a
+      fail-closed readiness check (`scripts/verify_provenance.py`).
+- [ ] **Known limitation**: `data/processed/` predates provenance, so the readiness check exits 1 with five
+      missing manifests, and the four artifact-dependent provenance tests fail by design. Both bundled
+      `models/*.7z` remain `provenance-unverified` (corpus overlap with held-out CUAD). Remediation is
+      gated behind approval A3 (backup + staged rebuild) and A4 (retrain). Source hashes are internally
+      consistent only — **not** authenticated against the upstream CUAD release.
 
 ---
 
