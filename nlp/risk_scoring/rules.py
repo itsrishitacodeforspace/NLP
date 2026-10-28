@@ -71,6 +71,12 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
     ]
     if not _any_clause_type(clause, "Limitation of Liability"):
         return None
+    # An indemnification clause shifts third-party liability; it is not the
+    # party's own limitation-of-liability clause, so cap analysis does not apply.
+    # This guards against clauses the classifier labels both "Limitation of
+    # Liability" and "Indemnification" when only the latter is correct.
+    if "indemn" in (clause.heading or "").lower():
+        return None
     if any(t in text for t in triggers):
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_LIABILITY_001",
