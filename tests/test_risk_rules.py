@@ -1,21 +1,37 @@
-"""Regression tests for the liability risk rules (general, not fixture-specific)."""
+"""Regression tests for the liability and contract-level risk rules (general)."""
 from __future__ import annotations
 
-from app.models.schemas import Clause, ContractSummary
-from nlp.risk_scoring.rules import rule_uncapped_liability
+from app.models.schemas import Clause, ContractSummary, RiskSeverity
+from nlp.risk_scoring.rules import (
+    rule_missing_stamp_duty,
+    rule_tds_missing,
+    rule_uncapped_liability,
+)
 
 
 def _summary() -> ContractSummary:
     return ContractSummary(contract_id="x", title="t", file_name="f.txt", jurisdiction="India")
 
 
+def _summary_with(*, jurisdiction: str = "India", stamp: bool = False, tds: bool = False) -> ContractSummary:
+    return ContractSummary(
+        contract_id="x",
+        title="t",
+        file_name="f.txt",
+        jurisdiction=jurisdiction,
+        stamp_duty_mentioned=stamp,
+        tds_mentioned=tds,
+    )
+
+
 def _clause(cid: str, *, heading: str, text: str, types: list[str]) -> Clause:
     return Clause(clause_id=cid, heading=heading, text=text, clause_types=types)
 
 
+# --------------------------------------------------------------------------- liability
+
+
 def test_indemnification_clause_is_not_treated_as_liability():
-    # An indemnification clause (heading says so) is not a limitation-of-liability
-    # clause even if the classifier also attached that label.
     clause = _clause(
         "c1",
         heading="5. Indemnification",
@@ -55,3 +71,50 @@ def test_missing_cap_is_detected():
     )
     flag = rule_uncapped_liability(clause, _summary())
     assert flag is not None and flag.rule_id == "RISK_LIABILITY_002"
+
+
+# ----------------------------------------------------------------------- stamp duty
+
+
+def test_stamp_duty_not_detected_is_review_not_critical():
+    clause = _clause("c5", heading="1. Definitions", text="Definitions only.", types=["Definitions"])
+    flag = rule_missing_stamp_duty(clause, _summary_with(stamp=False))
+    assert flag is not None and flag.rule_id == "RISK_STAMP_001"
+    assert flag.severity == RiskSeverity.MEDIUM  # "not found" is not "confirmed absent"
+    assert "not found" in flag.explanation
+
+
+def test_stamp_duty_mentioned_suppresses_finding():
+    clause = _clause("c5", heading="1. Definitions", text="Definitions only.", types=["Definitions"])
+    assert rule_missing_stamp_duty(clause, _summary_with(stamp=True)) is None
+
+
+def test_stamp_duty_out_of_scope_for_non_indian_jurisdiction():
+    clause = _clause("c5", heading="1. Definitions", text="Definitions only.", types=["Definitions"])
+    assert rule_missing_stamp_duty(clause, _summary_with(jurisdiction="United States", stamp=False)) is None
+
+
+# ------------------------------------------------------------------------------ TDS
+
+
+def test_tds_not_detected_is_review():
+    clause = _clause("c6", heading="3. Payment Terms", text="Customer shall pay fees within 30 days.", types=["Payment Terms"])
+    flag = rule_tds_missing(clause, _summary_with(tds=False))
+    assert flag is not None and flag.rule_id == "RISK_TDS_001"
+    assert flag.severity == RiskSeverity.LOW
+    assert "not found" in flag.explanation
+
+
+def test_tds_mentioned_suppresses_finding():
+    clause = _clause("c6", heading="3. Payment Terms", text="Fees subject to TDS.", types=["Payment Terms"])
+    assert rule_tds_missing(clause, _summary_with(tds=True)) is None
+
+
+def test_tds_out_of_scope_for_non_indian_jurisdiction():
+    clause = _clause("c6", heading="3. Payment Terms", text="Fees.", types=["Payment Terms"])
+    assert rule_tds_missing(clause, _summary_with(jurisdiction="United Kingdom", tds=False)) is None
+
+
+def test_tds_requires_payment_terms_clause():
+    clause = _clause("c7", heading="4. Confidentiality", text="Keep information secret.", types=["Confidentiality"])
+    assert rule_tds_missing(clause, _summary_with(tds=False)) is None

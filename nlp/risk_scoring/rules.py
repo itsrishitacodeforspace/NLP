@@ -286,14 +286,15 @@ def rule_missing_stamp_duty(clause: Clause, summary: ContractSummary) -> Optiona
         risk_id="contract_RISK_STAMP_001",
         clause_id=None,
         rule_id="RISK_STAMP_001",
-        name="Missing stamp duty provision",
-        severity=RiskSeverity.CRITICAL,
+        name="Stamp duty language not detected",
+        severity=RiskSeverity.MEDIUM,
         explanation=(
-            "Indian Stamp Act, 1899 requires adequate stamping. "
-            "Unstamped / inadequately stamped agreements are inadmissible in Indian courts."
+            "No stamp duty language was detected (not found). This does not establish that the "
+            "agreement is unstamped — stamping is often handled at execution, outside the contract "
+            "text. Verify execution on duly stamped paper."
         ),
-        recommendation="Add an explicit stamp duty clause and execute on e-stamp paper of appropriate value.",
-        score=92.0,
+        recommendation="Verify stamping; where applicable add a stamp duty clause and execute on e-stamp paper of appropriate value.",
+        score=50.0,
     )
 
 
@@ -308,11 +309,15 @@ def rule_tds_missing(clause: Clause, summary: ContractSummary) -> Optional[RiskF
         risk_id=f"{clause.clause_id}_RISK_TDS_001",
         clause_id=clause.clause_id,
         rule_id="RISK_TDS_001",
-        name="TDS provision missing",
-        severity=RiskSeverity.MEDIUM,
-        explanation="Payment clause does not reference TDS deduction under the Income Tax Act, 1961.",
-        recommendation="Add: 'Subject to deduction of tax at source under section 194/195 of the Income Tax Act, 1961.'",
-        score=55.0,
+        name="TDS language not detected",
+        severity=RiskSeverity.LOW,
+        explanation=(
+            "No tax-deduction-at-source language was detected in the payment clause (not found). "
+            "TDS applicability depends on the nature of the payment and the parties; absence from "
+            "the text does not by itself establish non-compliance. Verify."
+        ),
+        recommendation="If applicable, add: 'Subject to deduction of tax at source under the Income Tax Act, 1961.'",
+        score=30.0,
     )
 
 
@@ -362,9 +367,9 @@ RISK_RULES: List[RiskRule] = [
     RiskRule(rule_id="RISK_ARB_001", name="Arbitration seat/venue mismatch", severity=RiskSeverity.HIGH, clause_type="Dispute Resolution",
              description="Seat foreign but venue Indian.", check=rule_arbitration_seat_mismatch),
     # Indian-statutory rules fire ONCE per contract (not per clause).
-    RiskRule(rule_id="RISK_STAMP_001", name="Missing stamp duty provision", severity=RiskSeverity.CRITICAL, clause_type="ANY",
+    RiskRule(rule_id="RISK_STAMP_001", name="Stamp duty language not detected", severity=RiskSeverity.MEDIUM, clause_type="ANY",
              description="Indian Stamp Act requirement unmet.", requires_indian=True, is_contract_level=True, check=rule_missing_stamp_duty),
-    RiskRule(rule_id="RISK_TDS_001", name="TDS provision missing", severity=RiskSeverity.MEDIUM, clause_type="ANY",
+    RiskRule(rule_id="RISK_TDS_001", name="TDS language not detected", severity=RiskSeverity.LOW, clause_type="ANY",
              description="No TDS deduction reference in payment clause.", requires_indian=True, is_contract_level=True, check=rule_tds_missing),
     RiskRule(rule_id="RISK_S124_001", name="Section 124 indemnity gap", severity=RiskSeverity.MEDIUM, clause_type="ANY",
              description="Indian indemnity gap.", requires_indian=True, is_contract_level=True, check=rule_section_124_indemnity),
