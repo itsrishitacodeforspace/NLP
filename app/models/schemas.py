@@ -151,6 +151,8 @@ class RiskFlag(BaseModel):
     evidence_spans: List[EvidenceSpan] = Field(default_factory=list)
     search_scope: Optional[str] = None
     related_clause_ids: List[str] = Field(default_factory=list)
+    # P4: advisory cross-reference analysis (additive; never suppresses a finding).
+    cross_reference_note: Optional[str] = None
 
 
 class ContractSummary(BaseModel):

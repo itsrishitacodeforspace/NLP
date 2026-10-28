@@ -431,7 +431,63 @@ def apply_rules(
             flag.case_law = lookup_case_law(flag.rule_id)
     # 5. P2 evidence binding (additive; does not alter triggers/severity).
     _bind_evidence(flags, clauses)
+    # 6. P4 cross-reference analysis (advisory; never suppresses a finding).
+    _analyze_cross_references(flags, clauses)
     return flags
+
+
+def _analyze_cross_references(flags: List[RiskFlag], clauses: List[Clause]) -> None:
+    """Attach advisory cross-reference context to clause-level findings.
+
+    Never suppresses a finding. For a finding whose source clause references
+    other provisions, records the reference resolution status and the related
+    clause text so a reviewer can judge whether the reference affects the
+    concern. A reference that merely exists, or that contains a matching
+    keyword, is never treated as resolving the issue.
+    """
+    by_id = {c.clause_id: c for c in clauses}
+    for flag in flags:
+        if flag.source == "model" or not flag.clause_id:
+            continue
+        clause = by_id.get(flag.clause_id)
+        if clause is None:
+            continue
+        ctx = clause.context if isinstance(clause.context, dict) else {}
+
+        notes: list[str] = []
+        for ref in ctx.get("references") or []:
+            status = ref.get("status")
+            raw = str(ref.get("raw") or "").strip()
+            if not raw:
+                continue
+            if status == "missing":
+                notes.append(f"missing reference to {raw!r}")
+            elif status == "ambiguous":
+                notes.append(f"ambiguous reference to {raw!r}")
+        for raw in (ctx.get("unresolved_references") or []):
+            notes.append(f"unresolved reference to {str(raw)!r}")
+
+        related_ids = [rid for rid in (ctx.get("related_clause_ids") or []) if rid and rid != flag.clause_id]
+        related_texts = ctx.get("related_clause_texts") or []
+        for i, rid in enumerate(related_ids):
+            if rid in by_id:
+                snippet = " ".join((by_id[rid].text or "").split())[:100]
+                heading = by_id[rid].heading or "no heading"
+            elif i < len(related_texts):
+                snippet = " ".join(str(related_texts[i]).split())[:100]
+                heading = "related provision"
+            else:
+                continue
+            notes.append(f"related clause {rid} ({heading}): {snippet!r}")
+
+        if related_ids:
+            flag.related_clause_ids = sorted(set(flag.related_clause_ids) | set(related_ids))
+
+        if notes:
+            flag.cross_reference_note = (
+                "; ".join(notes)
+                + " — advisory only; verify whether this affects the finding"
+            )
 
 
 def _bind_evidence(flags: List[RiskFlag], clauses: List[Clause]) -> None:
