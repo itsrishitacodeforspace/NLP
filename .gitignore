@@ -35,6 +35,11 @@ models/hf/*
 logs/*
 !logs/.gitkeep
 
+# Scratch (recovery / testing)
+tmp/
+# understand-anything knowledge-graph scratch (generated, not source)
+.ua/
+
 # Streamlit
 .streamlit/secrets.toml
 
