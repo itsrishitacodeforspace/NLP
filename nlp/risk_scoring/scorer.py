@@ -35,6 +35,10 @@ def score_contract(
         + severity mass / 100 (max 10)
     capped at 100. This keeps a single critical finding in the critical band
     (>= 76) and prevents volume alone from inflating a low-risk contract.
+
+    The score is an *ordinal risk heuristic*, not a calibrated probability: a
+    higher value means more and/or more severe findings. 100 means "at the top
+    of the critical band", not "100% certain" or "100% likely to be a problem".
     """
     if not risks:
         return 0.0, RiskSeverity.LOW

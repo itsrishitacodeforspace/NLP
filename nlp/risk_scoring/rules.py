@@ -334,13 +334,15 @@ def rule_section_124_indemnity(clause: Clause, summary: ContractSummary) -> Opti
             risk_id=f"{clause.clause_id}_RISK_S124_001",
             clause_id=clause.clause_id,
             rule_id="RISK_S124_001",
-            name="Section 124 indemnity gap (Indian Contract Act)",
+            name="Indemnity may not cover direct losses",
             severity=RiskSeverity.MEDIUM,
             explanation=(
-                "Historically, Indian indemnity (Section 124) only covered third-party claims "
-                "unless expressly drafted to cover direct losses / breach of contract."
+                "The indemnity clause does not expressly extend to direct losses or breach of "
+                "contract. Under Indian Contract Act ss. 124-125 a wider indemnity is enforceable "
+                "only if clearly worded, so if the parties intend direct-loss coverage this may be "
+                "insufficient. Verify the intended scope."
             ),
-            recommendation="Explicitly extend indemnity to losses arising from breach of contract.",
+            recommendation="If direct-loss or breach-of-contract coverage is intended, expressly extend the indemnity to those losses.",
             score=50.0,
         )
     return None
@@ -371,7 +373,7 @@ RISK_RULES: List[RiskRule] = [
              description="Indian Stamp Act requirement unmet.", requires_indian=True, is_contract_level=True, check=rule_missing_stamp_duty),
     RiskRule(rule_id="RISK_TDS_001", name="TDS language not detected", severity=RiskSeverity.LOW, clause_type="ANY",
              description="No TDS deduction reference in payment clause.", requires_indian=True, is_contract_level=True, check=rule_tds_missing),
-    RiskRule(rule_id="RISK_S124_001", name="Section 124 indemnity gap", severity=RiskSeverity.MEDIUM, clause_type="ANY",
+    RiskRule(rule_id="RISK_S124_001", name="Indemnity may not cover direct losses", severity=RiskSeverity.MEDIUM, clause_type="ANY",
              description="Indian indemnity gap.", requires_indian=True, is_contract_level=True, check=rule_section_124_indemnity),
 ]
 
