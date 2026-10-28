@@ -55,6 +55,18 @@ Then open:
 
 A bundled sample MSA lives in `data/raw/sample_msa.txt`. From the dashboard's Home page, click **Run demo analysis on bundled sample MSA** to see the pipeline without uploading anything.
 
+> **`data/processed/` is generated, not shipped.** A fresh clone runs out of the box via the bundled
+> `models/tfidf_classifier.7z`, but it has no evaluation corpus: the rule-based classifier loses its CUAD
+> keyword bank and the accuracy/provenance tests are skipped. To regenerate the corpus from the bundled
+> CUAD/MAUD datasets (train-only, with manifests):
+>
+> ```bash
+> uv run python scripts/build_training_data.py   # writes data/processed/* with manifests
+> uv run python scripts/verify_provenance.py     # exit 0 when the regenerated artifacts verify
+> ```
+>
+> Set `BCC_EVAL_MODE=ci` when running pytest to make a missing corpus a hard failure instead of a skip.
+
 ---
 
 ## CLI demo (no infra required)
