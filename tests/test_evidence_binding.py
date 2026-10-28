@@ -7,7 +7,7 @@ from pathlib import Path
 from app.models.schemas import Clause, ContractSummary, EvidenceSpan, RiskFlag, RiskSeverity
 from nlp.risk_scoring.rules import _bind_evidence, apply_rules
 
-TC05 = Path("uploads/c_20261026_134911_fc805c301d8d_TC-05_cross_reference_traps.md")
+TC05 = Path(__file__).resolve().parent / "fixtures" / "TC-05_cross_reference_traps.md"
 
 
 def _clause(cid="c1", text="Provider shall have unlimited liability for all losses.", sec="7.1"):

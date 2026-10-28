@@ -7,7 +7,7 @@ from app.services.segmenter import segment_clauses
 from nlp.context import resolve_context
 from nlp.context.resolver import BUNDLE_NONE, BUNDLE_PARTIAL, STATUS_CANDIDATE, STATUS_MISSING
 
-TC05 = Path("uploads/c_20261026_134911_fc805c301d8d_TC-05_cross_reference_traps.md")
+TC05 = Path(__file__).resolve().parent / "fixtures" / "TC-05_cross_reference_traps.md"
 
 
 def _ctx(text: str) -> dict:
