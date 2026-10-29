@@ -98,9 +98,15 @@ def test_analyzer_augmentation_adds_model_finding(monkeypatch):
     clauses = [Clause(clause_id="c1", text="some unflagged clause")]
     augmented = _augment_with_ml_risks(clauses, [])
     assert len(augmented) == 1
-    assert augmented[0].rule_id == "ML_RISK_001"
-    assert augmented[0].severity == RiskSeverity.HIGH
-    assert augmented[0].clause_id == "c1"
+    finding = augmented[0]
+    assert finding.rule_id == "ML_RISK_001"
+    assert finding.severity == RiskSeverity.HIGH
+    assert finding.clause_id == "c1"
+    assert finding.evidence_status == "unverified"
+    assert finding.name == "Model-suggested high risk"
+    assert "uncalibrated model score of 90%" in finding.explanation
+    assert "not a calibrated probability" in finding.explanation
+    assert "confidence" not in finding.explanation.lower()
 
 
 @pytest.mark.skipif(risk_model.ensure_model_file() is None, reason="no bundled risk model")

@@ -250,12 +250,13 @@ def _augment_with_ml_risks(clauses: List[Clause], flags: List[RiskFlag]) -> List
                 risk_id=f"{clause.clause_id}_ML_RISK_001",
                 clause_id=clause.clause_id,
                 rule_id="ML_RISK_001",
-                name=f"Model-detected {prediction.severity.value} risk",
+                name=f"Model-suggested {prediction.severity.value} risk",
                 severity=prediction.severity,
                 explanation=(
-                    f"The ML risk classifier predicts {prediction.severity.value} severity "
-                    f"(confidence {prediction.confidence:.0%}) from the clause wording, although "
-                    "no explicit rule matched. Treat as a review prompt, not a definitive finding."
+                    f"The ML risk classifier suggests {prediction.severity.value} severity with an "
+                    f"uncalibrated model score of {prediction.confidence:.0%} (raw classifier output, "
+                    "not a calibrated probability) from the clause wording, although no explicit rule "
+                    "matched. Treat as a review prompt, not a definitive finding."
                 ),
                 recommendation="Manually review this clause against the standard playbook.",
                 score=_ML_FALLBACK_SCORE.get(prediction.severity.value, 45.0),

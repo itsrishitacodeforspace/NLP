@@ -109,6 +109,12 @@ class Obligation(BaseModel):
     risk_level: RiskSeverity = RiskSeverity.LOW
     confidence: float = 0.7
     source: str = "rule"
+    # Zero-based, end-exclusive offsets into the clause text passed to the
+    # extractor (the same string stored as ``Clause.text``). ``text`` above is
+    # the exact source substring when offsets are present. Both are None when
+    # the sentence cannot be located unambiguously (e.g. repeated sentences).
+    char_start: Optional[int] = None
+    char_end: Optional[int] = None
 
 
 class CaseLawReference(BaseModel):

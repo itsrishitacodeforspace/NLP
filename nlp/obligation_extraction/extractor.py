@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Mapping, Optional
 
 from app.models.schemas import Obligation, ObligationType, RiskSeverity
 
@@ -60,12 +60,79 @@ DATE_DEADLINE_RE = re.compile(
 
 OBJECT_CUT_RE = re.compile(
     r"\b(?:within|by|no\s+later\s+than|prior\s+to|on\s+or\s+before|if|unless|subject\s+to|"
+    r"provided\s+that|in\s+the\s+event\s+that|in\s+case|"
     r"pursuant\s+to|under\s+this|in\s+accordance\s+with)\b|[.;]",
     re.IGNORECASE,
 )
 
-CONDITIONAL_RE = re.compile(
-    r"\b(if|provided that|subject to|unless|upon|in case|where)\b", re.IGNORECASE
+# Conditional / exception markers. ``where`` is only accepted clause-initially
+# (or after punctuation); elsewhere it is usually a relative adverb.
+_CONDITION_MARKER = (
+    r"if|unless|provided\s+that|subject\s+to|in\s+the\s+event\s+that|in\s+case|where|"
+    r"except(?:\s+(?:where|as|for))?"
+)
+_CONDITION_SCAN_RE = re.compile(r"\b(?P<marker>" + _CONDITION_MARKER + r")\b", re.IGNORECASE)
+_CONDITION_AT_START_RE = re.compile(r"^(?P<marker>" + _CONDITION_MARKER + r")\b", re.IGNORECASE)
+
+_CLAUSE_PREFIX_RE = re.compile(r"^\s*(?:\(?[A-Za-z0-9]{1,4}[.)]\s*|\d+(?:\.\d+)*\.?\s+)")
+_HEADING_PREFIX_RE = re.compile(
+    r"^\s*(?:#{1,6}\s*)?(?:"
+    r"\d+(?:\.\d+)*"
+    r"|[A-Z]\."
+    r"|\([a-z0-9]+\)"
+    r"|(?i:Article\s+\d+)"
+    r"|(?i:Section\s+[IVXLC]+)"
+    r")[.):]?\s+[A-Z][^\n]{0,120}\n"
+)
+
+# Party vocabulary. Role nouns are accepted case-insensitively; proper names
+# additionally need a corporate suffix or at least two capitalised tokens.
+_PARTY_ROLE = (
+    r"(?:Service\s+Provider|Disclosing\s+Party|Receiving\s+Party|Subcontractor|"
+    r"Consultant|Contractor|Distributor|Purchaser|Indemnifier|Guarantor|"
+    r"Arbitrator|Transferee|Assignor|Assignee|Customer|Supplier|Provider|"
+    r"Vendor|Buyer|Seller|Client|Licensor|Licensee|Lessor|Lessee|Borrower|"
+    r"Lender|Employer|Employee|Partner|Reseller|Recipient|Insurer|Bank|"
+    r"Agent|Company|Firm|Party)"
+)
+_PARTY_ARTICLE_RE = re.compile(r"(?:the|a|an)\s+", re.IGNORECASE)
+_PARTY_ROLE_RE = re.compile(_PARTY_ROLE + r"\b", re.IGNORECASE)
+_CORP_NAME_RE = re.compile(
+    r"(?:[A-Z][\w&.'-]*\s+){1,5}(?:Ltd|Limited|LLP|Inc|Corp|Corporation|LLC|PLC|Pvt)\b\.?"
+)
+_PROPER_NAME_RE = re.compile(
+    r"[A-Z][\w&.'-]*(?:\s+(?:of|and|&)\s+[A-Z][\w&.'-]*|\s+[A-Z][\w&.'-]*)+"
+)
+_RECIPIENT_VERB = (
+    r"(?:pay|paid|pays|paying|"
+    r"deliver(?:s|ed|ing)?|"
+    r"provide(?:s|d|ing)?|"
+    r"send|sent|sends|sending|"
+    r"submit(?:s|ted|ting)?|"
+    r"notif(?:y|ies|ied|ying)|"
+    r"give|gave|given|gives|giving|"
+    r"furnish(?:es|ed|ing)?|"
+    r"supply|supplies|supplied|supplying|"
+    r"transfer(?:s|red|ring)?|"
+    r"refund(?:s|ed|ing)?|"
+    r"reimburse(?:s|d|ing)?|"
+    r"indemnif(?:y|ies|ied|ying)|"
+    r"compensate(?:s|d|ing)?|"
+    r"assign(?:s|ed|ing)?|"
+    r"disclos(?:e|es|ed|ing)|"
+    r"shar(?:e|es|ed|ing)|"
+    r"serv(?:e|es|ed|ing)|"
+    r"issu(?:e|es|ed|ing)|"
+    r"offer(?:s|ed|ing)?)"
+)
+_TO_RECIPIENT_RE = re.compile(
+    r"\b" + _RECIPIENT_VERB + r"\b[^.;:]{0,120}?\bto\s+", re.IGNORECASE
+)
+_DOUBLE_OBJECT_RE = re.compile(
+    r"\b(?:pay|paid|notif(?:y|ies|ied|ying)|reimburse(?:s|d|ing)?|"
+    r"indemnif(?:y|ies|ied|ying)|compensate(?:s|d|ing)?|advis(?:e|es|ed|ing)|"
+    r"inform(?:s|ed|ing)?|give|gave|given|send|sent|provide(?:s|d|ing)?)\b\s+",
+    re.IGNORECASE,
 )
 
 
@@ -89,24 +156,38 @@ def extract_obligations_from_clause(
     clause_text: str,
     *,
     obligation_counter: int = 0,
-) -> list:
-    """Parse a clause into structured Obligation rows."""
+    party_aliases: Optional[Mapping[str, str]] = None,
+) -> List[Obligation]:
+    """Parse a clause into structured Obligation rows.
+
+    ``char_start``/``char_end`` are zero-based, end-exclusive offsets into
+    ``clause_text``. ``Obligation.text`` is the exact source substring when the
+    sentence can be located unambiguously; offsets are ``None`` otherwise.
+    ``party_aliases`` maps an alternate spelling (e.g. a defined company name)
+    to its canonical party label.
+    """
     if not clause_text or not clause_text.strip():
         return []
 
     # Split by sentence-like boundaries while keeping them in order
     sentences = _split_sentences(clause_text)
-    obligations: list = []
+    obligations: List[Obligation] = []
     for sent in sentences:
-        hit = _analyse_sentence(sent)
+        hit = _analyse_sentence(sent, party_aliases=party_aliases)
         if not hit:
             continue
         obligation_counter += 1
+        char_start, char_end = _locate_sentence(clause_text, sent.strip())
+        cited_text = (
+            clause_text[char_start:char_end]
+            if char_start is not None and char_end is not None
+            else sent.strip()
+        )
         obligations.append(
             Obligation(
                 obligation_id=f"{clause_id}_obg{obligation_counter:03d}",
                 clause_id=clause_id,
-                text=sent.strip(),
+                text=cited_text,
                 obligation_type=hit.obligation_type,
                 subject=hit.subject,
                 counterparty=hit.counterparty,
@@ -118,6 +199,8 @@ def extract_obligations_from_clause(
                 risk_level=hit.risk_level,
                 confidence=hit.confidence,
                 source="rule",
+                char_start=char_start,
+                char_end=char_end,
             )
         )
     return obligations
@@ -132,7 +215,7 @@ def _split_sentences(text: str) -> List[str]:
     """Sentence splitter that respects legal abbreviations and headings."""
     # First, split on double-newlines / headings.
     # Strip the leading heading-like prefix (e.g. "1. Limitation of Liability").
-    text = re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+[A-Z][^\n]{0,120}\n", "", text, count=1)
+    text = _HEADING_PREFIX_RE.sub("", text, count=1)
     # Normalise whitespace but keep newlines as sentence boundaries for now.
     text = re.sub(r"[ \t]+", " ", text).strip()
     text = re.sub(r"\n+", " ", text)
@@ -165,19 +248,16 @@ def _split_sentences(text: str) -> List[str]:
     return sentences
 
 
-def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
+def _analyse_sentence(
+    sentence: str,
+    *,
+    party_aliases: Optional[Mapping[str, str]] = None,
+) -> Optional[ObligationHit]:
     sentence = sentence.strip()
     if not sentence:
         return None
 
-    obligation_type: Optional[ObligationType] = None
-    modal_match: Optional[re.Match] = None
-    for candidate_type, pattern in _DEONTIC_PATTERNS:
-        match = pattern.search(sentence)
-        if match:
-            obligation_type = candidate_type
-            modal_match = match
-            break
+    obligation_type, modal_match = _choose_modal(sentence)
     if obligation_type is None or modal_match is None:
         return None
 
@@ -187,14 +267,25 @@ def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
         ObligationType.PROHIBITION: 0.8,
     }[obligation_type]
 
-    # The subject belongs to the first deontic verb, even when the sentence
-    # later contains a prohibition ("shall keep ... and shall not disclose").
+    condition_spans = _condition_spans(sentence, modal_match.start())
+    masked = _mask_spans(sentence, condition_spans)
+
+    # The subject belongs to the first deontic verb outside a condition, even
+    # when the sentence later contains a prohibition
+    # ("shall keep ... and shall not disclose").
     first_modal_start = min(
-        (match.start() for _, pattern in _DEONTIC_PATTERNS if (match := pattern.search(sentence))),
+        (
+            match.start()
+            for _, pattern in _DEONTIC_PATTERNS
+            for match in pattern.finditer(sentence)
+            if not _inside_span(match.start(), condition_spans)
+        ),
         default=modal_match.start(),
     )
-    subject = _extract_subject(sentence[:first_modal_start])
-    raw_tail = sentence[modal_match.end():].strip()
+    subject_src = _subject_source(sentence, condition_spans, first_modal_start)
+    subject = _extract_subject(subject_src)
+
+    raw_tail = re.sub(r"^[\s,;:]+", "", masked[modal_match.end():])
     if re.match(r"be\s+", raw_tail, re.IGNORECASE) and re.search(
         r"\b(seat|venue)\b", subject or "", re.IGNORECASE
     ):
@@ -210,23 +301,28 @@ def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
             re.IGNORECASE,
         )
         if passive:
-            agent_m = re.search(r"\bby\s+(?:the\s+)?(?P<agent>[A-Z][A-Za-z0-9 ,&'.\-]{1,80})", raw_tail)
-            subject = agent_m.group("agent").strip().rstrip(".") if agent_m else None
+            agent_m = re.search(r"\bby\s+", raw_tail, re.IGNORECASE)
+            subject = _party_after(raw_tail, agent_m.end()) if agent_m else None
     action, obj = _extract_action_object(raw_tail)
+    # "shall fail" in a conditional protasis is an event, not a duty.
+    if action == "fail":
+        return None
+    counterparty = _extract_counterparty(raw_tail, subject, party_aliases)
     if action == "governed":
         return None
     if action == "resolved" and subject and re.search(r"\b(seat|venue|dispute)\b", subject):
         return None
-    condition = _extract_condition(sentence)
-    deadline_expr = _extract_deadline(sentence)
-    deadline_date = _extract_deadline_date(sentence)
+    condition = _extract_condition(sentence, condition_spans)
+    # Deadlines inside a condition belong to the condition, not the duty.
+    deadline_expr = _extract_deadline(masked)
+    deadline_date = _extract_deadline_date(masked)
     risk_level = _derive_risk_level(obligation_type, deadline_expr, sentence.lower())
 
     return ObligationHit(
         text=sentence,
         obligation_type=obligation_type,
         subject=subject,
-        counterparty=None,
+        counterparty=counterparty,
         action=action,
         object=obj,
         condition=condition,
@@ -237,16 +333,141 @@ def _analyse_sentence(sentence: str) -> Optional[ObligationHit]:
     )
 
 
+def _choose_modal(sentence: str) -> tuple[Optional[ObligationType], Optional[re.Match]]:
+    """Pick the deontic modal, preferring the main clause over a protasis."""
+    first_type, first_match = _find_modal(sentence, 0)
+    if first_match is None:
+        return None, None
+    leading_start = _leading_condition_start(sentence)
+    if leading_start is None:
+        return first_type, first_match
+    comma = _next_top_level_comma(sentence, leading_start, len(sentence))
+    if comma is not None:
+        later_type, later_match = _find_modal(sentence, comma + 1)
+        if later_match is not None:
+            return later_type, later_match
+    return first_type, first_match
+
+
+def _find_modal(sentence: str, start: int) -> tuple[Optional[ObligationType], Optional[re.Match]]:
+    for candidate_type, pattern in _DEONTIC_PATTERNS:
+        match = pattern.search(sentence, start)
+        if match:
+            return candidate_type, match
+    return None, None
+
+
+def _leading_condition_start(sentence: str) -> Optional[int]:
+    stripped = _CLAUSE_PREFIX_RE.sub("", sentence, count=1)
+    offset = len(sentence) - len(stripped)
+    match = _CONDITION_AT_START_RE.match(stripped)
+    if not match:
+        return None
+    return offset + match.start()
+
+
+def _only_prefix(prefix: str) -> bool:
+    return not re.search(r"[A-Za-z]", _CLAUSE_PREFIX_RE.sub("", prefix, count=1))
+
+
+def _next_top_level_comma(text: str, start: int, limit: int) -> Optional[int]:
+    depth = 0
+    for index in range(start, min(limit, len(text))):
+        char = text[index]
+        if char in "([":
+            depth += 1
+        elif char in ")]":
+            depth = max(0, depth - 1)
+        elif char == "," and depth == 0:
+            return index
+    return None
+
+
+def _last_top_level_comma(text: str, start: int, limit: int) -> Optional[int]:
+    last: Optional[int] = None
+    depth = 0
+    for index in range(start, min(limit, len(text))):
+        char = text[index]
+        if char in "([":
+            depth += 1
+        elif char in ")]":
+            depth = max(0, depth - 1)
+        elif char == "," and depth == 0:
+            last = index
+    return last
+
+
+def _condition_spans(sentence: str, modal_start: int) -> list[tuple[int, int]]:
+    """Return (start, end) spans of conditional / exception clauses."""
+    spans: list[tuple[int, int]] = []
+    for match in _CONDITION_SCAN_RE.finditer(sentence):
+        marker = match.group("marker").lower()
+        if marker == "where" and not _where_is_conditional(sentence, match.start()):
+            continue
+        if _inside_span(match.start(), spans):
+            continue
+        if match.start() < modal_start:
+            if _only_prefix(sentence[: match.start()]):
+                end = _last_top_level_comma(sentence, match.start(), modal_start)
+            else:
+                end = _next_top_level_comma(sentence, match.end(), modal_start)
+            if end is None:
+                end = modal_start
+            spans.append((match.start(), end))
+        else:
+            end = _next_top_level_comma(sentence, match.end(), len(sentence))
+            if end is None:
+                end = len(sentence)
+            spans.append((match.start(), end))
+    return spans
+
+
+def _where_is_conditional(sentence: str, start: int) -> bool:
+    prefix = sentence[:start].rstrip()
+    if not prefix or _only_prefix(prefix):
+        return True
+    return prefix.endswith((",", ";", ":"))
+
+
+def _inside_span(position: int, spans: list[tuple[int, int]]) -> bool:
+    return any(start <= position < end for start, end in spans)
+
+
+def _mask_spans(text: str, spans: list[tuple[int, int]]) -> str:
+    chars = list(text)
+    for start, end in spans:
+        for index in range(start, min(end, len(chars))):
+            chars[index] = " "
+    return "".join(chars)
+
+
+def _subject_source(sentence: str, spans: list[tuple[int, int]], modal_start: int) -> str:
+    for start, end in spans:
+        if start >= modal_start:
+            continue
+        if _only_prefix(sentence[:start]):
+            return sentence[end:modal_start]
+        return sentence[:start]
+    return sentence[:modal_start]
+
+
 def _extract_subject(prefix: str) -> Optional[str]:
-    subject = re.sub(r"^\s*\(?[a-z0-9]+[.)]\s*", "", prefix)
-    subject = re.sub(r"^\s*\d+(?:\.\d+)*\.?\s+", "", subject)
+    subject = _CLAUSE_PREFIX_RE.sub("", prefix, count=1)
+    subject = re.sub(r"^\s*#+\s*", "", subject)
+    # Fallback for callers that pass a full clause rather than a subject span.
+    subject = re.sub(
+        r"^(?:if|provided\s+that|subject\s+to|unless|in\s+the\s+event\s+that)\b[^,]{0,250},\s*",
+        "",
+        subject,
+        flags=re.IGNORECASE,
+    )
     subject = re.sub(
         r"^(?:thereafter|however|notwithstanding(?:\s+the\s+foregoing)?|further|additionally)\s+",
         "",
         subject.strip(),
         flags=re.IGNORECASE,
     )
-    subject = subject.strip().rstrip(",;:")
+    subject = subject.strip().lstrip(",;:").strip().rstrip(",;:")
     if len(subject) > 100:
         subject = re.split(r"[,;]", subject)[-1].strip()
     subject = re.sub(r"^(?:the|this|that|a|an)\s+", "", subject, flags=re.IGNORECASE)
@@ -259,7 +480,8 @@ def _extract_subject(prefix: str) -> Optional[str]:
 
 def _extract_action_object(rest: str) -> tuple[Optional[str], Optional[str]]:
     rest = rest.strip().lstrip(",;: ")
-    rest = re.sub(r"^(?:not|hereby|also)\s+", "", rest, flags=re.IGNORECASE)
+    rest = re.sub(r"^(?:not|hereby|also)\b[,\s]*", "", rest, flags=re.IGNORECASE)
+    rest = rest.lstrip(",;: ")
     unlimited = re.match(r"have\s+(unlimited|no|full)\s+liability\b", rest, re.IGNORECASE)
     if unlimited:
         return "bear", f"{unlimited.group(1).lower()} liability{rest[unlimited.end():]}".strip()
@@ -280,20 +502,95 @@ def _extract_action_object(rest: str) -> tuple[Optional[str], Optional[str]]:
     return action, obj[:160] or None
 
 
-def _extract_condition(sentence: str) -> Optional[str]:
-    m = CONDITIONAL_RE.search(sentence)
-    if not m:
+def _party_after(text: str, position: int) -> Optional[str]:
+    rest = text[position:]
+    article = _PARTY_ARTICLE_RE.match(rest)
+    if article:
+        rest = rest[article.end():]
+    role = _PARTY_ROLE_RE.match(rest)
+    if role:
+        return role.group(0).strip()
+    corp = _CORP_NAME_RE.match(rest)
+    if corp:
+        return corp.group(0).strip().rstrip(".")
+    proper = _PROPER_NAME_RE.match(rest)
+    if proper:
+        return proper.group(0).strip()
+    return None
+
+
+def _norm_party(name: Optional[str]) -> str:
+    value = re.sub(r"^(?:the|a|an)\s+", "", (name or "").strip(), flags=re.IGNORECASE)
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _canonical_party(
+    name: str,
+    party_aliases: Optional[Mapping[str, str]],
+) -> str:
+    if not party_aliases:
+        return name
+    key = _norm_party(name)
+    for alias, canonical in party_aliases.items():
+        if key == _norm_party(alias):
+            return canonical
+    return name
+
+
+def _extract_counterparty(
+    raw_tail: str,
+    subject: Optional[str],
+    party_aliases: Optional[Mapping[str, str]] = None,
+) -> Optional[str]:
+    """Conservatively extract the recipient/beneficiary of the obligation.
+
+    Only explicit dative constructions are used ("pay X", "deliver ... to X",
+    "notify X"). A party is never inferred merely from its presence in the
+    clause; ambiguous or unnamed recipients stay ``None``.
+    """
+    candidates = [match.end() for match in _TO_RECIPIENT_RE.finditer(raw_tail)]
+    candidates.extend(match.end() for match in _DOUBLE_OBJECT_RE.finditer(raw_tail))
+    for position in candidates:
+        party = _party_after(raw_tail, position)
+        if not party:
+            continue
+        if subject and _norm_party(party) == _norm_party(subject):
+            continue
+        return _canonical_party(party, party_aliases)
+    return None
+
+
+def _locate_sentence(clause_text: str, sentence: str) -> tuple[Optional[int], Optional[int]]:
+    """Locate ``sentence`` within ``clause_text``, allowing whitespace differences.
+
+    Returns zero-based half-open (start, end) offsets, or (None, None) when the
+    sentence is not found or matches more than once (never fabricate a location).
+    """
+    if not sentence or not clause_text:
+        return None, None
+    tokens = [t for t in re.split(r"\s+", sentence) if t]
+    pattern = r"(?<![A-Za-z0-9])" + r"\s+".join(re.escape(t) for t in tokens) + r"(?![A-Za-z0-9])"
+    matches = list(re.finditer(pattern, clause_text))
+    if len(matches) != 1:
+        return None, None
+    match = matches[0]
+    return match.start(), match.end()
+
+
+def _extract_condition(sentence: str, spans: list[tuple[int, int]]) -> Optional[str]:
+    parts = [sentence[start:end].strip(" \t\r\n,;:.") for start, end in spans]
+    parts = [part for part in parts if part]
+    if not parts:
         return None
-    cond = sentence[m.start() :].strip().rstrip(".")
-    return cond[:280]
+    return "; ".join(parts)[:280]
 
 
 def _extract_deadline(sentence: str) -> Optional[str]:
     """Extract a relative deadline (e.g. '30 days'), not a calendar date."""
-    m = DEADLINE_RE.search(sentence)
-    if not m:
+    match = DEADLINE_RE.search(sentence)
+    if not match:
         return None
-    raw = m.group(1).strip()
+    raw = match.group(1).strip()
     # Drop any parenthetical numeric, e.g. "thirty (30) days" -> "thirty days".
     raw = re.sub(r"\(\d+\)", "", raw).strip()
     raw = re.sub(r"\)\s*", " ", raw).strip()
@@ -307,23 +604,23 @@ def _extract_deadline(sentence: str) -> Optional[str]:
 
 def _extract_deadline_date(sentence: str) -> Optional[str]:
     """Extract a calendar-date deadline (e.g. '15 April 2024')."""
-    m = DATE_DEADLINE_RE.search(sentence)
-    if not m:
+    match = DATE_DEADLINE_RE.search(sentence)
+    if not match:
         return None
-    return m.group(1).strip()
+    return match.group(1).strip()
 
 
 def _derive_risk_level(typ: ObligationType, deadline: Optional[str], sentence_low: str) -> RiskSeverity:
     text = sentence_low
     risk = RiskSeverity.MEDIUM if typ == ObligationType.PROHIBITION else RiskSeverity.LOW
     if deadline:
-        m = re.match(
+        match = re.match(
             r"(\d+)\s+(hour|hours|day|days|week|weeks|month|months|year|years|business\s+days)",
             deadline.lower(),
         )
-        if m:
-            value = int(m.group(1))
-            unit = m.group(2)
+        if match:
+            value = int(match.group(1))
+            unit = match.group(2)
             if "hour" in unit:
                 days = value / 24
             elif "week" in unit:
