@@ -47,8 +47,15 @@ defined names to canonical labels. Ambiguous recipients stay `None`. Regression:
 not a calibrated probability)". Calibration itself remains open. Regression:
 `test_analyzer_augmentation_adds_model_finding` asserts the new wording and absence of "confidence".
 
+### D11 — Section 124 checked the whole contract for direct-loss wording
+The contract-level rule scanned all clause text, so an unrelated "breach of contract" or "direct
+losses" mention suppressed the Section 124 review prompt. Fix: evaluate only indemnification
+clauses, preserve `evidence_status="unverified"`, and record an indemnity-specific `search_scope`.
+Regression: `test_s124_not_suppressed_by_unrelated_breach_of_contract_language`.
+
 ## Open
-- §124 indemnity-gap finding lacks a "verify" qualifier; P3 four-way missing-protection status not implemented.
+- P3 four-way missing-protection status is represented only implicitly by existing `RiskFlag`
+  fields; there is no explicit status enum or consumer.
 - ML risk score remains uncalibrated (`ML_RISK_001`); only the misleading presentation is fixed.
 - Whole-contract cross-reference reasoning not consumed (P4); prior suppression reverted as unsafe.
 - No-comma leading conditions leave the responsible party `None` (ambiguous without a parser).

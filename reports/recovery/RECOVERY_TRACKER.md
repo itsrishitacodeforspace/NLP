@@ -3,7 +3,7 @@
 Last updated: 2026-10-29
 
 ## State
-- Branch `main`, HEAD `118e8ae` (9 local commits ahead of `origin/main` `a1b4298`). Nothing pushed.
+- Branch `main`, HEAD `975512b` (11 local commits ahead of `origin/main` `a1b4298`). Nothing pushed.
 - Fresh-checkout validation: git worktree at `tmp/freshcheckout` (gitignored scratch), currently at `118e8ae`.
 
 ## Commits this session
@@ -16,6 +16,8 @@ Last updated: 2026-10-29
 - `3ec86b6` fix(risk): qualify S124 indemnity finding and document scoring heuristic
 - `d6e3f69` feat(risk): add advisory cross-reference analysis to findings
 - `118e8ae` fix(obligations): populate deadline_date, handle passive voice, written-out deadlines
+- `0cf396a` fix(obligations): add source offsets, conditions, beneficiary; clarify ML score
+- `975512b` fix(risk): scope S124 check to indemnity clauses
 
 ## Verified fresh-checkout workflow (milestone 14)
 1. `uv sync --extra dev` → exit 0 (154 packages, Python 3.12.14)
@@ -42,15 +44,19 @@ Last updated: 2026-10-29
 - D13: `ML_RISK_001` no longer presents `predict_proba` as calibrated confidence. The flag is named
   "Model-suggested …" and the explanation says "uncalibrated model score … (raw classifier output,
   not a calibrated probability)".
+- D14: `RISK_S124_001` was contract-level but scanned the whole contract, so an unrelated
+  "breach of contract" mention suppressed it. It now evaluates only indemnification clauses,
+  keeps `evidence_status="unverified"`, and reports an indemnity-specific `search_scope`.
+  Regression: `test_s124_not_suppressed_by_unrelated_breach_of_contract_language`.
 - Regression coverage added in `tests/test_obligation_extraction.py` (18 cases: offsets, duplicates,
   beneficiary, aliases, conditions/exceptions, protasis, passive, condition dates, written-out
   deadlines) and `tests/test_risk_model.py` (wording/no-"confidence" assertion). The deleted tail of
   `test_tfidf_outputs_are_canonicalised` is restored to match HEAD.
 
-Verification: focused suite (obligations, regressions, risk model, P4) → 55 passed;
-`uv run ruff check .` → clean. Full `uv run pytest -q` → 7 failures, all in
+Verification: focused suite (obligations, regressions, risk rules, risk model, P4) → 75 passed;
+`uv run ruff check .` → clean. Full `uv run pytest --tb=no` → 137 passed, 7 failures, all in
 `tests/test_no_leakage.py` from the known stale main-tree `data/processed/` artifacts
-(missing manifests / empty `split` columns), unchanged by this pass.
+(missing manifests / empty `split` columns), unchanged by this fix.
 
 ## Main-tree provenance failures — VERIFIED stale artifacts (not code defects)
 Main tree `data/processed/` has 5 artifacts and **0 manifests**; `verify_provenance.py` reports 5 "manifest missing" failures (7 test failures total with lineage). Regenerated fresh checkout passes 0 failures. Resolution is a separately-approved artifact rebuild.
@@ -60,7 +66,8 @@ Main tree `data/processed/` has 5 artifacts and **0 manifests**; `verify_provena
 - Whole-contract cross-reference reasoning is not consumed by risk rules (P4); prior suppression
   was reverted as unsafe.
 - P3 four-way missing-protection status (`present | incomplete | not_found_in_scope | undetermined`)
-  is designed but not implemented; §124 still lacks a "verify" qualifier.
+  is represented only implicitly by existing `RiskFlag` fields; no explicit status enum or consumer.
+  Section 124 now has the "Verify" qualifier and an indemnity-only search scope.
 - No-comma leading conditions (e.g. "If required by law the Provider shall …") cannot be split
   reliably without a parser; the responsible party is left `None` rather than guessed.
 - The uncommitted user P4 work (analyzer `related_clause_texts` enrichment, `app/utils/text.py`
@@ -68,8 +75,8 @@ Main tree `data/processed/` has 5 artifacts and **0 manifests**; `verify_provena
   committed cross-reference analysis.
 
 ## Next actions
-1. Calibrate or label the ML risk score (a raw `predict_proba` remains uncalibrated).
-2. Implement P3 four-way status and the §124 qualifier.
+1. Write `reports/BHARATCONTRACT_AI_FINAL_PROJECT_REPORT.md` from observed code/tests/demo results.
+2. Calibrate or label the ML risk score (a raw `predict_proba` remains uncalibrated).
 3. Whole-contract cross-reference reasoning consumed by rules, with labelled evaluation.
 4. (Approval-gated) rebuild/replace stale `data/processed/` artifacts.
 
