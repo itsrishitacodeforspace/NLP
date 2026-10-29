@@ -71,13 +71,14 @@ def clean_text(text: str) -> str:
 
 
 _SECTION_HEADING_RE = re.compile(
-    r"""^(?P<num>
+    r"""^(?:[#]+\s*)?(?P<num>
         (?:\d+(?:\.\d+)*)            # 1, 1.1, 1.1.1
         |(?:[A-Z]\.)                 # A.
         |(?:\([a-z0-9]+\))           # (a), (1)
         |(?:Article\s+\d+)           # Article 5
+        |(?:Section\s+[IVXLC]+)      # Section IV
     )[\.\):]?\s+(?P<heading>.+)$""",
-    re.VERBOSE,
+    re.VERBOSE | re.IGNORECASE,
 )
 
 

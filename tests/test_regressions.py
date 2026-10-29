@@ -89,3 +89,28 @@ def test_tfidf_outputs_are_canonicalised():
     unknown = TrainedClassifier(pipeline=UnknownPipeline(), labels=["Unknown Label"])
     assert unknown.predict_one("unknown clause") == []
     assert unknown.predict_top1("unknown clause") == "Miscellaneous"
+
+
+def test_obligation_deadline_parenthetical_digits():
+    text = "The Vendor shall deliver the goods within thirty (30) days of the order date."
+    obligations = extract_obligations_from_clause("c1", text, obligation_counter=0)
+    assert obligations, "expected an obligation to be extracted"
+    assert obligations[0].deadline_expression == "30 days", obligations[0].deadline_expression
+
+
+def test_segmenter_markdown_headings():
+    from app.services.segmenter import segment_clauses
+
+    text = """\
+## 7. Limitation of Liability
+Provider's total liability shall not exceed fees paid.
+
+## 8. Confidentiality
+Each party shall protect confidential information.
+"""
+    clauses = segment_clauses(text, contract_id="c1")
+    headings = [c.heading for c in clauses if c.heading]
+    assert any("Limitation" in (h or "") for h in headings)
+    assert any("Confidentiality" in (h or "") for h in headings)
+    sections = [c.section_number for c in clauses if c.section_number]
+    assert "7" in sections or any(s and s.startswith("7") for s in sections)

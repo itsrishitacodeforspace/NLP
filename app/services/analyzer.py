@@ -164,6 +164,24 @@ def _analyse(
     summary_draft.obligation_count = len(all_obligations)
 
     # 4. Risk rules -> flags, then ML recall booster for unflagged clauses
+    # P4: enrich each clause's context bundle with the text of its related
+    # clauses so risk rules can perform whole-contract (cross-reference) checks
+    # without treating a resolved reference as proof of override.
+    clause_by_id = {c.clause_id: c for c in clauses}
+    for cl in clauses:
+        ctx = cl.context
+        if not isinstance(ctx, dict):
+            continue
+        related_ids = ctx.get("related_clause_ids") or []
+        related_texts = [
+            clause_by_id[rid].text
+            for rid in related_ids
+            if rid in clause_by_id and rid != cl.clause_id
+        ]
+        ctx = dict(ctx)
+        ctx["related_clause_texts"] = related_texts
+        cl.context = ctx
+
     flags = apply_rules(clauses, summary_draft)
     flags = _augment_with_ml_risks(clauses, flags)
 
