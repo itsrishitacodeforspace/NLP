@@ -3,7 +3,8 @@
 Last updated: 2026-10-29
 
 ## State
-- Branch `main`, HEAD `975512b` (11 local commits ahead of `origin/main` `a1b4298`). Nothing pushed.
+- Branch `main`, HEAD `be51191` plus this docs-only update (14 local commits ahead of
+  `origin/main` `a1b4298`). Nothing pushed.
 - Fresh-checkout validation: git worktree at `tmp/freshcheckout` (gitignored scratch), currently at `118e8ae`.
 
 ## Commits this session
@@ -18,6 +19,8 @@ Last updated: 2026-10-29
 - `118e8ae` fix(obligations): populate deadline_date, handle passive voice, written-out deadlines
 - `0cf396a` fix(obligations): add source offsets, conditions, beneficiary; clarify ML score
 - `975512b` fix(risk): scope S124 check to indemnity clauses
+- `f1bf4f4` docs(recovery): record S124 scope fix and current verification
+- `be51191` docs: add final project report
 
 ## Verified fresh-checkout workflow (milestone 14)
 1. `uv sync --extra dev` → exit 0 (154 packages, Python 3.12.14)
@@ -75,10 +78,10 @@ Main tree `data/processed/` has 5 artifacts and **0 manifests**; `verify_provena
   committed cross-reference analysis.
 
 ## Next actions
-1. Write `reports/BHARATCONTRACT_AI_FINAL_PROJECT_REPORT.md` from observed code/tests/demo results.
-2. Calibrate or label the ML risk score (a raw `predict_proba` remains uncalibrated).
-3. Whole-contract cross-reference reasoning consumed by rules, with labelled evaluation.
-4. (Approval-gated) rebuild/replace stale `data/processed/` artifacts.
+1. Calibrate or label the ML risk score (a raw `predict_proba` remains uncalibrated).
+2. Whole-contract cross-reference reasoning consumed by rules, with labelled evaluation.
+3. (Approval-gated) rebuild/replace stale `data/processed/` artifacts.
+4. Optional: explicit P3 status enum/consumer if the API needs machine-readable status values.
 
 ## Blocks
 - None. Do not push without separate instruction.

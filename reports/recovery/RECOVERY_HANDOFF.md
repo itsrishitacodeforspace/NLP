@@ -1,8 +1,9 @@
 # Recovery Handoff
 
 ## Resume from
-- Branch `main`, HEAD `118e8ae` plus the single local pass commit (10 commits ahead of
+- Branch `main`, HEAD `be51191` plus this docs-only update (14 commits ahead of
   `origin/main` `a1b4298`). Do not push unless separately instructed.
+- Final college report is at `reports/BHARATCONTRACT_AI_FINAL_PROJECT_REPORT.md`.
 - Read `reports/recovery/RECOVERY_TRACKER.md` and `DEFECT_REGISTER.md` first.
 
 ## Do not break
@@ -15,9 +16,10 @@
 - Do not add a co-author trailer to commits.
 
 ## Highest-value next work
-1. P2 risk correctness: RISK_LIABILITY_002 / RISK_RENEWAL_001 false positives when a cap/notice exists in a cross-referenced clause. Requires whole-contract reasoning; the prior keyword-suppression attempt was reverted as unsafe (see `reports/evaluations/p4_adversarial_review_20261027.md`).
-2. P3 four-way missing-protection status (`present | incomplete | not_found_in_scope | undetermined`) consuming P1/P2 context.
+1. Calibrate or label the ML risk score (`ML_RISK_001`); raw `predict_proba` remains uncalibrated.
+2. P2 risk correctness: RISK_LIABILITY_002 / RISK_RENEWAL_001 false positives when a cap/notice exists in a cross-referenced clause. Requires whole-contract reasoning; the prior keyword-suppression attempt was reverted as unsafe (see `reports/evaluations/p4_adversarial_review_20261027.md`).
 3. A small labelled evaluation corpus (cross-refs that do/do not change meaning, definitions, exceptions, precedence, schedule-located protections, broken/circular refs) to measure any change.
+4. Optional: explicit P3 status enum/consumer for `present | incomplete | not_found_in_scope | undetermined`.
 
 ## Environment reminders
 - Always `uv run` (host Python is 3.13, out of range).
