@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from app.models.schemas import Clause, ContractSummary, RiskFlag, RiskSeverity
 from nlp.risk_scoring.rules import (
+    apply_rules,
     rule_missing_stamp_duty,
     rule_section_124_indemnity,
     rule_tds_missing,
@@ -175,6 +176,28 @@ def test_s124_out_of_scope_for_non_indian_jurisdiction():
         types=["Indemnification"],
     )
     assert rule_section_124_indemnity(clause, _summary_with(jurisdiction="United States")) is None
+
+
+def test_s124_not_suppressed_by_unrelated_breach_of_contract_language():
+    clauses = [
+        _clause(
+            "c8",
+            heading="9. Indemnification",
+            text="The Provider shall indemnify the Customer against third-party claims.",
+            types=["Indemnification"],
+        ),
+        _clause(
+            "c9",
+            heading="10. Limitation of Liability",
+            text="Neither party is liable for indirect losses; this does not limit liability for breach of contract.",
+            types=["Limitation of Liability"],
+        ),
+    ]
+    findings = [f for f in apply_rules(clauses, _summary()) if f.rule_id == "RISK_S124_001"]
+    assert len(findings) == 1
+    assert findings[0].evidence_status == "unverified"
+    assert "indemnification clauses only" in findings[0].search_scope
+    assert "Verify" in findings[0].explanation
 
 
 # --------------------------------------------------------------------- scoring

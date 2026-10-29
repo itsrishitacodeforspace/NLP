@@ -521,10 +521,11 @@ def _bind_evidence(flags: List[RiskFlag], clauses: List[Clause]) -> None:
             elif clause is None:
                 flag.evidence_status = "unverified"
         else:
-            flag.search_scope = (
-                f"document-wide scan across {len(clauses)} clause(s); "
-                "keyword-presence rule - no single supporting span"
-            )
+            if not flag.search_scope:
+                flag.search_scope = (
+                    f"document-wide scan across {len(clauses)} clause(s); "
+                    "keyword-presence rule - no single supporting span"
+                )
             flag.evidence_status = "unverified"
 
 
@@ -575,10 +576,35 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
             )
         )
 
-    # Indian-statutory checks run once against the whole contract.
+    # Section 124 concerns the indemnity wording itself. Scanning the whole contract
+    # would let an unrelated "breach of contract" reference suppress the
+    # finding, so evaluate only the indemnification clauses.
+    indemnity_clauses = [c for c in clauses if "Indemnification" in c.clause_types]
+    indemnity_text = " ".join((c.text or "") for c in indemnity_clauses).strip()
+    if indemnity_text:
+        synthetic_indemnity = Clause(
+            clause_id="contract",
+            text=indemnity_text,
+            clause_types=["Indemnification"],
+        )
+        try:
+            flag = rule_section_124_indemnity(synthetic_indemnity, summary)
+        except Exception:
+            flag = None
+        if flag is not None:
+            flag.clause_id = None
+            flag.search_scope = (
+                f"indemnification clauses only ({len(indemnity_clauses)}); "
+                "absence-of-language check - no single span proves a gap"
+            )
+            flags.append(flag)
+
+    # Other Indian-statutory checks run once against the whole contract.
     synthetic = Clause(clause_id="contract", text=text_corpus, clause_types=sorted(detected_types))
     for rule in RISK_RULES:
         if not rule.is_contract_level or rule.check is None:
+            continue
+        if rule.rule_id == "RISK_S124_001":
             continue
         if rule.requires_indian and (summary.jurisdiction or "").lower() not in {"india", "indian"}:
             continue
