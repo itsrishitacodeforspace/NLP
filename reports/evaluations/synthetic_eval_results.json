@@ -1,0 +1,277 @@
+{
+  "cases": [
+    {
+      "case_id": "uncapped_liability_tp",
+      "category": "risk_true_positive",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_LIABILITY_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "auto_renewal_no_notice",
+      "category": "risk_true_positive",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_RENEWAL_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "auto_renewal_with_notice",
+      "category": "risk_severity_calibration",
+      "status": "fail",
+      "known_limitation": "rule_auto_renewal parses the notice period with a digit-only regex, so a 'sixty (60) days' (parenthetical/written-out) notice is not recognised and the finding stays high instead of being reduced to medium.",
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_RENEWAL_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": [
+        "expected RISK_RENEWAL_001@medium, observed ['high']"
+      ]
+    },
+    {
+      "case_id": "foreign_gov_law",
+      "category": "risk_true_positive",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_GOV_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "one_sided_termination",
+      "category": "risk_true_positive",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "ML_RISK_001",
+        "RISK_STAMP_001",
+        "RISK_TERM_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "broad_indemnity_tp",
+      "category": "risk_true_positive",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_TERMINATION",
+        "ML_RISK_001",
+        "RISK_INDEMNITY_001",
+        "RISK_S124_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "data_breach_tight",
+      "category": "risk_true_positive",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_DATA_001",
+        "RISK_STAMP_001",
+        "RISK_TDS_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "capped_liability_tn",
+      "category": "risk_true_negative",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_TERMINATION",
+        "ML_RISK_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "indemnity_direct_losses",
+      "category": "risk_true_negative",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_TERMINATION",
+        "ML_RISK_001",
+        "RISK_INDEMNITY_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "complete_contract",
+      "category": "risk_true_negative",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "ML_RISK_001",
+        "RISK_STAMP_001",
+        "RISK_TDS_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "stamp_tds_absent",
+      "category": "uncertain_legal_conclusion",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_STAMP_001",
+        "RISK_TDS_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "indemnity_narrow",
+      "category": "uncertain_legal_conclusion",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_TERMINATION",
+        "ML_RISK_001",
+        "RISK_S124_001",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "obligation_conditional",
+      "category": "conditions_and_exceptions",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_STAMP_001",
+        "RISK_TDS_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "ambiguous_recipient",
+      "category": "party_beneficiary_ambiguity",
+      "status": "pass",
+      "known_limitation": null,
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_STAMP_001"
+      ],
+      "failures": []
+    },
+    {
+      "case_id": "liability_cap_in_crossref",
+      "category": "cross_reference_resolution",
+      "status": "fail",
+      "known_limitation": "Rules evaluate a single clause; the cap in cross-referenced clause 7.4 is not consumed, so RISK_LIABILITY_002 is a false positive on 7.1. Automatic cross-clause suppression was deliberately reverted as unsafe (a keyword match in a related clause does not establish an applicable cap).",
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_TERMINATION",
+        "ML_RISK_001",
+        "RISK_LIABILITY_002",
+        "RISK_STAMP_001"
+      ],
+      "failures": [
+        "expected rule RISK_LIABILITY_002 absent, but it fired (false positive)"
+      ]
+    },
+    {
+      "case_id": "obligation_passive",
+      "category": "passive_voice",
+      "status": "fail",
+      "known_limitation": "Hyphenated written compounds ('twenty-four') are not normalised by the deadline parser, and the passive by-agent is not recovered here, so the subject and 24h deadline are both missed.",
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_STAMP_001",
+        "RISK_TDS_001"
+      ],
+      "failures": [
+        "obligation['encrypted']: subject is None (expected a responsible party)",
+        "obligation['encrypted']: deadline=None (expected '24 hours')"
+      ]
+    },
+    {
+      "case_id": "stamp_tds_present_missed",
+      "category": "detection_recall_gap",
+      "status": "fail",
+      "known_limitation": "detect_stamp_duty_mention / detect_tds_mention use narrow keyword lists and miss 'duly stamped paper' and 'deduction of tax at source', so the review prompts fire on a contract that already addresses both.",
+      "observed_rule_ids": [
+        "MISSING_CLAUSE_GOVERNING_LAW",
+        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
+        "MISSING_CLAUSE_TERMINATION",
+        "RISK_STAMP_001",
+        "RISK_TDS_001"
+      ],
+      "failures": [
+        "expected rule RISK_STAMP_001 absent, but it fired (false positive)",
+        "expected rule RISK_TDS_001 absent, but it fired (false positive)"
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "name": "model_findings_are_unverified",
+      "ok": true,
+      "violations": []
+    },
+    {
+      "name": "clause_rule_findings_have_direct_span",
+      "ok": true,
+      "violations": []
+    },
+    {
+      "name": "contract_level_findings_are_scoped_unverified",
+      "ok": true,
+      "violations": []
+    }
+  ],
+  "summary": {
+    "cases": 17,
+    "passing": 13,
+    "known_limitations": [
+      "auto_renewal_with_notice",
+      "liability_cap_in_crossref",
+      "obligation_passive",
+      "stamp_tds_present_missed"
+    ],
+    "regressions": [],
+    "resolved": []
+  }
+}
