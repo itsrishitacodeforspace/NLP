@@ -114,3 +114,36 @@ rebuild; do not swap staging blindly or weaken the guards.
   approval-gated rebuild. This is a data-state issue, not a code fix.
 - Direct `uvicorn` smoke is blocked by `dcg`; `tests/test_api_smoke.py` covers the API roundtrip.
 - Do not push without separate instruction.
+
+---
+
+## Kiro session 2026-10-30 (HEAD 42c25b0 -> b35da18)
+
+State: branch `main`; HEAD advanced from `42c25b0` to `b35da18` (2 local commits,
+nothing pushed; `origin/main` at `42c25b0`). Working tree clean. The previously
+"uncommitted user P4 work" is committed at `42c25b0`.
+
+Commits this session:
+- `85011e2` test(eval): add deterministic synthetic evaluation harness and labelled corpus
+- `b35da18` fix(risk): parse written/parenthetical renewal notice periods
+
+Verification at `b35da18` (all via `uv run --no-sync`):
+- `ruff check .` -> All checks passed.
+- `pytest --tb=no` -> 146 passed, 7 failed (153 collected). The 7 failures are the
+  same `tests/test_no_leakage.py` provenance guards on the stale main-tree
+  `data/processed/` (Oct 22, no manifests). Unchanged data-state issue; guards
+  working as designed.
+- Focused suite (obligations, regressions, risk model/rules, P4, eval harness) -> 84 passed.
+- `scripts/run_evaluation.py` -> 14/17 cases pass, 3 known limitations, 0 regressions;
+  3/3 evidence-integrity invariants hold; exit 0.
+- `scripts/run_demo.py` -> exit 0; 12 clauses, 13 obligations, score 100.0/critical.
+
+Added: `nlp/evaluation/` (cases + harness), `scripts/run_evaluation.py`,
+`tests/test_evaluation_harness.py`, `reports/evaluations/synthetic_eval_results.{md,json}`,
+shared number helpers in `app/utils/text.py`, renewal-notice parsing fix in
+`nlp/risk_scoring/rules.py`, defect D12, and `reports/recovery/KIRO_HANDOFF.md`.
+Final report updated to the current counts and the new harness.
+
+Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
+ML calibration; cross-reference suppression; stamp/TDS and passive-voice recall
+(documented as eval known limitations). No push; no co-author trailer.

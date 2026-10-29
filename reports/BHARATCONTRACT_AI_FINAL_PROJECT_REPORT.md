@@ -1,9 +1,10 @@
 # BharatContract AI — Final Project Report
 
 **Project:** BharatContract AI — Indian-context contract intelligence
-**Report date:** 29 October 2026
+**Report date:** 30 October 2026
 **Prepared by:** Project team
 **Repository:** `C:\Users\Ivermectin\Desktop\NLP\NLP`
+**Verified at commit:** `b35da18` on branch `main`
 **Report scope:** Backend, NLP pipeline, risk engine, verification, and limitations. The existing dashboard is outside the verification scope of this report.
 
 ---
@@ -12,7 +13,9 @@
 
 BharatContract AI is a working prototype for automated review of commercial contracts, with emphasis on Indian statutory and arbitration risks. The system accepts PDF, DOCX, TXT, and Markdown files; parses and segments the document; classifies clauses; extracts entities and obligations; and applies a rule-first risk playbook backed by an optional machine-learning recall booster. Findings carry evidence spans, search scope, and statutory or case-law pointers, so that a reviewer can inspect why a flag was raised rather than receiving an unexplained score.
 
-The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 144-test suite: **137 tests pass and 7 provenance tests fail closed** because the production `data/processed/` artifacts lack manifests and train-only lineage. A focused 75-test suite covering obligations, risk rules, risk-model wording, and cross-reference behaviour passes, and `ruff check .` reports no issues.
+The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 153-test suite: **146 tests pass and 7 provenance tests fail closed** because the production `data/processed/` artifacts lack manifests and train-only lineage. A focused 84-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues.
+
+A deterministic evaluation harness (`nlp/evaluation/`, driven by `scripts/run_evaluation.py`) runs 17 synthetic labelled contracts through the full pipeline. At the verified commit, **14 cases pass, 3 are documented known limitations, and there are no unexpected regressions**; three evidence-integrity invariants (model findings stay unverified; clause-level rule findings carry a direct span; contract-level findings are scoped and unverified) hold across every finding. This is a software-behaviour check on synthetic data, not a measure of legal accuracy or real-world reliability.
 
 The bundled sample MSA was processed end to end into **12 clauses and 13 obligations**, with rule and model findings. The report does not claim held-out accuracy: the bundled models were trained on a corpus that overlaps held-out CUAD documents, the ML score is uncalibrated, and the legal citations are system-provided pointers rather than verified legal advice.
 
@@ -325,9 +328,11 @@ uv run pytest tests/test_obligation_extraction.py \
   tests/test_risk_rules.py \
   tests/test_p4_adversarial.py \
   tests/test_p4_context_rules.py \
-  tests/test_p4_cross_reference.py -q
+  tests/test_p4_cross_reference.py \
+  tests/test_evaluation_harness.py -q
 uv run ruff check .
 uv run python scripts/run_demo.py
+uv run python scripts/run_evaluation.py
 uv run python scripts/verify_provenance.py
 ```
 
@@ -335,13 +340,14 @@ uv run python scripts/verify_provenance.py
 
 | Check | Result |
 |---|---|
-| Full test suite | **137 passed, 7 failed, 4 warnings** in 48.78 s |
-| Focused suite | **75 passed** |
+| Full test suite | **146 passed, 7 failed, 4 warnings** in ~70 s |
+| Focused suite | **84 passed** |
+| Synthetic evaluation harness | **14/17 cases pass, 3 known limitations, 0 regressions**; 3/3 evidence invariants hold |
 | Lint | **All checks passed** |
 | Demo | 2,846-character MSA parsed into **12 clauses and 13 obligations** |
 | Provenance verifier | **5 failures, 0 skipped** (all missing manifests) |
 
-The 144 collected tests cover parsing, segmentation, long clauses, classifier regression thresholds, context resolution, obligation extraction, evidence binding, risk rules, risk-model wording, P4 cross-reference behaviour, authentication/RBAC, row-level security, API smoke tests, end-to-end analysis, and provenance.
+The 153 collected tests cover parsing, segmentation, long clauses, classifier regression thresholds, context resolution, obligation extraction, evidence binding, risk rules (including written/parenthetical renewal-notice parsing), risk-model wording, P4 cross-reference behaviour, the synthetic evaluation harness, authentication/RBAC, row-level security, API smoke tests, end-to-end analysis, and provenance.
 
 ### 5.3 The seven failing tests
 
@@ -408,6 +414,34 @@ The score of 100 reflects multiple concurrent findings and the volume/severity a
 - Whole-contract conflict resolution.
 - Behaviour on a large, diverse production contract corpus.
 
+### 5.6 Synthetic evaluation harness
+
+`nlp/evaluation/` defines a small labelled corpus of 17 synthetic contracts and runs each through the full `analyse_bytes` pipeline. All contracts are invented for evaluation; none is a real agreement, and the expectations encode *desired* behaviour. The harness is deterministic and reproducible via `uv run python scripts/run_evaluation.py`, which writes `reports/evaluations/synthetic_eval_results.{md,json}` and exits non-zero on any unexpected regression or invariant violation.
+
+The corpus covers the behaviour categories required by the project charter:
+
+| Category | Example case | Checks |
+|---|---|---|
+| Risk true positive | `uncapped_liability_tp`, `foreign_gov_law`, `one_sided_termination`, `broad_indemnity_tp`, `data_breach_tight`, `auto_renewal_no_notice` | the correct rule fires at the expected severity |
+| Risk severity calibration | `auto_renewal_with_notice` | a 60-day same-clause notice reduces renewal severity to medium |
+| Risk true negative | `capped_liability_tn`, `indemnity_direct_losses`, `complete_contract` | no false alarm when the protection is present |
+| Uncertain legal conclusion | `stamp_tds_absent`, `indemnity_narrow` | stamp/TDS/S124 surface as qualified “not found / may — verify” prompts, never confirmed violations |
+| Conditions and exceptions | `obligation_conditional` | both the condition and the exception are captured, with the deadline |
+| Party/beneficiary ambiguity | `ambiguous_recipient` | a statute reference is not fabricated into a recipient |
+| Cross-reference resolution | `liability_cap_in_crossref` | a cap in a referenced clause should prevent a “missing cap” finding |
+| Passive voice | `obligation_passive` | the by-agent obligor and written-compound deadline should be recovered |
+| Detection recall gap | `stamp_tds_present_missed` | present stamp/TDS language should suppress the review prompts |
+
+At commit `b35da18`: **14 cases pass and 3 fail**. The three failures are declared, documented known limitations, not hidden regressions:
+
+- `liability_cap_in_crossref` — rules evaluate a single clause, so a cap stated only in a cross-referenced clause still produces a false “missing cap”. Automatic cross-clause suppression was deliberately reverted earlier as unsafe.
+- `obligation_passive` — hyphenated written compounds (“twenty-four”) are not normalised by the deadline parser, and the passive by-agent is not recovered in this construction.
+- `stamp_tds_present_missed` — `detect_stamp_duty_mention` / `detect_tds_mention` use narrow keyword lists and miss “duly stamped paper” and “deduction of tax at source”.
+
+Three evidence-integrity invariants are also checked across every finding in every case and all hold: model-sourced findings always carry `evidence_status="unverified"`; clause-level rule findings always carry `evidence_status="direct"` with at least one evidence span; and contract-level findings are always `unverified` with an explicit `search_scope`. The locking test (`tests/test_evaluation_harness.py`) fails if a new case regresses **or** if a known-limitation case is silently fixed without updating the record.
+
+This harness is a behavioural and regression instrument on synthetic data. It is **not** a held-out, human-labelled benchmark and yields no precision/recall/F1 or generalisation claim.
+
 ---
 
 ## 6. Results and Discussion
@@ -423,6 +457,7 @@ The score of 100 reflects multiple concurrent findings and the volume/severity a
 | D9 | Beneficiary/counterparty missing or greedy | Conservative dative/`to X` extraction, aliases, `None` on ambiguity |
 | D10 | Raw ML score presented as confidence | Rename to “model-suggested”; explain uncalibrated score |
 | D11 | Section 124 scanned unrelated contract text | Evaluate indemnification clauses only; preserve unverified status and scoped search |
+| D12 | Auto-renewal notice parsed with a digit-only regex, so a clearly stated `sixty (60) days` or `ninety days` in-clause notice was ignored and the finding stayed high severity | Shared `written_number_to_int` + `NUMBER_TOKEN_RE` parse digit, written and parenthetical forms; same-clause notices reduce severity to medium while cross-referenced notices remain advisory-only |
 
 ### 6.2 Interpretation
 
@@ -454,7 +489,7 @@ It is not suitable for:
 
 ### 7.1 Evaluation gap
 
-The largest academic limitation is the absence of a held-out, human-labelled risk corpus. The test suite verifies behaviour and regressions, not predictive quality. A future evaluation should use a pre-registered set of synthetic and real contracts covering:
+The deterministic synthetic harness in Section 5.6 is a first step: it fixes expected behaviour per case, keeps known limitations visible, and checks evidence-integrity invariants. It is not a substitute for a held-out, human-labelled risk corpus. The test suite and the harness verify behaviour and regressions, not predictive quality, and the 17-case synthetic set is too small and too clean to support precision/recall claims. A future evaluation should extend the harness with a pre-registered set of synthetic and real contracts covering:
 
 - cross-references that change meaning and those that do not;
 - definitions and exceptions;
@@ -516,20 +551,21 @@ The next milestone should be a labelled evaluation corpus and conservative whole
 6. `nlp/obligation_extraction/extractor.py` — obligation extraction.
 7. `nlp/risk_scoring/rules.py`, `scorer.py`, `case_law.py` — risk engine.
 8. `nlp/datasets/manifest.py`, `scripts/verify_provenance.py` — provenance checks.
-9. `tests/` — behavioural and regression tests.
-10. `reports/recovery/RECOVERY_TRACKER.md`, `DEFECT_REGISTER.md`, `P3_STATUS_DESIGN.md`.
-11. `reports/evaluations/generalizable_analysis_audit.md`, `p2_evidence_binding_report.md`, `provenance_guard_audit_20261027.md`.
+9. `tests/` — behavioural and regression tests, including `tests/test_evaluation_harness.py`.
+10. `nlp/evaluation/` and `scripts/run_evaluation.py` — synthetic evaluation harness; results in `reports/evaluations/synthetic_eval_results.{md,json}`.
+11. `reports/recovery/RECOVERY_TRACKER.md`, `DEFECT_REGISTER.md`, `P3_STATUS_DESIGN.md`, `KIRO_HANDOFF.md`.
+12. `reports/evaluations/generalizable_analysis_audit.md`, `p2_evidence_binding_report.md`, `provenance_guard_audit_20261027.md`.
 
 ### Legal and dataset pointers
 
-12. Indian Contract Act, 1872, ss. 124–125.
-13. Indian Stamp Act, 1899, ss. 33 and 35.
-14. Arbitration and Conciliation Act, 1996, ss. 2(2) and 20.
-15. Income-tax Act, 1961, ss. 194C/194J, 201, and 40(a)(ia).
-16. Digital Personal Data Protection Act, 2023, ss. 8 and 33.
-17. *Bharat Aluminium Co. v. Kaiser Aluminium Technical Services Inc.*, (2012) 9 SCC 552.
-18. *BGS SGS Soma JV v. NHPC Ltd.*, (2020) 4 SCC 234.
-19. CUAD (Contract Understanding Atticus Dataset) and MAUD, as bundled under `data/datasets/`.
+13. Indian Contract Act, 1872, ss. 124–125.
+14. Indian Stamp Act, 1899, ss. 33 and 35.
+15. Arbitration and Conciliation Act, 1996, ss. 2(2) and 20.
+16. Income-tax Act, 1961, ss. 194C/194J, 201, and 40(a)(ia).
+17. Digital Personal Data Protection Act, 2023, ss. 8 and 33.
+18. *Bharat Aluminium Co. v. Kaiser Aluminium Technical Services Inc.*, (2012) 9 SCC 552.
+19. *BGS SGS Soma JV v. NHPC Ltd.*, (2020) 4 SCC 234.
+20. CUAD (Contract Understanding Atticus Dataset) and MAUD, as bundled under `data/datasets/`.
 
 The legal citations above are reproduced from the system’s advisory pointer table. They have not been independently verified against primary sources for this report.
 
@@ -559,6 +595,7 @@ uv sync --extra dev
 uv run pytest --tb=no
 uv run ruff check .
 uv run python scripts/run_demo.py
+uv run python scripts/run_evaluation.py
 uv run python scripts/verify_provenance.py
 ```
 
@@ -574,6 +611,9 @@ Artifact regeneration is approval-gated and was not performed for this report.
 ## Appendix C — Selected recent commits
 
 ```text
+b35da18 fix(risk): parse written/parenthetical renewal notice periods
+85011e2 test(eval): add deterministic synthetic evaluation harness and labelled corpus
+42c25b0 refactor(analyzer): enrich clause context with related texts for cross-reference validation
 f1bf4f4 docs(recovery): record S124 scope fix and current verification
 975512b fix(risk): scope S124 check to indemnity clauses
 0cf396a fix(obligations): add source offsets, conditions, beneficiary; clarify ML score
