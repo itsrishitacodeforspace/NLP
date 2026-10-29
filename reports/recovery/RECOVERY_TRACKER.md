@@ -3,9 +3,12 @@
 Last updated: 2026-10-29
 
 ## State
-- Branch `main`, HEAD `be51191` plus this docs-only update (14 local commits ahead of
-  `origin/main` `a1b4298`). Nothing pushed.
-- Fresh-checkout validation: git worktree at `tmp/freshcheckout` (gitignored scratch), currently at `118e8ae`.
+- Branch `main`; verification baseline `97f4c21` (14 local commits ahead of
+  `origin/main` `a1b4298`). This docs-only update follows that baseline. Nothing pushed.
+- Clean verification worktree: repo-local `tmp/bcc-clean-97f4c21` at `97f4c21`.
+  Main-tree user WIP remains uncommitted and untouched.
+- Historical fresh-checkout validation: `tmp/freshcheckout` at `118e8ae` (superseded by the
+  current clean run below).
 
 ## Commits this session
 - `66684a1` fix(tests): ship TC-05 synthetic fixture for fresh-checkout reproducibility
@@ -22,13 +25,30 @@ Last updated: 2026-10-29
 - `f1bf4f4` docs(recovery): record S124 scope fix and current verification
 - `be51191` docs: add final project report
 
-## Verified fresh-checkout workflow (milestone 14)
+## Verified clean workflow — current HEAD (2026-10-29)
+Starting HEAD: `97f4c21`. Worktree: repo-local `tmp/bcc-clean-97f4c21`.
+
 1. `uv sync --extra dev` → exit 0 (154 packages, Python 3.12.14)
 2. `uv run ruff check .` → "All checks passed!"
-3. `uv run python scripts/build_training_data.py` → exit 0 (train-only, 5 artifacts + manifests)
-4. `uv run python scripts/verify_provenance.py` → 0 failures, 0 skipped
-5. `uv run uvicorn app.main:app` → serves; `/healthz` 200, `/docs` 200
-6. `uv run pytest -q` → **exit 0** (all pass against regenerated corpus)
+3. `uv run python scripts/build_training_data.py` → exit 0; 9,278 rows, 5 manifests
+4. `uv run python scripts/verify_provenance.py` → **0 failures, 0 skipped**
+5. `$env:BCC_EVAL_MODE='ci'; uv run pytest -q` → **exit 0** (129 tests at HEAD)
+6. `uv run python scripts/run_demo.py` → exit 0 (12 clauses, 13 obligations, score 100.0/critical)
+7. API smoke: `tests/test_api_smoke.py` passed in the full suite. A direct `uvicorn` launch
+   for `/healthz` and `/docs` was blocked by `dcg`; it was not run.
+
+## Provenance diagnosis at current HEAD
+- Main tree `data/processed/` has 5 artifacts and **0 manifests**; mtimes are 2026-10-22.
+  `clause_classifier.csv` header is `text,category,source` (no `doc_id`/`split` columns).
+- `scripts/verify_provenance.py` → 5 failures, 0 skipped.
+- `tests/test_no_leakage.py` → 7 failed, 16 passed
+  (T1a/T1b/T2a/T2b/T3a/T3b/T8).
+- `data/processed.staging/` holds newer artifacts from 2026-10-26 (code revision `cbd9c29`)
+  with the correct `doc_id`/`split` header and all 5 manifests. It was **not** swapped.
+- Clean rebuild at HEAD produces the correct schema, 5 manifests, 0 verifier failures, and
+  129/129 passing tests. Conclusion: **stale main-tree generated artifacts**, not a code
+  regression or test-isolation defect. No code/test fix was made; the guards correctly fail closed.
+- The main-tree artifacts were not rebuilt or replaced. That remains approval-gated.
 
 ## Fixed this session
 - D1–D8 (fresh-clone blockers, T1b, liability/stamp/TDS/S124 severity + scoring, cross-reference notes).
@@ -57,12 +77,16 @@ Last updated: 2026-10-29
   `test_tfidf_outputs_are_canonicalised` is restored to match HEAD.
 
 Verification: focused suite (obligations, regressions, risk rules, risk model, P4) → 75 passed;
-`uv run ruff check .` → clean. Full `uv run pytest --tb=no` → 137 passed, 7 failures, all in
-`tests/test_no_leakage.py` from the known stale main-tree `data/processed/` artifacts
-(missing manifests / empty `split` columns), unchanged by this fix.
+`uv run ruff check .` → clean. Full main-tree `uv run pytest --tb=no` → 137 passed, 7 failed, all
+in `tests/test_no_leakage.py` from stale main-tree `data/processed/` artifacts (missing manifests /
+old schema without `doc_id`/`split`). The isolated clean rebuild at HEAD passes 129/129.
 
 ## Main-tree provenance failures — VERIFIED stale artifacts (not code defects)
-Main tree `data/processed/` has 5 artifacts and **0 manifests**; `verify_provenance.py` reports 5 "manifest missing" failures (7 test failures total with lineage). Regenerated fresh checkout passes 0 failures. Resolution is a separately-approved artifact rebuild.
+Main tree `data/processed/` has 5 artifacts, **0 manifests**, and an old header without
+`doc_id`/`split`; `verify_provenance.py` reports 5 "manifest missing" failures (7 test failures
+with lineage). The isolated worktree at `97f4c21` regenerates 5 manifests, passes the verifier
+with 0 failures, and passes all 129 tests. Resolution is a separately-approved main-tree artifact
+rebuild; do not swap staging blindly or weaken the guards.
 
 ## Open (documented, not defects)
 - ML risk classifier score is still uncalibrated (`ML_RISK_001`); only its presentation is fixed.
@@ -78,10 +102,15 @@ Main tree `data/processed/` has 5 artifacts and **0 manifests**; `verify_provena
   committed cross-reference analysis.
 
 ## Next actions
-1. Calibrate or label the ML risk score (a raw `predict_proba` remains uncalibrated).
-2. Whole-contract cross-reference reasoning consumed by rules, with labelled evaluation.
-3. (Approval-gated) rebuild/replace stale `data/processed/` artifacts.
+1. (Approval-gated) rebuild/replace stale main-tree `data/processed/` artifacts with
+   `uv run python scripts/build_training_data.py`, then require
+   `verify_provenance.py` 0 failures and a full 144-test main-tree run.
+2. Calibrate or label the ML risk score (a raw `predict_proba` remains uncalibrated).
+3. Whole-contract cross-reference reasoning consumed by rules, with labelled evaluation.
 4. Optional: explicit P3 status enum/consumer if the API needs machine-readable status values.
 
 ## Blocks
-- None. Do not push without separate instruction.
+- Main-tree `data/processed/` remains stale, so the 7 provenance tests stay red until an
+  approval-gated rebuild. This is a data-state issue, not a code fix.
+- Direct `uvicorn` smoke is blocked by `dcg`; `tests/test_api_smoke.py` covers the API roundtrip.
+- Do not push without separate instruction.
