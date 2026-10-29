@@ -336,10 +336,5 @@ CASES: Tuple[EvalCase, ...] = (
             "on duly stamped paper.\n"
         ),
         expect_absent=("RISK_STAMP_001", "RISK_TDS_001"),
-        known_limitation=(
-            "detect_stamp_duty_mention / detect_tds_mention use narrow keyword lists "
-            "and miss 'duly stamped paper' and 'deduction of tax at source', so the "
-            "review prompts fire on a contract that already addresses both."
-        ),
     ),
 )

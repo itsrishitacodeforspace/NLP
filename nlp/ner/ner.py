@@ -261,14 +261,46 @@ def detect_governing_law(text: str) -> Optional[str]:
     return None
 
 
+# Stamp-duty wording beyond the plain keyword list: "duly stamped paper",
+# "non-judicial stamp paper", "stamping of this Agreement". Deliberately tight:
+# unrelated senses ("rubber-stamped", "postage stamp", "timestamp") must not
+# count as stamp-duty language.
+_STAMP_DUTY_KEYWORDS = ("stamp duty", "e-stamp", "franking", "indian stamp act")
+_STAMP_DUTY_RE = re.compile(
+    r"\b(?:"
+    r"(?:duly|non-judicial|properly|sufficiently|adequately|appropriately)\s+stamped"
+    r"|stamped\s+(?:paper|papers|certificate|document|instrument|agreement|copy|copies)"
+    r"|stamp\s+papers?"
+    r"|stamping\s+of\s+(?:this|the|such)"
+    r")",
+    re.IGNORECASE,
+)
+
+# TDS wording: the statutory phrase has several surface forms. A bare "tax" or
+# "deduction" never counts; a match always needs the at-source construction
+# (or the "tds" abbreviation / section reference).
+_TDS_RE = re.compile(
+    r"\b(?:"
+    r"tax\s+deduct(?:ed|ion)\s+at\s+source"
+    r"|deduct(?:ed|ing|ion)?\s+(?:of\s+)?tax\s+at\s+source"
+    r"|deduct(?:ed|ing)?\s+at\s+source"
+    r"|tds"
+    r"|section\s+19[45]"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
 def detect_stamp_duty_mention(text: str) -> bool:
     lowered = clean_text(text).lower()
-    return any(kw in lowered for kw in ("stamp duty", "e-stamp", "franking", "indian stamp act"))
+    if any(kw in lowered for kw in _STAMP_DUTY_KEYWORDS):
+        return True
+    return bool(_STAMP_DUTY_RE.search(lowered))
 
 
 def detect_tds_mention(text: str) -> bool:
     lowered = clean_text(text).lower()
-    return bool(re.search(r"\b(?:tax deducted at source|tds|section 19[45])\b", lowered))
+    return bool(_TDS_RE.search(lowered))
 
 
 def detect_gstin_mention(text: str) -> bool:

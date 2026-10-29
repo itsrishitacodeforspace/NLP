@@ -147,3 +147,70 @@ Final report updated to the current counts and the new harness.
 Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
 ML calibration; cross-reference suppression; stamp/TDS and passive-voice recall
 (documented as eval known limitations). No push; no co-author trailer.
+
+---
+
+## Kiro session 2026-10-30, second pass (HEAD b35da18 -> NEWCOMMIT)
+
+State: branch `main`; HEAD advanced from `b35da18` to `NEWCOMMIT` (1 local commit,
+nothing pushed). Working tree clean after the commit.
+
+Commits this session:
+- `NEWCOMMIT` fix(ner): detect stamped-paper and deduction-at-source wording for stamp/TDS
+
+Task: resolve the `stamp_tds_present_missed` evaluation known limitation
+(`RISK_STAMP_001` / `RISK_TDS_001` false "not found" prompts on present language).
+
+Root cause: `detect_stamp_duty_mention` / `detect_tds_mention` in `nlp/ner/ner.py`
+matched only literal keywords ("stamp duty", "e-stamp", "franking",
+"indian stamp act") and `\b(?:tax deducted at source|tds|section 19[45])\b`, so
+"duly stamped paper" and "deduction of tax at source" were missed. Reproduced with
+a direct detector call (both returned False) and via the eval case before the fix.
+
+Fix (minimal, detector-level only):
+- `_STAMP_DUTY_RE` adds tight stamped-wording forms: adverb-qualified "stamped"
+  ("duly", "non-judicial", "properly", "sufficiently", "adequately",
+  "appropriately"), "stamped paper/certificate/document/instrument/agreement/copy",
+  "stamp paper(s)", "stamping of this/the/such". Existing keyword list unchanged.
+- `_TDS_RE` keeps the old forms verbatim and adds "tax deduction at source",
+  "deduct(ed|ing|ion)? (of)? tax at source", and "deduct(ed|ing)? at source".
+  Bare "tax" or "deduction" never matches; the at-source construction is required.
+- Jurisdiction gating, payment-clause scoping, severity, "not found — verify"
+  wording, evidence status, and search scope in `rules.py` are untouched; a
+  detected mention suppresses the review prompt, it is not asserted to be a
+  confirmed legal compliance fact.
+
+Regression coverage (tests/test_regressions.py, 4 new tests):
+- positives: "duly stamped paper", "non-judicial stamp paper", "stamped copies",
+  "stamping of this Agreement", "deduction of tax at source", "deduct tax at
+  source", "deduct at source", "amounts deducted at source".
+- negative controls: "rubber-stamped the decision", "postage stamp", "date stamp",
+  "stamp out fraud", "timestamped", "paper copy", "stamp of approval"; "goods and
+  services tax", "income tax returns", "sales tax", "deduction of damages",
+  "deduction for late delivery", "source code escrow", "tax deducted from the
+  invoice" (no "at source" — intentionally not matched).
+
+Verification at `NEWCOMMIT` (all via `uv run --no-sync`):
+- `ruff check .` -> All checks passed.
+- `pytest --tb=no -q` -> 157 collected, **150 passed, 7 failed** (junit-verified).
+  The 7 failures are the same `tests/test_no_leakage.py` provenance guards on the
+  stale main-tree `data/processed/` — unchanged data-state issue, kept separate
+  from this task; artifacts not touched.
+- Focused suite (obligations, regressions, risk model/rules, P4 adversarial/
+  context/cross-reference, eval harness) -> **88 passed** (was 84; +4 new tests).
+- `scripts/run_evaluation.py` -> **15/17 pass, 2 known limitations, 0 regressions,
+  0 resolved pending**, 3/3 invariants OK, exit 0. Before the fix: 14/17 pass,
+  3 known limitations. `stamp_tds_present_missed` now passes; its
+  `known_limitation` note was removed and the lock set in
+  `tests/test_evaluation_harness.py` updated (otherwise the lock test correctly
+  fails on a silently resolved limitation).
+- `scripts/run_demo.py` -> exit 0; output identical to the pre-fix baseline
+  (12 clauses, 13 obligations, score 100.0/critical; sample MSA still
+  stamp_duty_mentioned=false, tds_mentioned=false).
+
+Reports updated: `reports/evaluations/synthetic_eval_results.{md,json}`
+(regenerated), final project report (counts + defect D13), `KIRO_HANDOFF.md`.
+
+Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
+ML calibration; cross-reference suppression; `obligation_passive` recall. No push;
+no co-author trailer.
