@@ -4,6 +4,7 @@ from __future__ import annotations
 from app.models.schemas import Clause, ContractSummary, RiskFlag, RiskSeverity
 from nlp.risk_scoring.rules import (
     apply_rules,
+    rule_auto_renewal,
     rule_missing_stamp_duty,
     rule_section_124_indemnity,
     rule_tds_missing,
@@ -198,6 +199,61 @@ def test_s124_not_suppressed_by_unrelated_breach_of_contract_language():
     assert findings[0].evidence_status == "unverified"
     assert "indemnification clauses only" in findings[0].search_scope
     assert "Verify" in findings[0].explanation
+
+
+# --------------------------------------------------------------- auto-renewal notice
+
+
+def _renewal(text: str) -> Clause:
+    return _clause("cr", heading="3. Term and Renewal", text=text, types=["Term and Renewal"])
+
+
+def test_renewal_no_notice_is_high():
+    clause = _renewal("This Agreement automatically renews for successive one-year terms.")
+    flag = rule_auto_renewal(clause, _summary())
+    assert flag is not None and flag.rule_id == "RISK_RENEWAL_001"
+    assert flag.severity == RiskSeverity.HIGH
+    assert "No notice period" in flag.explanation
+
+
+def test_renewal_short_notice_is_high():
+    clause = _renewal(
+        "This Agreement automatically renews unless either party gives notice of "
+        "non-renewal at least 15 days before the end of the term."
+    )
+    flag = rule_auto_renewal(clause, _summary())
+    assert flag is not None and flag.severity == RiskSeverity.HIGH
+
+
+def test_renewal_digit_notice_is_medium():
+    clause = _renewal(
+        "This Agreement automatically renews unless either party gives notice of "
+        "non-renewal at least 60 days before the end of the term."
+    )
+    flag = rule_auto_renewal(clause, _summary())
+    assert flag is not None and flag.severity == RiskSeverity.MEDIUM
+
+
+def test_renewal_parenthetical_notice_is_medium():
+    # "sixty (60) days" is a clearly stated 60-day notice; the digit-only regex
+    # previously missed it and left the finding at high severity.
+    clause = _renewal(
+        "This Agreement automatically renews for successive one-year terms unless "
+        "either party gives written notice of non-renewal at least sixty (60) days "
+        "before the end of the then-current term."
+    )
+    flag = rule_auto_renewal(clause, _summary())
+    assert flag is not None and flag.rule_id == "RISK_RENEWAL_001"
+    assert flag.severity == RiskSeverity.MEDIUM
+
+
+def test_renewal_written_notice_is_medium():
+    clause = _renewal(
+        "This Agreement automatically renews unless either party gives notice of "
+        "non-renewal at least ninety days before the end of the term."
+    )
+    flag = rule_auto_renewal(clause, _summary())
+    assert flag is not None and flag.severity == RiskSeverity.MEDIUM
 
 
 # --------------------------------------------------------------------- scoring

@@ -33,6 +33,37 @@ INDIAN_LEGAL_TERMS = {
 }
 
 
+# Written cardinal numbers for parsing notice/deadline periods ("sixty days").
+NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+    "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
+    "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18,
+    "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+    "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100,
+}
+_TENS = {20, 30, 40, 50, 60, 70, 80, 90}
+
+# Regex alternation that matches a digit run or a (possibly hyphenated) written
+# number such as "sixty" or "twenty-four". Longer words first so "sixty" wins
+# over "six". Callers wrap this in a capturing group.
+_WORD_ALT = "|".join(sorted(NUMBER_WORDS, key=len, reverse=True))
+NUMBER_TOKEN_RE = r"(?:\d+|(?:" + _WORD_ALT + r")(?:-(?:" + _WORD_ALT + r"))?)"
+
+
+def written_number_to_int(token: str) -> int | None:
+    """Convert a digit run or written cardinal ('sixty', 'twenty-four') to an int."""
+    if not token:
+        return None
+    value = token.strip().lower()
+    if value.isdigit():
+        return int(value)
+    if "-" in value:
+        tens, _, units = value.partition("-")
+        if NUMBER_WORDS.get(tens) in _TENS and units in NUMBER_WORDS and NUMBER_WORDS[units] < 10:
+            return NUMBER_WORDS[tens] + NUMBER_WORDS[units]
+    return NUMBER_WORDS.get(value)
+
+
 def normalise_whitespace(text: str) -> str:
     """Collapse runs of whitespace and trim each line, while preserving
     paragraph breaks (consecutive blank lines)."""

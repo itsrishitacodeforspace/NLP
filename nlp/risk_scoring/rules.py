@@ -18,6 +18,7 @@ from app.models.schemas import (
     RiskFlag,
     RiskSeverity,
 )
+from app.utils.text import NUMBER_TOKEN_RE, written_number_to_int
 from nlp.risk_scoring.case_law import lookup_case_law
 
 
@@ -136,20 +137,26 @@ def rule_auto_renewal(clause: Clause, summary: ContractSummary) -> Optional[Risk
     if not _any_clause_type(clause, "Term and Renewal"):
         return None
     if "automatic" in text and "renew" in text:
+        # Accept digit, written ("ninety") and parenthetical ("sixty (60)")
+        # notice periods in the SAME clause. A notice in a cross-referenced
+        # clause is handled elsewhere (advisory only) and never suppresses.
         notice = re.search(
             r"notice[^.]{0,100}?(?:non-renewal|renewal|terminate)[^.]{0,100}?"
-            r"(\d+)\s+(hour|hours|day|days|week|weeks|month|months)\b",
+            r"(" + NUMBER_TOKEN_RE + r")\s*(?:\((\d+)\))?\s+"
+            r"(hour|hours|day|days|week|weeks|month|months)\b",
             text,
             re.IGNORECASE,
         )
         severity = RiskSeverity.MEDIUM
         explanation = "Contract auto-renews unless timely notice is given."
-        if not notice:
+        value = written_number_to_int(notice.group(2)) if notice and notice.group(2) else (
+            written_number_to_int(notice.group(1)) if notice else None
+        )
+        if not notice or value is None:
             severity = RiskSeverity.HIGH
             explanation += " No notice period detected — risk of being locked in."
         else:
-            value = int(notice.group(1))
-            unit = notice.group(2)
+            unit = notice.group(3)
             days = value / 24 if "hour" in unit else value * 7 if "week" in unit else value * 30 if "month" in unit else value
             if days < 30:
                 severity = RiskSeverity.HIGH

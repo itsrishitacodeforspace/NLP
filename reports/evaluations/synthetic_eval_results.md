@@ -5,8 +5,8 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 ## Summary
 
 - Cases: 17
-- Passing: 13
-- Known limitations (declared, still failing): 4
+- Passing: 14
+- Known limitations (declared, still failing): 3
 - Unexpected regressions: 0
 - Resolved limitations (declared but now passing): 0
 
@@ -28,13 +28,10 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 - Expected: Auto-renewal with no notice period is a high-severity lock-in risk.
 - Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_RENEWAL_001, RISK_STAMP_001
 
-### auto_renewal_with_notice — KNOWN LIMITATION
+### auto_renewal_with_notice — PASS
 - Category: `risk_severity_calibration`
 - Expected: Auto-renewal WITH a clearly stated 60-day non-renewal notice in the same clause should be medium severity, not high (the lock-in risk is reduced).
 - Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_RENEWAL_001, RISK_STAMP_001
-- Deviations from expected:
-    - expected RISK_RENEWAL_001@medium, observed ['high']
-- Known limitation: rule_auto_renewal parses the notice period with a digit-only regex, so a 'sixty (60) days' (parenthetical/written-out) notice is not recognised and the finding stays high instead of being reduced to medium.
 
 ### foreign_gov_law — PASS
 - Category: `risk_true_positive`

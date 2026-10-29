@@ -30,8 +30,8 @@
     {
       "case_id": "auto_renewal_with_notice",
       "category": "risk_severity_calibration",
-      "status": "fail",
-      "known_limitation": "rule_auto_renewal parses the notice period with a digit-only regex, so a 'sixty (60) days' (parenthetical/written-out) notice is not recognised and the finding stays high instead of being reduced to medium.",
+      "status": "pass",
+      "known_limitation": null,
       "observed_rule_ids": [
         "MISSING_CLAUSE_GOVERNING_LAW",
         "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
@@ -39,9 +39,7 @@
         "RISK_RENEWAL_001",
         "RISK_STAMP_001"
       ],
-      "failures": [
-        "expected RISK_RENEWAL_001@medium, observed ['high']"
-      ]
+      "failures": []
     },
     {
       "case_id": "foreign_gov_law",
@@ -264,9 +262,8 @@
   ],
   "summary": {
     "cases": 17,
-    "passing": 13,
+    "passing": 14,
     "known_limitations": [
-      "auto_renewal_with_notice",
       "liability_cap_in_crossref",
       "obligation_passive",
       "stamp_tds_present_missed"

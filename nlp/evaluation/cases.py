@@ -85,11 +85,6 @@ CASES: Tuple[EvalCase, ...] = (
         ),
         expect_present=("RISK_RENEWAL_001",),
         expect_severity=(("RISK_RENEWAL_001", "medium"),),
-        known_limitation=(
-            "rule_auto_renewal parses the notice period with a digit-only regex, so a "
-            "'sixty (60) days' (parenthetical/written-out) notice is not recognised and "
-            "the finding stays high instead of being reduced to medium."
-        ),
     ),
     EvalCase(
         case_id="foreign_gov_law",
