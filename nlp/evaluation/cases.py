@@ -308,11 +308,6 @@ CASES: Tuple[EvalCase, ...] = (
                 deadline_expression="24 hours",
             ),
         ),
-        known_limitation=(
-            "Hyphenated written compounds ('twenty-four') are not normalised by the "
-            "deadline parser, and the passive by-agent is not recovered here, so the "
-            "subject and 24h deadline are both missed."
-        ),
     ),
     # ----- Detection recall gap for present Indian-statutory language ----
     EvalCase(

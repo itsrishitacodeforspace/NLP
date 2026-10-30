@@ -5,8 +5,8 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 ## Summary
 
 - Cases: 17
-- Passing: 16
-- Known limitations (declared, still failing): 1
+- Passing: 17
+- Known limitations (declared, still failing): 0
 - Unexpected regressions: 0
 - Resolved limitations (declared but now passing): 0
 
@@ -93,14 +93,10 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 - Expected: A liability cap stated in a cross-referenced clause (7.4) should prevent a 'missing cap' finding on clause 7.1.
 - Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_TERMINATION, ML_RISK_001, RISK_STAMP_001
 
-### obligation_passive — KNOWN LIMITATION
+### obligation_passive — PASS
 - Category: `passive_voice`
 - Expected: A passive duty ('shall be encrypted by the Processor within twenty-four (24) hours') should recover the by-agent as obligor and the 24h deadline.
 - Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_STAMP_001, RISK_TDS_001
-- Deviations from expected:
-    - obligation['encrypted']: subject is None (expected a responsible party)
-    - obligation['encrypted']: deadline=None (expected '24 hours')
-- Known limitation: Hyphenated written compounds ('twenty-four') are not normalised by the deadline parser, and the passive by-agent is not recovered here, so the subject and 24h deadline are both missed.
 
 ### stamp_tds_present_missed — PASS
 - Category: `detection_recall_gap`

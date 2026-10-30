@@ -9,9 +9,9 @@ from nlp.evaluation import run_all
 # ``known_limitation`` note on the case itself. This set is the honest record of
 # unresolved behaviour; it is asserted explicitly so a limitation cannot be
 # hidden and a fix cannot silently "resolve" a case without this list changing.
-EXPECTED_KNOWN_LIMITATIONS = {
-    "obligation_passive",
-}
+# Currently empty: every declared limitation has been resolved. A new
+# limitation must be added here AND documented on the case itself.
+EXPECTED_KNOWN_LIMITATIONS: set[str] = set()
 
 
 @pytest.fixture(scope="module")

@@ -208,8 +208,8 @@
     {
       "case_id": "obligation_passive",
       "category": "passive_voice",
-      "status": "fail",
-      "known_limitation": "Hyphenated written compounds ('twenty-four') are not normalised by the deadline parser, and the passive by-agent is not recovered here, so the subject and 24h deadline are both missed.",
+      "status": "pass",
+      "known_limitation": null,
       "observed_rule_ids": [
         "MISSING_CLAUSE_GOVERNING_LAW",
         "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
@@ -217,10 +217,7 @@
         "RISK_STAMP_001",
         "RISK_TDS_001"
       ],
-      "failures": [
-        "obligation['encrypted']: subject is None (expected a responsible party)",
-        "obligation['encrypted']: deadline=None (expected '24 hours')"
-      ]
+      "failures": []
     },
     {
       "case_id": "stamp_tds_present_missed",
@@ -254,10 +251,8 @@
   ],
   "summary": {
     "cases": 17,
-    "passing": 16,
-    "known_limitations": [
-      "obligation_passive"
-    ],
+    "passing": 17,
+    "known_limitations": [],
     "regressions": [],
     "resolved": []
   }

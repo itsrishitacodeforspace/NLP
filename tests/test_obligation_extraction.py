@@ -161,3 +161,118 @@ def test_condition_calendar_date_is_not_attributed_as_deadline():
 def test_written_out_deadline_is_normalised():
     o = _one("The Provider shall deliver within two business days.")
     assert o.deadline_expression == "2 business days"
+
+
+# ---------------------------------------------------------------------------
+# Passive voice with data-protection roles + compound written deadlines
+# (eval case obligation_passive)
+# ---------------------------------------------------------------------------
+
+
+def test_passive_by_agent_processor_role_is_recovered():
+    o = _one(
+        "Personal data shall be encrypted by the Processor within twenty-four "
+        "(24) hours of a security incident."
+    )
+    assert o.subject == "Processor"
+    assert o.action == "encrypted"
+    assert o.deadline_expression == "24 hours"
+
+
+def test_passive_by_agent_controller_role_is_recovered():
+    o = _one("The data shall be deleted by the Controller within thirty (30) days.")
+    assert o.subject == "Controller"
+    assert o.deadline_expression == "30 days"
+
+
+def test_passive_irregular_participle_with_agent():
+    o = _one("The fee shall be paid by the Customer within twenty-four days.")
+    assert o.subject == "Customer"
+    assert o.deadline_expression == "24 days"
+
+
+def test_passive_irregular_participle_sent():
+    o = _one("The report shall be sent by the Provider.")
+    assert o.subject == "Provider"
+    assert o.action == "sent"
+
+
+def test_passive_agent_that_is_not_a_party_stays_unknown():
+    o = _one("The report shall be delivered by Friday.")
+    assert o.subject is None
+
+
+def test_passive_without_agent_compound_deadline():
+    o = _one("Personal data shall be encrypted within twenty-four (24) hours.")
+    assert o.subject is None
+    assert o.deadline_expression == "24 hours"
+
+
+def test_compound_written_deadline_without_parenthetical():
+    o = _one("The Provider shall deliver the goods within twenty-four days.")
+    assert o.deadline_expression == "24 days"
+
+
+def test_compound_written_deadline_sixty_five():
+    o = _one("The Customer shall pay within sixty-five days of the invoice.")
+    assert o.deadline_expression == "65 days"
+
+
+def test_seventy_written_deadline_is_normalised():
+    o = _one("The Provider shall deliver within seventy days.")
+    assert o.deadline_expression == "70 days"
+
+
+def test_passive_with_leading_condition_preserves_condition_and_deadline():
+    o = _one(
+        "If a security incident occurs, personal data shall be encrypted by "
+        "the Processor within twenty-four (24) hours."
+    )
+    assert o.subject == "Processor"
+    assert o.condition == "If a security incident occurs"
+    assert o.deadline_expression == "24 hours"
+
+
+def test_passive_with_exception_preserves_exception():
+    o = _one("The fee shall be refunded by the Provider unless the Customer waives it.")
+    assert o.subject == "Provider"
+    assert o.condition == "unless the Customer waives it"
+
+
+def test_passive_adjective_is_not_treated_as_passive():
+    # "available" is an adjective, not a participle; the active-voice path and
+    # its subject must be preserved.
+    o = _one("The services shall be available at all times.")
+    assert o.subject == "services"
+    assert o.action == "available"
+
+
+def test_active_voice_obligation_unchanged_with_compound_deadline():
+    o = _one("The Customer shall pay the invoice within thirty (30) days.")
+    assert o.subject == "Customer"
+    assert o.action == "pay"
+    assert o.deadline_expression == "30 days"
+
+
+def test_cross_reference_sentence_stays_clause_local():
+    # A sentence that points at another clause yields at most its own
+    # obligation (here: passive, no agent -> unknown subject). No obligation is
+    # fabricated from the referenced clause's content; cross-reference handling
+    # is advisory-only and lives in the risk layer, not obligation extraction.
+    text = "Personal data shall be encrypted as set out in Clause 4.2."
+    obligations = extract_obligations_from_clause("c1", text)
+    assert len(obligations) == 1
+    assert obligations[0].subject is None
+    assert obligations[0].action == "encrypted"
+
+
+def test_passive_offsets_are_exact_source_slices():
+    text = (
+        "4.1 Personal data shall be encrypted by the Processor within "
+        "twenty-four (24) hours."
+    )
+    obligations = extract_obligations_from_clause("c1", text)
+    assert len(obligations) == 1
+    o = obligations[0]
+    assert o.char_start is not None and o.char_end is not None
+    assert text[o.char_start:o.char_end] == o.text
