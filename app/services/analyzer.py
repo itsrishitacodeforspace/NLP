@@ -336,6 +336,14 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
             "january", "february", "march", "april", "may", "june", "july",
             "august", "september", "october", "november", "december",
         }
+        # Corporate-suffix tokens: the current match's own suffix is kept, but
+        # hitting a SECOND suffix while walking back means we have crossed
+        # into an earlier party name ("Acme Services Pvt Ltd and Zenith
+        # Technologies Pvt Ltd") — stop there or the names glue together.
+        suffix_tokens = {
+            "pvt", "ltd", "limited", "llp", "inc", "corp", "corporation",
+            "llc", "plc", "pte", "private",
+        }
         pan_noise = re.compile(r"^[A-Z]{5}\d{4}[A-Z],?\s*(?:and\s+)?", re.IGNORECASE)
         # Also catch "DTwelve Accommodations Private Limited" style names
         # where "Private Limited" or "Pte Ltd" appears.
@@ -352,7 +360,13 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
                 tokens_back = re.findall(r"[A-Z][\w'.-]+", text[max(0, cut + 1) : end])
                 kept: List[str] = []
                 for tok in reversed(tokens_back):
-                    if tok.lower() in noise_words or tok.lower() in blacklist:
+                    low = tok.lower().strip(".,")
+                    if low in noise_words or low in blacklist:
+                        break
+                    if (
+                        low in suffix_tokens
+                        and any(t.lower().strip(".,") not in suffix_tokens for t in kept)
+                    ):
                         break
                     kept.append(tok)
                     if len(kept) >= 7:

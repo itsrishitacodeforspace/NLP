@@ -309,3 +309,15 @@ def test_d6_heading_and_role_phrases_are_not_parties():
     assert "MASTER SERVICES" not in names
     assert "Services Pvt Ltd" not in names
     assert "Provider" not in names or "Pvt" in names
+
+
+def test_d6_adjacent_party_names_are_not_glued_together():
+    # Walking back from the second name's suffix must stop at the first
+    # name's suffix — two adjacent names must never merge.
+    r = _run(
+        "1. PARTIES\nThis Agreement is entered into by Acme Consulting Services Pvt Ltd "
+        "and Zenith Technologies Pvt Ltd."
+    )
+    assert "Acme Consulting Services Pvt Ltd" in r.contract.parties
+    assert "Zenith Technologies Pvt Ltd" in r.contract.parties
+    assert not any("Services Pvt Ltd Zenith" in p for p in r.contract.parties)
