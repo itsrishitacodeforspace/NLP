@@ -120,7 +120,18 @@ uv run python scripts/run_evaluation.py
 uv run python scripts/verify_provenance.py
 ```
 
-## 6. Current results (verified at `42b985c`)
+## 6. Current results (verified at `42b985c`; audit-verified at `c3a6468`)
+
+**2026-10-30 audit update:** a zero-trust integration audit ran at `c3a6468` and
+re-verified every number below by execution (report:
+`reports/audit/integration_audit_20261030.md`). It added
+`tests/test_audit_integration.py` (14 passing + 7 xfail defect records), so the
+suite is now **207 collected, 193 passed, 7 failed (same provenance guards),
+7 xfailed**; ruff clean; eval unchanged 17/17. The audit confirmed six
+integration defects (D1–D6: segmenter text loss, negated stamp/TDS suppression,
+two offset-fidelity defects, digit-only breach-window parsing, party-name noise
+truncation) — see report §C and the remediation plan §G. The branch is actually
+**7** commits ahead (the merge commit counts; §1's "ahead 6" was undercounted).
 
 - `ruff check .` → All checks passed.
 - Full suite → **179 passed, 7 failed** (186 collected). The 7 failures are all in
@@ -168,14 +179,16 @@ uv run python scripts/verify_provenance.py
 
 ## 8. Next three prioritised actions
 
-1. **Approval-gated `data/processed/` rebuild** to clear the 7 provenance failures,
-   with a full post-rebuild suite run recorded. Ask before running.
-2. **Renewal cross-reference notice** under the same fail-closed contract used
-   for caps (resolved reference + verified opt-out right in the target clause),
-   or **P3 status enum** if the API needs machine-readable missing-protection
-   status.
-3. **ML calibration** or labelling of the raw risk score (presentation-only fix
-   is in place; retraining is approval-gated).
+1. **Audit defect remediation (D1–D6)** in the report's §G order: negation-aware
+   stamp/TDS detection (D4), segmenter preamble text loss (D2), offset fidelity
+   (D1/D3), breach-window written numbers (D5), party-name noise truncation (D6).
+   Each has an `xfail(strict=True)` record in `tests/test_audit_integration.py`
+   that flips red when fixed — update the record to a permanent test then.
+2. **Approval-gated `data/processed/` rebuild** (or staging swap — the audit
+   proved staging is byte-identical to a fresh isolated build and verifies 0
+   failures). Ask before running.
+3. **Renewal cross-reference notice** under the same fail-closed contract used
+   for caps, **P3 status enum**, or **ML calibration** (approval-gated).
 
 ## 9. Continuation prompt for a future Kiro session
 

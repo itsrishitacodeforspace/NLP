@@ -377,3 +377,48 @@ Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
 ML calibration; renewal cross-reference notices; P3 status enum. Space-separated
 written compounds ("twenty four days") and unusual role nouns in by-agent
 phrases remain conservative misses. No push; no co-author trailer.
+
+---
+
+## Kiro session 2026-10-30, fifth pass — zero-trust integration audit (no production code changed)
+
+Audit-only pass at HEAD `c3a6468`. Full report:
+`reports/audit/integration_audit_20261030.md`. No production code, tests, or
+`data/processed/` content was modified; one audit-only test file was added.
+
+Verified baseline (all executed): ruff clean; full suite 186 collected / 179
+passed / 7 failed (the same provenance guards); eval harness 17/17 exit 0;
+demo exit 0 identical output; provenance verifier 5 failures exit 1. Doc
+staleness found: handoff said "ahead 6" (actual 7, merge commit counts); final
+report's "~70 s" suite timing measured at ~89 s. All substantive reported
+numbers reproduced exactly.
+
+Added: `tests/test_audit_integration.py` — 14 passing integration tests
+(offsets, cross-reference caps incl. indemnity-exclusion + different-party at
+pipeline level, obligations, dedupe, fail-safety, taxonomy-sync guard, ML
+invariants, stamp/TDS positive controls) + 7 `xfail(strict=True)` defect
+records. Suite after addition: **207 collected, 193 passed, 7 failed
+(provenance), 7 xfailed**; ruff clean; eval unchanged 17/17.
+
+Confirmed integration defects (evidence in report §C):
+- D2 (high): segmentation silently drops lines 2+ of a non-heading multi-line
+  preamble paragraph.
+- D4 (high): negated stamp/TDS mentions ("was not executed on duly stamped
+  paper", "without deduction of tax at source") suppress the review prompts.
+- D1 (medium): clause offsets don't slice the source for single-newline
+  heading+body layout (dominant layout; API/graph offsets wrong).
+- D3 (medium): long-clause sub-offsets drift (heading length + separator
+  assumptions).
+- D5 (medium): breach-window rule parses digit-only notice periods; written
+  "twenty-four (24) hours" invisible to it (obligation layer sees "24 hours").
+- D6 (low-medium): `_detect_parties` drops names containing the noise word
+  "services" ("ABC Services Pvt Ltd" lost).
+
+Provenance: isolated rebuild at HEAD in `tmp/audit-rebuild/` (gitignored) →
+5 artifacts + 5 manifests, verifier exit 0, byte-identical to
+`data/processed.staging/`; staging itself verifies 0 failures. Diagnosis
+confirmed: stale main-tree data, not code/env; approval-gated rebuild/swap
+remains pending (report §H).
+
+Not done (boundaries): no production code changes; no test weakening; no
+`data/processed/` modification; no push; no model retraining.
