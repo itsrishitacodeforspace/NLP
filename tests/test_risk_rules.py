@@ -274,3 +274,58 @@ def test_score_is_capped_at_100():
     flags = [_flag(f"R{i}", RiskSeverity.CRITICAL, 85.0) for i in range(15)]
     score, level = score_contract([], flags)
     assert score == 100.0 and level == RiskSeverity.CRITICAL
+
+
+# ----------------------------------------------------------------- data breach
+
+
+def _dp_clause(text: str) -> Clause:
+    return _clause("cd", heading="4. Security", text=text, types=["Data Protection"])
+
+
+def test_breach_window_digit_hours_is_flagged():
+    from nlp.risk_scoring.rules import rule_data_breach_window
+
+    flag = rule_data_breach_window(_dp_clause("The Processor shall notify the Controller of any data breach within 24 hours."), _summary())
+    assert flag is not None and flag.rule_id == "RISK_DATA_001"
+
+
+def test_breach_window_written_compound_with_parenthetical_is_flagged():
+    from nlp.risk_scoring.rules import rule_data_breach_window
+
+    flag = rule_data_breach_window(
+        _dp_clause("The Processor shall notify the Controller of any security incident within twenty-four (24) hours."),
+        _summary(),
+    )
+    assert flag is not None and flag.rule_id == "RISK_DATA_001"
+
+
+def test_breach_window_written_compound_without_parenthetical_is_flagged():
+    from nlp.risk_scoring.rules import rule_data_breach_window
+
+    flag = rule_data_breach_window(
+        _dp_clause("The Provider shall report any data breach within twenty-four hours."),
+        _summary(),
+    )
+    assert flag is not None and flag.rule_id == "RISK_DATA_001"
+
+
+def test_breach_window_loose_periods_are_not_flagged():
+    from nlp.risk_scoring.rules import rule_data_breach_window
+
+    for text in (
+        "The Processor shall notify the Controller of any data breach within 48 hours.",
+        "The Processor shall notify the Controller of any data breach within seventy-two (72) hours.",
+        "The Processor shall notify the Controller of any data breach within 2 days.",
+    ):
+        assert rule_data_breach_window(_dp_clause(text), _summary()) is None, text
+
+
+def test_breach_window_one_day_boundary_is_flagged():
+    from nlp.risk_scoring.rules import rule_data_breach_window
+
+    flag = rule_data_breach_window(
+        _dp_clause("The Processor shall notify the Controller of any security incident within 1 day."),
+        _summary(),
+    )
+    assert flag is not None and flag.rule_id == "RISK_DATA_001"

@@ -321,12 +321,17 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
         pvt_suffix = re.compile(
             r"\b((?:[A-Z][\w'.-]+\s+){0,5}(?:Pvt\.?\s*Ltd\.?|Limited|LLP|Inc\.?|Corporation|Corp\.?|LLC|PLC))\b"
         )
+        # Noise words that END a candidate name when walking back from the
+        # corporate suffix. Role/context words belong here ("agent",
+        # "customer"); words that are legitimate *inside* a legal entity name
+        # ("Services", "Company") do NOT — treating them as noise truncated
+        # real names like "ABC Services Pvt Ltd" to nothing (audit defect D6).
         noise_words = {
             "having", "with", "between", "of", "the", "and", "from", "pan",
             "cin", "gstin", "represented", "incorporated", "registered", "its",
             "their", "whose", "whereas", "recital", "by", "as", "for",
             "annexure", "annexed", "schedule", "section", "clause",
-            "services", "company", "agent", "customer", "resident", "client",
+            "agent", "customer", "resident", "client",
             "party", "parties", "provider", "recipient",
             "january", "february", "march", "april", "may", "june", "july",
             "august", "september", "october", "november", "december",
@@ -366,6 +371,17 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
                         name = " ".join(name.split()[1:]).strip()
                     else:
                         break
+                # A candidate built only from generic suffix/name words
+                # ("Services Pvt Ltd") is a fragment, not an entity: require at
+                # least one distinctive token.
+                generic_tokens = {
+                    "private", "limited", "ltd", "pvt", "pte", "llp", "inc",
+                    "corp", "corporation", "llc", "plc", "services", "company",
+                }
+                if not any(
+                    tok.lower().strip(".,") not in generic_tokens for tok in name.split()
+                ):
+                    continue
                 if 4 <= len(name) <= 100 and name not in parties and name not in found:
                     found.append(name)
                 if len(found) >= 6:

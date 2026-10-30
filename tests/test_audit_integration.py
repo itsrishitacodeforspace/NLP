@@ -1,23 +1,19 @@
-"""Audit-only integration tests (zero-trust audit, 2026-10-30).
+"""Audit-originated integration tests (zero-trust audit, 2026-10-30).
 
-Two kinds of tests live here:
+Originally added by the integration audit as 14 passing integration tests plus
+7 ``xfail(strict=True)`` defect records (AUDIT-D1 .. AUDIT-D6). All six defects
+were fixed in the remediation milestone that followed the audit, and every
+xfail record has been converted into a normal passing regression test (the
+``test_d<no>_`` names are kept as defect-history documentation):
 
-* **Passing integration tests** — lock cross-feature behaviour that was
-  verified empirically at the audit commit (offsets, cross-reference caps,
-  obligations, dedupe, fail-safety, evidence invariants). They must keep
-  passing.
-
-* **xfail(strict=True) defect records** — each documents a confirmed
-  integration defect (AUDIT-D1 .. AUDIT-D6) with the *derived* expected
-  behaviour. They fail today; strict xfail means the suite goes red the day a
-  fix makes them pass, forcing the record to be updated. They do not weaken
-  any existing test.
+* D1/D2/D3 — exact source spans; multi-line preamble preserved (segmenter).
+* D4 — negated statutory mentions no longer suppress review prompts (NER).
+* D5 — written-number breach windows; cross-stage deadline consistency.
+* D6 — legal entity names containing "Services"/"Company" are preserved.
 
 See ``reports/audit/integration_audit_20261030.md`` for evidence and analysis.
 """
 from __future__ import annotations
-
-import pytest
 
 from app.models.schemas import ContractType, PartySide
 from app.services.analyzer import analyse_bytes
@@ -262,18 +258,27 @@ def test_d4_negated_stamp_mention_still_prompts_review():
     assert "RISK_STAMP_001" in _rule_ids(r)
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D5: the breach-window rule parses digit-only notice "
-                                       "periods while the obligation layer normalises written numbers")
 def test_d5_written_number_breach_window_is_flagged():
     r = _run(
-        "4. SECURITY\nThe Processor shall notify the Controller of any security "
-        "incident within twenty-four (24) hours."
+        "4. SECURITY\nThe Processor shall notify the Controller of any data "
+        "breach within twenty-four (24) hours."
     )
     assert "RISK_DATA_001" in _rule_ids(r)
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D6: _detect_parties treats 'services' as a noise word and "
-                                       "silently drops a party whose legal name contains it")
+def test_d5_written_deadline_is_consistent_across_pipeline_stages():
+    """The same sentence must not give the obligation layer a '24 hours'
+    deadline while the risk layer sees no notice period (cross-stage
+    consistency, audit D5)."""
+    r = _run(
+        "4. SECURITY\nThe Processor shall notify the Controller of any data "
+        "breach within twenty-four (24) hours."
+    )
+    deadlines = [o.deadline_expression for o in r.obligations if o.deadline_expression]
+    assert "24 hours" in deadlines
+    assert "RISK_DATA_001" in _rule_ids(r)
+
+
 def test_d6_similar_party_names_are_both_detected():
     r = _run(
         "1. PARTIES\nThis Agreement is between ABC Services Pvt Ltd (the Customer) "
@@ -281,3 +286,26 @@ def test_d6_similar_party_names_are_both_detected():
     )
     names = " | ".join(r.contract.parties)
     assert "ABC Services" in names and "ABC Technologies" in names
+
+
+def test_d6_multiword_names_with_various_suffixes_detected():
+    r = _run(
+        "1. PARTIES\nThis Agreement is between Acme Consulting Services LLP "
+        "(the Provider) and XYZ Company Ltd (the Customer)."
+    )
+    names = " | ".join(r.contract.parties)
+    assert "Acme Consulting Services" in names
+    assert "XYZ Company" in names
+
+
+def test_d6_heading_and_role_phrases_are_not_parties():
+    # "Services" inside a heading must not manufacture a party, and role
+    # phrases are not legal entity names.
+    r = _run(
+        "MASTER SERVICES AGREEMENT\n\n"
+        "1. SERVICES\nThe Provider shall supply the services to the Customer."
+    )
+    names = " | ".join(r.contract.parties)
+    assert "MASTER SERVICES" not in names
+    assert "Services Pvt Ltd" not in names
+    assert "Provider" not in names or "Pvt" in names

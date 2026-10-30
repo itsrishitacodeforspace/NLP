@@ -320,14 +320,23 @@ def rule_data_breach_window(clause: Clause, summary: ContractSummary) -> Optiona
     if not _any_clause_type(clause, "Data Protection"):
         return None
     if "data breach" in text or "breach notification" in text or "security incident" in text:
+        # Accept digit, written ("twenty-four") and parenthetical ("twenty-four
+        # (24)") notice periods — the same shared number vocabulary the
+        # obligation extractor and renewal rule use, so one sentence cannot
+        # yield contradictory deadline interpretations across pipeline stages.
         notice = re.search(
-            r"(?:within|no\s+later\s+than)\s+(\d+)\s+(hour|hours|day|days)\b",
+            r"(?:within|no\s+later\s+than)\s+(" + NUMBER_TOKEN_RE + r")\s*(?:\((\d+)\))?\s+"
+            r"(hour|hours|day|days)\b",
             text,
             re.IGNORECASE,
         )
-        if notice:
-            value = int(notice.group(1))
-            unit = notice.group(2)
+        value = (
+            written_number_to_int(notice.group(2))
+            if notice and notice.group(2)
+            else (written_number_to_int(notice.group(1)) if notice else None)
+        )
+        if notice and value is not None:
+            unit = notice.group(3)
             hours = value if "hour" in unit else value * 24
         else:
             hours = None
