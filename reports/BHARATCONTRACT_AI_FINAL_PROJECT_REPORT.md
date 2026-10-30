@@ -4,7 +4,7 @@
 **Report date:** 30 October 2026
 **Prepared by:** Project team
 **Repository:** `C:\Users\Ivermectin\Desktop\NLP\NLP`
-**Verified at commit:** `aaa9fd5` on branch `main`
+**Verified at commit:** `8c60ae6` on branch `main`
 **Report scope:** Backend, NLP pipeline, risk engine, verification, and limitations. The existing dashboard is outside the verification scope of this report.
 
 ---
@@ -13,9 +13,9 @@
 
 BharatContract AI is a working prototype for automated review of commercial contracts, with emphasis on Indian statutory and arbitration risks. The system accepts PDF, DOCX, TXT, and Markdown files; parses and segments the document; classifies clauses; extracts entities and obligations; and applies a rule-first risk playbook backed by an optional machine-learning recall booster. Findings carry evidence spans, search scope, and statutory or case-law pointers, so that a reviewer can inspect why a flag was raised rather than receiving an unexplained score.
 
-The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 157-test suite: **150 tests pass and 7 provenance tests fail closed** because the production `data/processed/` artifacts lack manifests and train-only lineage. A focused 88-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues.
+The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 171-test suite: **164 tests pass and 7 provenance tests fail closed** because the production `data/processed/` artifacts lack manifests and train-only lineage. A focused 102-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues.
 
-A deterministic evaluation harness (`nlp/evaluation/`, driven by `scripts/run_evaluation.py`) runs 17 synthetic labelled contracts through the full pipeline. At the verified commit, **15 cases pass, 2 are documented known limitations, and there are no unexpected regressions**; three evidence-integrity invariants (model findings stay unverified; clause-level rule findings carry a direct span; contract-level findings are scoped and unverified) hold across every finding. This is a software-behaviour check on synthetic data, not a measure of legal accuracy or real-world reliability.
+A deterministic evaluation harness (`nlp/evaluation/`, driven by `scripts/run_evaluation.py`) runs 17 synthetic labelled contracts through the full pipeline. At the verified commit, **16 cases pass, 1 is a documented known limitation, and there are no unexpected regressions**; three evidence-integrity invariants (model findings stay unverified; clause-level rule findings carry a direct span; contract-level findings are scoped and unverified) hold across every finding. This is a software-behaviour check on synthetic data, not a measure of legal accuracy or real-world reliability.
 
 The bundled sample MSA was processed end to end into **12 clauses and 13 obligations**, with rule and model findings. The report does not claim held-out accuracy: the bundled models were trained on a corpus that overlaps held-out CUAD documents, the ML score is uncalibrated, and the legal citations are system-provided pointers rather than verified legal advice.
 
@@ -340,14 +340,14 @@ uv run python scripts/verify_provenance.py
 
 | Check | Result |
 |---|---|
-| Full test suite | **150 passed, 7 failed, 4 warnings** in ~70 s |
-| Focused suite | **88 passed** |
-| Synthetic evaluation harness | **15/17 cases pass, 2 known limitations, 0 regressions**; 3/3 evidence invariants hold |
+| Full test suite | **164 passed, 7 failed, 4 warnings** in ~70 s |
+| Focused suite | **102 passed** |
+| Synthetic evaluation harness | **16/17 cases pass, 1 known limitation, 0 regressions**; 3/3 evidence invariants hold |
 | Lint | **All checks passed** |
 | Demo | 2,846-character MSA parsed into **12 clauses and 13 obligations** |
 | Provenance verifier | **5 failures, 0 skipped** (all missing manifests) |
 
-The 157 collected tests cover parsing, segmentation, long clauses, classifier regression thresholds, context resolution, obligation extraction, evidence binding, risk rules (including written/parenthetical renewal-notice parsing and stamp-duty/TDS detection recall with negative controls), risk-model wording, P4 cross-reference behaviour, the synthetic evaluation harness, authentication/RBAC, row-level security, API smoke tests, end-to-end analysis, and provenance.
+The 171 collected tests cover parsing, segmentation, long clauses, classifier regression thresholds, context resolution, obligation extraction, evidence binding, risk rules (including written/parenthetical renewal-notice parsing, stamp-duty/TDS detection recall with negative controls, and conservative cross-reference cap resolution), risk-model wording, P4 cross-reference behaviour, the synthetic evaluation harness, authentication/RBAC, row-level security, API smoke tests, end-to-end analysis, and provenance.
 
 ### 5.3 The seven failing tests
 
@@ -432,12 +432,11 @@ The corpus covers the behaviour categories required by the project charter:
 | Passive voice | `obligation_passive` | the by-agent obligor and written-compound deadline should be recovered |
 | Detection recall gap | `stamp_tds_present_missed` | present stamp/TDS language should suppress the review prompts |
 
-At commit `aaa9fd5`: **15 cases pass and 2 fail**. The two failures are declared, documented known limitations, not hidden regressions:
+At commit `8c60ae6`: **16 cases pass and 1 fails**. The remaining failure is a declared, documented known limitation, not a hidden regression:
 
-- `liability_cap_in_crossref` — rules evaluate a single clause, so a cap stated only in a cross-referenced clause still produces a false “missing cap”. Automatic cross-clause suppression was deliberately reverted earlier as unsafe.
 - `obligation_passive` — hyphenated written compounds (“twenty-four”) are not normalised by the deadline parser, and the passive by-agent is not recovered in this construction.
 
-The third former limitation, `stamp_tds_present_missed`, was resolved in this pass (defect D13 below): the detectors now recognise “duly stamped paper” and “deduction of tax at source”, so present statutory language suppresses the review prompts. The case passes and its `known_limitation` note was removed; the locking test set was updated accordingly.
+Two former limitations were resolved in earlier passes (defects D13 and D14 below): `stamp_tds_present_missed` (the detectors now recognise “duly stamped paper” and “deduction of tax at source”) and `liability_cap_in_crossref` (a resolved cross-reference to a verifiably applicable cap now suppresses the “missing cap” finding; keyword presence alone still does not). Both cases pass and their `known_limitation` notes were removed; the locking test set was updated accordingly.
 
 Three evidence-integrity invariants are also checked across every finding in every case and all hold: model-sourced findings always carry `evidence_status="unverified"`; clause-level rule findings always carry `evidence_status="direct"` with at least one evidence span; and contract-level findings are always `unverified` with an explicit `search_scope`. The locking test (`tests/test_evaluation_harness.py`) fails if a new case regresses **or** if a known-limitation case is silently fixed without updating the record.
 
@@ -460,12 +459,13 @@ This harness is a behavioural and regression instrument on synthetic data. It is
 | D11 | Section 124 scanned unrelated contract text | Evaluate indemnification clauses only; preserve unverified status and scoped search |
 | D12 | Auto-renewal notice parsed with a digit-only regex, so a clearly stated `sixty (60) days` or `ninety days` in-clause notice was ignored and the finding stayed high severity | Shared `written_number_to_int` + `NUMBER_TOKEN_RE` parse digit, written and parenthetical forms; same-clause notices reduce severity to medium while cross-referenced notices remain advisory-only |
 | D13 | `detect_stamp_duty_mention` / `detect_tds_mention` used narrow keyword lists and missed “duly stamped paper” and “deduction of tax at source”, so the “not found — verify” prompts fired on contracts that already address both | Add tight stamped-wording and at-source patterns with negative controls (“rubber-stamped”, “postage stamp”, “timestamp”, unrelated tax/deduction mentions do not match); Indian-jurisdiction gating, payment-clause scoping, and “not found — verify” semantics unchanged |
+| D14 | `rule_uncapped_liability` evaluated only the clause's own text, so a clearly stated cap in a cross-referenced clause (“Except as set out in Clause 7.4” → 7.4 LIABILITY CAP) still produced a false `RISK_LIABILITY_002` | Fail-closed verification gate: suppression requires an explicit resolver reference with status `resolved` AND referenced text stating a cap that verifiably covers the assessed liability (mutual or matching party scope, no exclusions, no loss-category mismatch). Unresolved/missing/ambiguous references, related text without a resolved reference, exclusions, conflicts, and unknown party scope all keep the finding as a human-review prompt |
 
 ### 6.2 Interpretation
 
 The system’s strongest property is **traceability**. A reviewer can see the clause, the exact character span for clause-level findings, the search scope for contract-level findings, the rule that fired, and the legal pointer attached to it. This is more useful than a single opaque risk score.
 
-The weakest property is **whole-contract reasoning**. The context layer resolves references and records advisory notes, but the risk rules do not use a referenced cap or notice period to suppress a finding. This avoids unsafe false negatives, but it leaves known false positives: a cap defined in another clause can still produce “missing liability cap”, and a notice period in a related clause can still produce “no notice period detected”. Fixing this requires a labelled evaluation set and a conservative rule contract, not keyword suppression.
+The weakest property remains **whole-contract reasoning**. The liability-cap rule now consumes resolved cross-references through a narrow, fail-closed contract (D14): a verifiably applicable referenced cap suppresses the “missing cap” finding, while anything uncertain stays a human-review prompt. The same is not yet done for renewal notice periods — a notice in a related clause can still produce “no notice period detected” — and precedence/override language is still recorded only as a candidate, never as proof.
 
 The ML booster adds recall but not trust: its scores are uncalibrated, its labels are rule-derived, and the bundled model’s training corpus overlaps held-out CUAD documents. It is correctly presented as a review prompt, not a finding with evidence.
 
@@ -508,7 +508,7 @@ The risk model’s raw `predict_proba` is not calibrated. Future work should eit
 
 ### 7.3 Whole-contract reasoning
 
-Rules currently do not consume cross-reference context for suppression. A safe next step is to define a narrow rule contract: only suppress when a resolved, explicit provision states the missing element (for example, a cap amount or a notice period), and always record the related clause and the reason. Anything weaker should remain advisory.
+The liability-cap rule now consumes cross-reference context under a narrow rule contract (D14): suppression only when a resolved, explicit provision states a verifiably applicable cap; anything weaker stays advisory and keeps the finding. The same contract should be evaluated for renewal notice periods, and precedence/override language remains a recorded candidate rather than proof of resolution.
 
 ### 7.4 P3 status model
 
@@ -535,7 +535,7 @@ Statutory and case-law pointers are informational and abbreviated. They must be 
 
 BharatContract AI demonstrates a complete, offline-capable contract-analysis pipeline with a strong emphasis on traceability and graceful degradation. It parses and segments contracts, classifies clauses, extracts entities and obligations, applies Indian and global risk rules, binds evidence to findings, and exposes the result through a FastAPI backend with optional authentication and persistence.
 
-The current verification is honest rather than flattering: 150 tests pass, 7 fail closed on stale provenance, the ML score is uncalibrated, and the project makes no held-out accuracy claim. The most important engineering contribution is not a single model score but the discipline of showing the clause, the span, the search scope, and the limitation behind each finding.
+The current verification is honest rather than flattering: 164 tests pass, 7 fail closed on stale provenance, the ML score is uncalibrated, and the project makes no held-out accuracy claim. The most important engineering contribution is not a single model score but the discipline of showing the clause, the span, the search scope, and the limitation behind each finding.
 
 The next milestone should be a labelled evaluation corpus and conservative whole-contract reasoning. Until then, the system is a useful reviewer-assistance prototype, not a legal decision-maker.
 
@@ -613,6 +613,8 @@ Artifact regeneration is approval-gated and was not performed for this report.
 ## Appendix C — Selected recent commits
 
 ```text
+8c60ae6 fix(risk): suppress missing-cap finding only for resolved, applicable cross-referenced caps
+ece750f merge: reconcile origin/main (5a03a1b) with local stamp/TDS commits
 aaa9fd5 fix(ner): detect stamped-paper and deduction-at-source wording for stamp/TDS
 b35da18 fix(risk): parse written/parenthetical renewal notice periods
 85011e2 test(eval): add deterministic synthetic evaluation harness and labelled corpus

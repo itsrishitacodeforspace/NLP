@@ -5,15 +5,17 @@ under `.commandcode/` and the earlier `reports/recovery/` documents. Read
 `.commandcode/BHARATCONTRACT_PROJECT_MEMORY.md` and `RECOVERY_TRACKER.md` first
 for the full prior history.
 
-Last updated: 2026-10-30 (Kiro session, second pass).
+Last updated: 2026-10-30 (Kiro session, third pass).
 
 ## 1. Verified repository state
 
 - Branch: `main`.
-- Starting HEAD this session: `b35da18`.
-- Ending HEAD this session: `aaa9fd5` (3 local commits ahead of `origin/main` at
-  `42c25b0`). **Nothing pushed.** Remote: `origin` (GitHub).
-- Working tree: clean after the commit below (plus repo-local `tmp/` scratch,
+- Starting HEAD this session: `a1aaf8b` (plus a pre-existing uncommitted merge of
+  `origin/main` `5a03a1b`, reconciled as `ece750f` — see Section 2).
+- Ending HEAD this session: `8c60ae6` + a docs commit on top (4 local commits
+  ahead of `origin/main` at `5a03a1b`; branch fast-forwards on push).
+  **Nothing pushed.** Remote: `origin` (GitHub).
+- Working tree: clean after the commits below (plus repo-local `tmp/` scratch,
   which is gitignored).
 - Python: uv-managed 3.12.14; always use `uv run` (host `python` is out of range).
 
@@ -26,6 +28,13 @@ P4 work" is now committed at `42c25b0`, and the main working tree is clean.
 - `85011e2` test(eval): add deterministic synthetic evaluation harness and labelled corpus
 - `b35da18` fix(risk): parse written/parenthetical renewal notice periods
 - `aaa9fd5` fix(ner): detect stamped-paper and deduction-at-source wording for stamp/TDS
+- `ece750f` merge: reconcile origin/main (5a03a1b) with local stamp/TDS commits.
+  `5a03a1b` was the first version of the stamp/TDS fix, pushed before the local
+  commit was rewritten into `aaa9fd5` + `a1aaf8b`; the only differences were the
+  literal `NEWCOMMIT` hash placeholder in 11 doc lines. The session started with
+  that merge in progress and 3 conflicted docs; resolving by keeping the local
+  side made the merge tree identical to `a1aaf8b` (no content lost).
+- `8c60ae6` fix(risk): suppress missing-cap finding only for resolved, applicable cross-referenced caps
 
 ## 3. Key architectural decisions (unchanged, reaffirmed)
 
@@ -69,6 +78,20 @@ P4 work" is now committed at `42c25b0`, and the main working tree is clean.
 - Eval case `stamp_tds_present_missed` no longer declares a known limitation; the
   lock set in `tests/test_evaluation_harness.py` now expects only the two remaining
   limitations.
+- `nlp/risk_scoring/rules.py` — `rule_uncapped_liability` now consults the
+  resolver's cross-reference context before raising `RISK_LIABILITY_002`.
+  Suppression requires an explicit reference with `status == "resolved"` AND
+  referenced text stating a cap that verifiably covers the assessed liability
+  (mutual or matching party scope, no exclusions, no loss-category mismatch).
+  Unresolved/missing/ambiguous references, related text without a resolved
+  reference (keyword suppression stays reverted), exclusions, conflicts, and
+  unknown party scope all keep the finding as a human-review prompt.
+- `tests/test_p4_cap_resolution.py` — 14 new tests (valid/invalid/unrelated/
+  ambiguous/excluded caps, negative controls). One P4 cross-reference test was
+  updated to the new contract: its scenario now uses an excluding cap so the
+  advisory-note assertions still hold.
+- Eval case `liability_cap_in_crossref` no longer declares a known limitation;
+  the lock set now expects only `obligation_passive`.
 
 ## 5. Reproducible setup and verification commands
 
@@ -82,16 +105,18 @@ uv run python scripts/run_evaluation.py
 uv run python scripts/verify_provenance.py
 ```
 
-## 6. Current results (verified at `aaa9fd5`)
+## 6. Current results (verified at `8c60ae6`)
 
 - `ruff check .` → All checks passed.
-- Full suite → **150 passed, 7 failed** (157 collected). The 7 failures are all in
+- Full suite → **164 passed, 7 failed** (171 collected). The 7 failures are all in
   `tests/test_no_leakage.py` (T1a/T1b/T2a/T2b/T3a/T3b/T8) — unchanged stale
   `data/processed/` provenance guards.
-- Focused suite (obligations, regressions, risk model/rules, P4, eval harness) → **88 passed**.
-- `scripts/run_evaluation.py` → **15/17 cases pass, 2 known limitations, 0 regressions**;
-  3/3 evidence-integrity invariants hold; exit 0. Before this fix: 14/17 pass,
-  3 known limitations; `stamp_tds_present_missed` was the resolved one.
+- Focused suite (obligations, regressions, risk model/rules, P4 incl. cap
+  resolution, eval harness) → **102 passed**.
+- `scripts/run_evaluation.py` → **16/17 cases pass, 1 known limitation, 0 regressions**;
+  3/3 evidence-integrity invariants hold; exit 0. Progression: 14/17 (3 known
+  limitations) → 15/17 (stamp/TDS fix) → 16/17 (cross-reference cap fix);
+  `obligation_passive` is the only remaining known limitation.
 - `scripts/run_demo.py` → exit 0; 12 clauses, 13 obligations, score 100.0/critical;
   output identical to the pre-fix baseline.
 - `scripts/verify_provenance.py` → 5 failures (missing manifests on the stale
@@ -104,19 +129,23 @@ uv run python scripts/verify_provenance.py
    Resolution is an approval-gated rebuild: `uv run python scripts/build_training_data.py`
    then require `verify_provenance.py` 0 failures. Do **not** swap staging blindly or
    weaken the guards.
-2. **`liability_cap_in_crossref`** (eval known limitation) — a cap in a referenced
-   clause still yields a false `RISK_LIABILITY_002`; needs conservative whole-contract
-   reasoning, not keyword suppression.
-3. **`obligation_passive`** (eval known limitation) — hyphenated written compounds
+2. **`obligation_passive`** (eval known limitation) — hyphenated written compounds
    ("twenty-four") not normalised by the deadline parser; passive by-agent not
    recovered in this construction.
-4. ML risk score remains uncalibrated (presentation only is fixed).
-5. P3 four-way missing-protection status has no explicit enum/consumer
+3. ML risk score remains uncalibrated (presentation only is fixed).
+4. P3 four-way missing-protection status has no explicit enum/consumer
    (see `reports/recovery/P3_STATUS_DESIGN.md`).
-6. TDS detection still requires the at-source construction: "tax deducted from the
+5. TDS detection still requires the at-source construction: "tax deducted from the
    invoice" (no "at source") is intentionally not matched, so `RISK_TDS_001` may
    still fire on contracts that address withholding in other words. This is a
    deliberate precision-over-recall choice, documented in `tests/test_regressions.py`.
+6. Cross-reference cap suppression is intentionally narrow: a cap whose party
+   scope cannot be determined from the text ("Total liability shall not exceed
+   ...") does NOT suppress, so genuine caps phrased without party language still
+   produce a review prompt. Caps with carve-outs also keep the finding by design.
+7. Renewal notices in cross-referenced clauses remain advisory-only; the same
+   conservative contract used for caps has not been applied to
+   `RISK_RENEWAL_001`.
 
 ## 8. Next three prioritised actions
 
@@ -125,18 +154,21 @@ uv run python scripts/verify_provenance.py
    the passive by-agent for "shall be <verb-ed> by <party>"; resolve `obligation_passive`.
 2. **Approval-gated `data/processed/` rebuild** to clear the 7 provenance failures,
    with a full post-rebuild suite run recorded. Ask before running.
-3. **Cross-reference suppression for liability caps** (`liability_cap_in_crossref`)
-   under a narrow, conservative rule contract — never keyword suppression.
+3. **Renewal cross-reference notice** under the same fail-closed contract used
+   for caps (resolved reference + verified opt-out right in the target clause),
+   or **P3 status enum** if the API needs machine-readable missing-protection
+   status.
 
 ## 9. Continuation prompt for a future Kiro session
 
-> Resume BharatContract AI from `reports/recovery/KIRO_HANDOFF.md` at HEAD `aaa9fd5`
-> on branch `main`. Verify with `uv run ruff check .` and `uv run pytest --tb=no`
-> (expect 150 passed, 7 provenance failures from stale `data/processed/`), then
-> `uv run python scripts/run_evaluation.py` (expect 15/17, 2 known limitations).
-> Pick the next action from Section 8, work test-first in a verified milestone,
-> keep the evaluation lock list honest, do not weaken provenance guards, do not
-> rebuild/replace `data/processed/` or push without explicit approval, and do not
-> add a co-author trailer.
+> Resume BharatContract AI from `reports/recovery/KIRO_HANDOFF.md` at HEAD `8c60ae6`
+> (+docs) on branch `main`. Verify with `uv run ruff check .` and
+> `uv run pytest --tb=no` (expect 164 passed, 7 provenance failures from stale
+> `data/processed/`), then `uv run python scripts/run_evaluation.py` (expect
+> 16/17, 1 known limitation: `obligation_passive`). Pick the next action from
+> Section 8, work test-first in a verified milestone, keep the evaluation lock
+> list honest, do not weaken provenance guards, do not rebuild/replace
+> `data/processed/` or push without explicit approval, and do not add a
+> co-author trailer.
 
 No secrets, tokens, or credentials are stored in this handoff.

@@ -214,3 +214,91 @@ Reports updated: `reports/evaluations/synthetic_eval_results.{md,json}`
 Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
 ML calibration; cross-reference suppression; `obligation_passive` recall. No push;
 no co-author trailer.
+
+---
+
+## Kiro session 2026-10-30, third pass (HEAD a1aaf8b -> 8c60ae6 +docs)
+
+State: branch `main`. The session opened with an **in-progress merge** left from
+a `git pull`: `MERGE_HEAD=5a03a1b` (the pushed first version of the stamp/TDS
+fix, which had since been rewritten locally into `aaa9fd5` + `a1aaf8b`) and 3
+conflicted docs. Diffing the sides showed the only differences were the literal
+`NEWCOMMIT` hash placeholder in 11 doc lines; code, tests, and eval reports were
+identical. The conflicts were resolved by keeping the local side, producing
+merge commit `ece750f` whose tree is identical to `a1aaf8b` (verified with
+`git diff a1aaf8b HEAD` — empty). Both histories stay reachable, so the branch
+fast-forwards on push. Nothing pushed.
+
+Commits this session:
+- `ece750f` merge: reconcile origin/main (5a03a1b) with local stamp/TDS commits
+- `8c60ae6` fix(risk): suppress missing-cap finding only for resolved, applicable cross-referenced caps
+
+Task: resolve the `liability_cap_in_crossref` evaluation known limitation
+(false `RISK_LIABILITY_002` when a cross-referenced clause states the cap).
+
+Root cause: `rule_uncapped_liability` evaluated only the clause's own text and
+entities. The resolver already resolved "Clause 7.4" to the cap clause
+(status `resolved`, no unresolved references) and the analyzer already attached
+the referenced clause text to the context bundle, but the rule never consulted
+it — the context fed only the advisory `cross_reference_note`. Reproduced via
+the eval harness (`run_case` on `liability_cap_in_crossref` -> fail,
+"expected rule RISK_LIABILITY_002 absent, but it fired") with the resolved
+context printed and inspected.
+
+Fix (fail-closed verification gate in `nlp/risk_scoring/rules.py`):
+- `_cross_reference_states_applicable_cap` requires the resolver's explicit
+  `references` entries with `status == "resolved"`; any unresolved, missing, or
+  ambiguous reference returns False. `related_clause_texts` without a resolved
+  reference is never sufficient — keyword suppression stays reverted (the P4
+  adversarial/context suites, which never include resolved references, pass
+  unchanged).
+- `_cap_text_covers_liability` then checks the referenced text actually covers
+  the assessed liability: cap language required; exclusion/override markers
+  ("excluding", "except for", "notwithstanding", "unlimited", ...) reject;
+  a cap scoped to direct losses does not cover assessed indirect/consequential
+  exposure; party scope must be mutual ("each party", ...) or name a party that
+  also appears in the assessed clause; unknown scope rejects.
+- Genuinely absent cap vs unresolved reference vs ambiguous reference vs
+  cap-that-may-not-cover: only the first suppression case is silent; every
+  uncertain case keeps `RISK_LIABILITY_002` as the human-review prompt, with
+  the advisory `cross_reference_note` surfacing the considered text.
+- Evidence/provenance: kept findings still bind the exact owning-clause span
+  (role "direct"), and referenced clauses stay traceable via
+  `related_clause_ids` + the advisory note; no spans are fabricated for
+  related clauses. Jurisdiction gating and the `RISK_LIABILITY_001` uncapped
+  path are untouched.
+
+Regression coverage (`tests/test_p4_cap_resolution.py`, 14 tests): valid
+mutual cap (suppresses), same-party cap (suppresses), unresolved reference,
+missing reference, ambiguous reference, unrelated reference (definitions),
+referenced clause without cap, cap with relevant exclusion, direct-losses-only
+cap vs indirect assessment, different-party cap, conflicting cap language,
+related text without resolved reference (negative control), generic cap with
+unknown scope (negative control), and no-context unchanged behaviour.
+`tests/test_p4_cross_reference.py`: one test updated to the new contract — its
+scenario now uses an excluding cap so the finding stands and every
+advisory-note assertion is preserved (comment explains why).
+
+Verification at `8c60ae6` (all via `uv run --no-sync`):
+- `ruff check .` -> All checks passed.
+- `pytest --tb=no -q` -> 171 collected, **164 passed, 7 failed** (junit-verified).
+  The 7 failures are the same `tests/test_no_leakage.py` provenance guards on
+  the stale main-tree `data/processed/` — unchanged data-state issue, kept
+  separate; artifacts not touched.
+- Focused suite (obligations, regressions, risk model/rules, all four P4
+  suites, eval harness) -> **102 passed** (was 88; +14 new tests).
+- `scripts/run_evaluation.py` -> **16/17 pass, 1 known limitation
+  (`obligation_passive`), 0 regressions, 0 resolved pending**, 3/3 invariants
+  OK, exit 0. Before the fix: 15/17 pass, 2 known limitations. The case's
+  `known_limitation` note was removed and the lock set in
+  `tests/test_evaluation_harness.py` updated.
+- `scripts/run_demo.py` -> exit 0; output identical to the pre-fix baseline
+  (12 clauses, 13 obligations, score 100.0/critical).
+
+Reports updated: `reports/evaluations/synthetic_eval_results.{md,json}`
+(regenerated), final project report (counts, defect D14, §6.2/§7.3 whole-contract
+reasoning now partially addressed), `KIRO_HANDOFF.md`.
+
+Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
+ML calibration; `obligation_passive` recall; renewal cross-reference notices
+remain advisory-only; P3 status enum. No push; no co-author trailer.
