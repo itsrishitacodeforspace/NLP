@@ -48,6 +48,10 @@ def test_ambiguous_reference_is_recorded():
 
 
 def test_resolved_related_clause_is_recorded_with_text_and_kept_advisory():
+    # The referenced cap excludes indirect damages, so it does NOT verifiably
+    # cover the assessed liability: the finding stands and the advisory note
+    # surfaces the considered text. (A resolved, fully applicable cap now
+    # suppresses the finding — see tests/test_p4_cap_resolution.py.)
     c = _clause(
         "c7",
         "Limitation of Liability. Liability is subject to Section 7.4.",
@@ -55,12 +59,12 @@ def test_resolved_related_clause_is_recorded_with_text_and_kept_advisory():
         context={
             "references": [{"raw": "Section 7.4", "status": "resolved", "target_clause_ids": ["c7_4"]}],
             "related_clause_ids": ["c7_4"],
-            "related_clause_texts": ["Each party's total liability shall not exceed the fees paid."],
+            "related_clause_texts": ["Each party's total liability shall not exceed the fees paid, excluding indirect damages."],
             "unresolved_references": [],
         },
     )
     flags = _liability_flags(c)
-    assert flags, "a related clause must not suppress the finding"
+    assert flags, "a cap that excludes the assessed liability must not suppress the finding"
     note = flags[0].cross_reference_note
     assert note is not None
     assert "related clause" in note

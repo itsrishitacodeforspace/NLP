@@ -286,12 +286,6 @@ CASES: Tuple[EvalCase, ...] = (
             "under this Agreement in the preceding 12 months.\n"
         ),
         expect_absent=("RISK_LIABILITY_002",),
-        known_limitation=(
-            "Rules evaluate a single clause; the cap in cross-referenced clause 7.4 "
-            "is not consumed, so RISK_LIABILITY_002 is a false positive on 7.1. "
-            "Automatic cross-clause suppression was deliberately reverted as unsafe "
-            "(a keyword match in a related clause does not establish an applicable cap)."
-        ),
     ),
     # ----- Passive voice + written-out compound deadline (known gap) -----
     EvalCase(

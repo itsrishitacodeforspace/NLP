@@ -10,7 +10,6 @@ from nlp.evaluation import run_all
 # unresolved behaviour; it is asserted explicitly so a limitation cannot be
 # hidden and a fix cannot silently "resolve" a case without this list changing.
 EXPECTED_KNOWN_LIMITATIONS = {
-    "liability_cap_in_crossref",
     "obligation_passive",
 }
 

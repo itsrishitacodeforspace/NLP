@@ -5,8 +5,8 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 ## Summary
 
 - Cases: 17
-- Passing: 15
-- Known limitations (declared, still failing): 2
+- Passing: 16
+- Known limitations (declared, still failing): 1
 - Unexpected regressions: 0
 - Resolved limitations (declared but now passing): 0
 
@@ -88,13 +88,10 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 - Expected: A statute reference is not a party; the recipient must stay None, not fabricated.
 - Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_STAMP_001
 
-### liability_cap_in_crossref — KNOWN LIMITATION
+### liability_cap_in_crossref — PASS
 - Category: `cross_reference_resolution`
 - Expected: A liability cap stated in a cross-referenced clause (7.4) should prevent a 'missing cap' finding on clause 7.1.
-- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_TERMINATION, ML_RISK_001, RISK_LIABILITY_002, RISK_STAMP_001
-- Deviations from expected:
-    - expected rule RISK_LIABILITY_002 absent, but it fired (false positive)
-- Known limitation: Rules evaluate a single clause; the cap in cross-referenced clause 7.4 is not consumed, so RISK_LIABILITY_002 is a false positive on 7.1. Automatic cross-clause suppression was deliberately reverted as unsafe (a keyword match in a related clause does not establish an applicable cap).
+- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_TERMINATION, ML_RISK_001, RISK_STAMP_001
 
 ### obligation_passive — KNOWN LIMITATION
 - Category: `passive_voice`

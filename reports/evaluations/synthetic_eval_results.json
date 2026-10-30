@@ -195,18 +195,15 @@
     {
       "case_id": "liability_cap_in_crossref",
       "category": "cross_reference_resolution",
-      "status": "fail",
-      "known_limitation": "Rules evaluate a single clause; the cap in cross-referenced clause 7.4 is not consumed, so RISK_LIABILITY_002 is a false positive on 7.1. Automatic cross-clause suppression was deliberately reverted as unsafe (a keyword match in a related clause does not establish an applicable cap).",
+      "status": "pass",
+      "known_limitation": null,
       "observed_rule_ids": [
         "MISSING_CLAUSE_GOVERNING_LAW",
         "MISSING_CLAUSE_TERMINATION",
         "ML_RISK_001",
-        "RISK_LIABILITY_002",
         "RISK_STAMP_001"
       ],
-      "failures": [
-        "expected rule RISK_LIABILITY_002 absent, but it fired (false positive)"
-      ]
+      "failures": []
     },
     {
       "case_id": "obligation_passive",
@@ -257,9 +254,8 @@
   ],
   "summary": {
     "cases": 17,
-    "passing": 15,
+    "passing": 16,
     "known_limitations": [
-      "liability_cap_in_crossref",
       "obligation_passive"
     ],
     "regressions": [],

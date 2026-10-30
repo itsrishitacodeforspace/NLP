@@ -56,6 +56,121 @@ def _any_clause_type(clause: Clause, *types: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Cross-reference cap verification (narrow, fail-closed)
+#
+# A "missing cap" finding may be suppressed ONLY when an explicit, resolved
+# in-clause reference points to a clause whose text states a liability cap that
+# verifiably covers the assessed liability. Keyword presence in a related
+# clause (without a resolved reference) never suppresses — that behaviour was
+# reverted as unsafe and stays reverted. Any doubt (ambiguous/missing/
+# unresolved reference, exclusions, party or loss-category mismatch, unknown
+# scope) keeps the finding as a human-review prompt.
+# ---------------------------------------------------------------------------
+
+_CAP_LANGUAGE = (
+    "shall not exceed",
+    "not exceed",
+    "limited to",
+    "liability cap",
+    "maximum liability",
+    "aggregate cap",
+    "cap of",
+)
+# Exclusion or override language in the cap clause means coverage of the
+# assessed liability cannot be confirmed from the text.
+_CAP_UNCERTAINTY_MARKERS = (
+    "excluding",
+    "except for",
+    "except as",
+    "other than",
+    "carve",
+    "notwithstanding",
+    "unlimited",
+    "without limitation",
+)
+_MUTUAL_SCOPE_MARKERS = (
+    "each party",
+    "either party",
+    "neither party",
+    "both parties",
+    "any party",
+    "of a party",
+)
+_PARTY_NOUNS = (
+    "provider", "customer", "client", "supplier", "vendor", "licensor",
+    "licensee", "contractor", "consultant", "reseller", "distributor",
+)
+
+
+def _cap_text_covers_liability(cap_text: str, assessed_text: str) -> bool:
+    """True only when ``cap_text`` states a cap that verifiably covers the
+    liability assessed in ``assessed_text``. Fail-closed on any uncertainty."""
+    cap = (cap_text or "").lower()
+    assessed = (assessed_text or "").lower()
+    if not any(t in cap for t in _CAP_LANGUAGE):
+        return False
+    if any(m in cap for m in _CAP_UNCERTAINTY_MARKERS):
+        return False
+    # Loss-category mismatch: a cap scoped to direct losses does not cover an
+    # assessed indirect/consequential exposure.
+    assessed_indirect = any(w in assessed for w in ("indirect", "consequential"))
+    cap_direct_only = (
+        any(w in cap for w in ("direct damages", "direct losses"))
+        and not any(w in cap for w in ("indirect", "consequential"))
+    )
+    if assessed_indirect and cap_direct_only:
+        return False
+    # Party scope: mutual language covers both parties; a named party must also
+    # appear in the assessed clause; anything else is unknown scope -> no cover.
+    if any(m in cap for m in _MUTUAL_SCOPE_MARKERS):
+        return True
+    named = [n for n in _PARTY_NOUNS if re.search(rf"\b{re.escape(n)}\b", cap)]
+    if named and any(re.search(rf"\b{re.escape(n)}\b", assessed) for n in named):
+        return True
+    return False
+
+
+def _cross_reference_states_applicable_cap(clause: Clause) -> bool:
+    """True only when a resolved reference in ``clause`` points to a clause
+    whose text states a liability cap covering the assessed liability.
+
+    Requires the resolver's explicit ``references`` entries with
+    ``status == "resolved"``; ``related_clause_texts`` alone (keyword presence)
+    is never sufficient. Unresolved, missing or ambiguous references, and
+    references without retrievable target text, all return False.
+    """
+    ctx = clause.context if isinstance(clause.context, dict) else {}
+    if ctx.get("unresolved_references"):
+        return False
+    references = ctx.get("references") or []
+    if not references:
+        return False
+    related_ids = list(ctx.get("related_clause_ids") or [])
+    related_texts = list(ctx.get("related_clause_texts") or [])
+    # related_clause_texts is built by the analyzer in related_clause_ids
+    # order, so positional alignment recovers each target's exact text.
+    text_by_id = {
+        rid: related_texts[i]
+        for i, rid in enumerate(related_ids)
+        if i < len(related_texts)
+    }
+    candidates: List[str] = []
+    for ref in references:
+        if not isinstance(ref, dict):
+            continue
+        if ref.get("status") != "resolved":
+            return False  # ambiguous/missing reference -> human review
+        for tid in ref.get("target_clause_ids") or []:
+            if tid == clause.clause_id:
+                continue
+            text = text_by_id.get(tid)
+            if text:
+                candidates.append(text)
+    assessed = clause.text or ""
+    return any(_cap_text_covers_liability(c, assessed) for c in candidates)
+
+
+# ---------------------------------------------------------------------------
 # Risk rules
 # ---------------------------------------------------------------------------
 
@@ -96,6 +211,13 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
         t in text for t in ("liability cap", "shall not exceed", "limited to", "maximum liability")
     )
     if not has_cap_language and not _has_label(clause.entities, "PAYMENT_AMOUNT"):
+        # A resolved cross-reference to a clause that states a verifiably
+        # applicable cap means the cap is not missing. This is reference-based
+        # verification, not keyword suppression: related text without a
+        # resolved reference, and any ambiguity about applicability, keeps the
+        # finding as a human-review prompt.
+        if _cross_reference_states_applicable_cap(clause):
+            return None
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_LIABILITY_002",
             clause_id=clause.clause_id,
