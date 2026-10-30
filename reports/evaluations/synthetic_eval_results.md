@@ -96,7 +96,7 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 ### obligation_passive — PASS
 - Category: `passive_voice`
 - Expected: A passive duty ('shall be encrypted by the Processor within twenty-four (24) hours') should recover the by-agent as obligor and the 24h deadline.
-- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_STAMP_001, RISK_TDS_001
+- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_DATA_001, RISK_STAMP_001, RISK_TDS_001
 
 ### stamp_tds_present_missed — PASS
 - Category: `detection_recall_gap`
