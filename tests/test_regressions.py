@@ -114,3 +114,74 @@ Each party shall protect confidential information.
     assert any("Confidentiality" in (h or "") for h in headings)
     sections = [c.section_number for c in clauses if c.section_number]
     assert "7" in sections or any(s and s.startswith("7") for s in sections)
+
+
+# ---------------------------------------------------------------------------
+# Stamp-duty / TDS detection recall (eval case stamp_tds_present_missed)
+# ---------------------------------------------------------------------------
+
+
+def test_stamp_duty_detector_covers_stamped_wording():
+    from nlp.ner.ner import detect_stamp_duty_mention
+
+    positives = [
+        "This Agreement is executed on duly stamped paper.",
+        "This Agreement is duly stamped.",
+        "The parties shall execute this Agreement on non-judicial stamp paper "
+        "of appropriate value.",
+        "The stamp duty on this Agreement shall be borne by the Customer.",
+        "Stamping of this Agreement shall be the responsibility of the Provider.",
+        "Each party shall bear the cost of the stamped copies.",
+        "The original stamped agreement shall be retained by the Customer.",
+    ]
+    for text in positives:
+        assert detect_stamp_duty_mention(text), text
+
+
+def test_stamp_duty_detector_ignores_unrelated_stamp_and_paper_mentions():
+    from nlp.ner.ner import detect_stamp_duty_mention
+
+    negatives = [
+        "The board rubber-stamped the decision without debate.",
+        "The letter bore a postage stamp.",
+        "Every notice shall carry a date stamp.",
+        "The parties shall cooperate to stamp out fraud.",
+        "Each log entry is timestamped.",
+        "A paper copy shall be provided on request.",
+        "The report bears the stamp of approval of the committee.",
+    ]
+    for text in negatives:
+        assert not detect_stamp_duty_mention(text), text
+
+
+def test_tds_detector_covers_deduction_at_source_wording():
+    from nlp.ner.ner import detect_tds_mention
+
+    positives = [
+        "Payments are subject to deduction of tax at source under the "
+        "Income Tax Act, 1961.",
+        "The Customer shall deduct tax at source as required by law.",
+        "The Customer shall deduct at source any applicable taxes.",
+        "Fees are subject to tax deducted at source.",
+        "TDS shall be withheld as applicable.",
+        "Amounts deducted at source shall be remitted to the government.",
+        "Tax deduction at source shall apply to all payments under this Agreement.",
+    ]
+    for text in positives:
+        assert detect_tds_mention(text), text
+
+
+def test_tds_detector_ignores_unrelated_tax_and_deduction_mentions():
+    from nlp.ner.ner import detect_tds_mention
+
+    negatives = [
+        "The Customer shall pay goods and services tax on each invoice.",
+        "No deduction of damages shall be made from the security deposit.",
+        "Each party is responsible for filing its own income tax returns.",
+        "The fees are exclusive of sales tax.",
+        "Any deduction for late delivery shall be capped at five percent.",
+        "The source code shall be deposited in escrow.",
+        "Tax shall be deducted from the invoice where required.",
+    ]
+    for text in negatives:
+        assert not detect_tds_mention(text), text

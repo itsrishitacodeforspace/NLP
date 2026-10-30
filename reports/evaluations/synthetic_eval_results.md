@@ -5,8 +5,8 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 ## Summary
 
 - Cases: 17
-- Passing: 14
-- Known limitations (declared, still failing): 3
+- Passing: 15
+- Known limitations (declared, still failing): 2
 - Unexpected regressions: 0
 - Resolved limitations (declared but now passing): 0
 
@@ -105,11 +105,7 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
     - obligation['encrypted']: deadline=None (expected '24 hours')
 - Known limitation: Hyphenated written compounds ('twenty-four') are not normalised by the deadline parser, and the passive by-agent is not recovered here, so the subject and 24h deadline are both missed.
 
-### stamp_tds_present_missed — KNOWN LIMITATION
+### stamp_tds_present_missed — PASS
 - Category: `detection_recall_gap`
 - Expected: 'duly stamped paper' and 'deduction of tax at source' are present, so the stamp/TDS 'not found' prompts should NOT fire.
-- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_STAMP_001, RISK_TDS_001
-- Deviations from expected:
-    - expected rule RISK_STAMP_001 absent, but it fired (false positive)
-    - expected rule RISK_TDS_001 absent, but it fired (false positive)
-- Known limitation: detect_stamp_duty_mention / detect_tds_mention use narrow keyword lists and miss 'duly stamped paper' and 'deduction of tax at source', so the review prompts fire on a contract that already addresses both.
+- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION

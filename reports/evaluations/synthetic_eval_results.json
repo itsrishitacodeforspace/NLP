@@ -228,19 +228,14 @@
     {
       "case_id": "stamp_tds_present_missed",
       "category": "detection_recall_gap",
-      "status": "fail",
-      "known_limitation": "detect_stamp_duty_mention / detect_tds_mention use narrow keyword lists and miss 'duly stamped paper' and 'deduction of tax at source', so the review prompts fire on a contract that already addresses both.",
+      "status": "pass",
+      "known_limitation": null,
       "observed_rule_ids": [
         "MISSING_CLAUSE_GOVERNING_LAW",
         "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
-        "MISSING_CLAUSE_TERMINATION",
-        "RISK_STAMP_001",
-        "RISK_TDS_001"
+        "MISSING_CLAUSE_TERMINATION"
       ],
-      "failures": [
-        "expected rule RISK_STAMP_001 absent, but it fired (false positive)",
-        "expected rule RISK_TDS_001 absent, but it fired (false positive)"
-      ]
+      "failures": []
     }
   ],
   "invariants": [
@@ -262,11 +257,10 @@
   ],
   "summary": {
     "cases": 17,
-    "passing": 14,
+    "passing": 15,
     "known_limitations": [
       "liability_cap_in_crossref",
-      "obligation_passive",
-      "stamp_tds_present_missed"
+      "obligation_passive"
     ],
     "regressions": [],
     "resolved": []

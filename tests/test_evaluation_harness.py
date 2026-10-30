@@ -12,7 +12,6 @@ from nlp.evaluation import run_all
 EXPECTED_KNOWN_LIMITATIONS = {
     "liability_cap_in_crossref",
     "obligation_passive",
-    "stamp_tds_present_missed",
 }
 
 
