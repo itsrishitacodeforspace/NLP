@@ -252,8 +252,6 @@ def test_d3_long_clause_sub_offsets_slice_source():
         assert text[c.char_start:c.char_end] == c.text
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D4: negated/disclaiming statutory mentions suppress the "
-                                       "stamp/TDS review prompts exactly when review is most needed")
 def test_d4_negated_tds_mention_still_prompts_review():
     r = _run(
         "2. PAYMENT\nThe Customer shall pay invoices within 30 days. "
@@ -262,7 +260,6 @@ def test_d4_negated_tds_mention_still_prompts_review():
     assert "RISK_TDS_001" in _rule_ids(r)
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D4: negated stamp-duty mention suppresses the review prompt")
 def test_d4_negated_stamp_mention_still_prompts_review():
     r = _run(
         "2. PAYMENT\nThe Customer shall pay invoices within 30 days. "

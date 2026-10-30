@@ -261,6 +261,33 @@ def detect_governing_law(text: str) -> Optional[str]:
     return None
 
 
+# Negation handling: a statutory mention that is explicitly negated or denied
+# in its immediate scope ("was not executed on duly stamped paper", "without
+# deduction of tax at source", "exempt from stamp duty") is NOT confirmation
+# that the requirement was addressed, so it must not suppress the review
+# prompt. The cue must sit within a few tokens before the match, in the same
+# sentence: distant or unrelated negation ("no later than 30 days ... duly
+# stamped paper", a negated previous sentence) never hides a valid mention.
+_NEGATION_CUES = ("not", "no", "never", "without", "neither", "nor", "exempt")
+_NEGATION_WINDOW_TOKENS = 6
+
+
+def _is_negated_mention(lowered: str, start: int) -> bool:
+    """True when a negation cue appears within a few tokens before ``start``,
+    inside the same sentence (sentence punctuation and newlines bound the
+    window; commas do not, so "..., without deduction of tax at source, ..."
+    is still negated)."""
+    prefix = lowered[:start]
+    boundary = max(
+        prefix.rfind("."), prefix.rfind("!"), prefix.rfind("?"),
+        prefix.rfind(";"), prefix.rfind("\n"),
+    )
+    window = prefix[boundary + 1:] if boundary != -1 else prefix
+    tokens = [t.strip("(),:\"'") for t in window.split()]
+    tail = [t for t in tokens if t]
+    return any(tok in _NEGATION_CUES for tok in tail[-_NEGATION_WINDOW_TOKENS:])
+
+
 # Stamp-duty wording beyond the plain keyword list: "duly stamped paper",
 # "non-judicial stamp paper", "stamping of this Agreement". Deliberately tight:
 # unrelated senses ("rubber-stamped", "postage stamp", "timestamp") must not
@@ -293,14 +320,22 @@ _TDS_RE = re.compile(
 
 def detect_stamp_duty_mention(text: str) -> bool:
     lowered = clean_text(text).lower()
-    if any(kw in lowered for kw in _STAMP_DUTY_KEYWORDS):
-        return True
-    return bool(_STAMP_DUTY_RE.search(lowered))
+    for kw in _STAMP_DUTY_KEYWORDS:
+        for m in re.finditer(re.escape(kw), lowered):
+            if not _is_negated_mention(lowered, m.start()):
+                return True
+    return any(
+        not _is_negated_mention(lowered, m.start())
+        for m in _STAMP_DUTY_RE.finditer(lowered)
+    )
 
 
 def detect_tds_mention(text: str) -> bool:
     lowered = clean_text(text).lower()
-    return bool(_TDS_RE.search(lowered))
+    return any(
+        not _is_negated_mention(lowered, m.start())
+        for m in _TDS_RE.finditer(lowered)
+    )
 
 
 def detect_gstin_mention(text: str) -> bool:

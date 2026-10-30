@@ -185,3 +185,66 @@ def test_tds_detector_ignores_unrelated_tax_and_deduction_mentions():
     ]
     for text in negatives:
         assert not detect_tds_mention(text), text
+
+
+# ---------------------------------------------------------------------------
+# Negated statutory mentions (audit defect D4): a denied mention is not
+# confirmation that the requirement was addressed.
+# ---------------------------------------------------------------------------
+
+
+def test_stamp_duty_negated_mentions_are_not_confirmations():
+    from nlp.ner.ner import detect_stamp_duty_mention
+
+    negated = [
+        "This Agreement was not executed on duly stamped paper.",
+        "The Agreement is not duly stamped.",
+        "This Agreement is exempt from stamp duty under the applicable notification.",
+        "No stamp duty certificate was obtained by either party.",
+        "The parties agreed never to present the Agreement on stamped paper.",
+    ]
+    for text in negated:
+        assert not detect_stamp_duty_mention(text), text
+
+
+def test_tds_negated_mentions_are_not_confirmations():
+    from nlp.ner.ner import detect_tds_mention
+
+    negated = [
+        "Payments shall be made without deduction of tax at source.",
+        "The Provider is not responsible for deducting tax at source.",
+        "No TDS shall apply to payments under this Agreement.",
+        "The Customer shall never deduct tax at source from the fees.",
+    ]
+    for text in negated:
+        assert not detect_tds_mention(text), text
+
+
+def test_unrelated_negation_does_not_hide_valid_mentions():
+    from nlp.ner.ner import detect_stamp_duty_mention, detect_tds_mention
+
+    boundary_cases = [
+        # A negated earlier sentence must not hide a valid later mention.
+        "The Provider shall not be liable for delays. This Agreement is executed on duly stamped paper.",
+        # "notwithstanding" is not the cue token "not".
+        "Notwithstanding anything herein, this Agreement is executed on duly stamped paper.",
+        # "no later than" sits far outside the negation window.
+        "The invoice shall be paid no later than thirty days after execution on duly stamped paper.",
+    ]
+    for text in boundary_cases:
+        assert detect_stamp_duty_mention(text), text
+    tds_boundary = [
+        "The Provider shall not charge for support. Payments are subject to deduction of tax at source.",
+        "Notwithstanding the foregoing, the Customer shall deduct tax at source as required by law.",
+    ]
+    for text in tds_boundary:
+        assert detect_tds_mention(text), text
+
+
+def test_post_mention_negation_does_not_negate():
+    from nlp.ner.ner import detect_stamp_duty_mention
+
+    # Negation AFTER the mention does not deny the mention itself.
+    assert detect_stamp_duty_mention(
+        "The stamp duty on this Agreement shall not be borne by the Provider."
+    )
