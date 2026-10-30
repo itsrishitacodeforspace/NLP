@@ -4,7 +4,7 @@
 **Report date:** 30 October 2026
 **Prepared by:** Project team
 **Repository:** `C:\Users\Ivermectin\Desktop\NLP\NLP`
-**Verified at commit:** `42b985c` on branch `main`
+**Verified at commit:** `5b64da9` on branch `main` (docs/records on top)
 **Report scope:** Backend, NLP pipeline, risk engine, verification, and limitations. The existing dashboard is outside the verification scope of this report.
 
 ---
@@ -13,7 +13,7 @@
 
 BharatContract AI is a working prototype for automated review of commercial contracts, with emphasis on Indian statutory and arbitration risks. The system accepts PDF, DOCX, TXT, and Markdown files; parses and segments the document; classifies clauses; extracts entities and obligations; and applies a rule-first risk playbook backed by an optional machine-learning recall booster. Findings carry evidence spans, search scope, and statutory or case-law pointers, so that a reviewer can inspect why a flag was raised rather than receiving an unexplained score.
 
-The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 186-test suite: **179 tests pass and 7 provenance tests fail closed** because the production `data/processed/` artifacts lack manifests and train-only lineage. A focused 117-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues.
+The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 227-test suite in which **all 227 tests pass** — the seven provenance guards now pass on the restored, manifest-complete `data/processed/` artifacts (an authorised, controlled replacement; before/after evidence in `reports/audit/remediation_verification_20261030.md`). A focused 126-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues. A zero-trust integration audit (`reports/audit/integration_audit_20261030.md`) and its remediation pass fixed six integration defects: negated statutory mentions, segmenter preamble loss, clause/sub-clause offset fidelity, digit-only breach-window parsing, and party-name truncation.
 
 A deterministic evaluation harness (`nlp/evaluation/`, driven by `scripts/run_evaluation.py`) runs 17 synthetic labelled contracts through the full pipeline. At the verified commit, **all 17 cases pass, with no documented known limitations and no unexpected regressions**; three evidence-integrity invariants (model findings stay unverified; clause-level rule findings carry a direct span; contract-level findings are scoped and unverified) hold across every finding. This is a software-behaviour check on synthetic data, not a measure of legal accuracy or real-world reliability.
 
@@ -204,7 +204,7 @@ When auth is disabled, the demo remains open and owner filtering is skipped.
 
 ### 4.2 Segmentation
 
-`app/services/segmenter.py` groups paragraphs into clauses using numbered sections, article/section headings, and capitalised headings. Markdown-prefixed headings such as `## 7. Limitation of Liability` are recognised. Clauses longer than 2,500 characters are re-split by paragraph. Each clause stores offsets into the cleaned document text.
+`app/services/segmenter.py` groups paragraphs into clauses using numbered sections, article/section headings, and capitalised headings. Markdown-prefixed headings such as `## 7. Limitation of Liability` are recognised. Clauses longer than 2,500 characters are re-split by paragraph (then sentence, then fixed character). Each clause stores offsets into the cleaned document text, and since the 2026-10-30 remediation every clause's text is the **exact slice** of the cleaned document at those offsets — including for long-clause sub-segments — with no synthetic separators or assumed spacing. Preamble text is never dropped during grouping.
 
 ### 4.3 Clause classification
 
@@ -310,7 +310,7 @@ The score is not a probability. A value of 100 means “top of the critical band
 
 Generated artifacts carry `<artifact>.manifest.json` files containing source hashes, split identity, build command, code revision, and artifact hash. `scripts/verify_provenance.py` fails closed: it exits non-zero when a manifest is missing or lineage is invalid. `/healthz` exposes a provenance block, and analysis warnings carry `PROVENANCE_UNVERIFIED` or `PROVENANCE_ABSENT` tokens.
 
-The current production `data/processed/` directory has five artifacts and zero manifests. This is the reason for the seven failing tests described in Section 5.
+The production `data/processed/` directory was restored on 2026-10-30 under an authorised controlled procedure: it now carries five artifacts **with** manifests and train-only row lineage, and the verifier reports 0 failures. The previously stale tree (five artifacts, zero manifests) is preserved as a hash-verified backup at `tmp/processed-backup-20261030/` (gitignored).
 
 ---
 
@@ -340,18 +340,25 @@ uv run python scripts/verify_provenance.py
 
 | Check | Result |
 |---|---|
-| Full test suite | **179 passed, 7 failed, 4 warnings** in ~70 s |
-| Focused suite | **117 passed** |
+| Full test suite | **227 passed, 0 failed, 0 skipped** in ~90 s |
+| Focused suite | **126 passed** |
 | Synthetic evaluation harness | **17/17 cases pass, 0 known limitations, 0 regressions**; 3/3 evidence invariants hold |
 | Lint | **All checks passed** |
 | Demo | 2,846-character MSA parsed into **12 clauses and 13 obligations** |
-| Provenance verifier | **5 failures, 0 skipped** (all missing manifests) |
+| Provenance verifier | **0 failures, 0 skipped** (restored artifacts, 2026-10-30) |
 
-The 186 collected tests cover parsing, segmentation, long clauses, classifier regression thresholds, context resolution, obligation extraction (including passive-voice by-agents and compound written deadlines), evidence binding, risk rules (including written/parenthetical renewal-notice parsing, stamp-duty/TDS detection recall with negative controls, and conservative cross-reference cap resolution), risk-model wording, P4 cross-reference behaviour, the synthetic evaluation harness, authentication/RBAC, row-level security, API smoke tests, end-to-end analysis, and provenance.
+The 227 collected tests cover parsing, segmentation (including exact source-slice offsets for every heading layout and long-clause splitting, and preamble preservation), long clauses, classifier regression thresholds, context resolution, obligation extraction (including passive-voice by-agents and compound written deadlines), evidence binding, risk rules (including written/parenthetical renewal-notice parsing, written-number breach windows, stamp-duty/TDS detection recall with negative controls and negation handling, and conservative cross-reference cap resolution), risk-model wording, P4 cross-reference behaviour, audit-originated integration tests, the synthetic evaluation harness, authentication/RBAC, row-level security, API smoke tests, end-to-end analysis, and provenance.
 
-### 5.3 The seven failing tests
+### 5.3 The seven provenance tests — formerly failing, now passing
 
-All seven failures are in `tests/test_no_leakage.py`:
+**Status update (2026-10-30):** the seven failures below were resolved by an
+authorised, controlled restoration of `data/processed/` (backup, supported
+rebuild, hash verification, verifier exit 0; full evidence in
+`reports/audit/remediation_verification_20261030.md`). All seven tests now pass
+against the restored artifacts. The historical diagnosis is preserved below for
+context.
+
+All seven failures were in `tests/test_no_leakage.py`:
 
 - `test_t1a_training_corpus_has_train_only_provenance`
 - `test_t1b_corpus_rows_trace_to_train_only_sources`
@@ -361,7 +368,7 @@ All seven failures are in `tests/test_no_leakage.py`:
 - `test_t3b_maud_artifacts_exclude_test_split`
 - `test_t8_cuad_examples_provenance`
 
-The immediate cause is missing manifests for:
+The immediate cause was missing manifests for:
 
 ```text
 data/processed/clause_classifier.csv
@@ -371,9 +378,7 @@ data/processed/maud_examples.jsonl
 data/processed/unified_examples.jsonl
 ```
 
-The corpus also lacks usable per-row `doc_id`/`split` lineage in the current production copy. These are **data-state failures, not code failures**. The guards are working as designed: they fail closed instead of silently accepting unverified artifacts.
-
-A prior fresh-checkout workflow, recorded in `reports/recovery/RECOVERY_TRACKER.md`, regenerated train-only artifacts and completed the suite with exit 0. Replacing the production artifacts is a separate, approval-gated operation and was not performed in this pass.
+The corpus also lacked usable per-row `doc_id`/`split` lineage in the then-current production copy. These were **data-state failures, not code failures** — the guards worked as designed, failing closed instead of silently accepting unverified artifacts. The 2026-10-30 restoration replaced the stale tree via the supported build procedure with full before/after evidence; the old tree is backed up at `tmp/processed-backup-20261030/` (gitignored), and the replacement's hashes match an independently verified isolated build.
 
 ### 5.4 Demo output
 
@@ -458,6 +463,8 @@ This harness is a behavioural and regression instrument on synthetic data. It is
 | D14 | `rule_uncapped_liability` evaluated only the clause's own text, so a clearly stated cap in a cross-referenced clause (“Except as set out in Clause 7.4” → 7.4 LIABILITY CAP) still produced a false `RISK_LIABILITY_002` | Fail-closed verification gate: suppression requires an explicit resolver reference with status `resolved` AND referenced text stating a cap that verifiably covers the assessed liability (mutual or matching party scope, no exclusions, no loss-category mismatch). Unresolved/missing/ambiguous references, related text without a resolved reference, exclusions, conflicts, and unknown party scope all keep the finding as a human-review prompt |
 | D15 | Passive obligations lost the responsible party and the deadline in “Personal data shall be encrypted by the Processor within twenty-four (24) hours”: the passive-agent vocabulary had no data-protection role nouns (“Processor”), and the deadline parser matched only single-token numbers (no hyphenated compounds; “seventy”/“eighty” missing) | Add Processor/Controller to the party-role vocabulary so “by the Processor” is recovered as the obligor; use the shared `NUMBER_TOKEN_RE`/`written_number_to_int` for deadlines so “twenty-four (24) hours” normalises to “24 hours”; recognise irregular passive participles (sent/made/paid/…). Agentless passives and non-party agent phrases (“by Friday”) still leave the subject unknown |
 
+A subsequent zero-trust integration audit (2026-10-30, `reports/audit/integration_audit_20261030.md`) found six further integration defects, all fixed in the same-authorised remediation pass (`reports/audit/remediation_verification_20261030.md`): negated stamp/TDS mentions no longer suppress review prompts; multi-line preambles keep every line; clause and long-clause sub-segment offsets slice the cleaned source exactly; the breach-window rule parses written-number notice periods; and party detection no longer truncates legal names containing “Services”/“Company” or glues adjacent names.
+
 ### 6.2 Interpretation
 
 The system’s strongest property is **traceability**. A reviewer can see the clause, the exact character span for clause-level findings, the search scope for contract-level findings, the rule that fired, and the legal pointer attached to it. This is more useful than a single opaque risk score.
@@ -513,7 +520,7 @@ The four-way missing-protection model (`present | incomplete | not_found_in_scop
 
 ### 7.5 Provenance
 
-The production `data/processed/` artifacts remain unverified. The seven failing tests should remain visible until the artifacts are rebuilt from train-only sources with manifests and the provenance verifier exits 0. The bundled models remain `provenance-unverified`; no leakage-free or generalisation claim is made.
+The production `data/processed/` artifacts are now verified (manifests + train-only row lineage; verifier exit 0 since 2026-10-30). The bundled models remain `provenance-unverified` — their training corpus overlaps held-out CUAD — so no leakage-free or generalisation claim is made, and retraining remains approval-gated.
 
 ### 7.6 Parsing and extraction limits
 
@@ -532,7 +539,7 @@ Statutory and case-law pointers are informational and abbreviated. They must be 
 
 BharatContract AI demonstrates a complete, offline-capable contract-analysis pipeline with a strong emphasis on traceability and graceful degradation. It parses and segments contracts, classifies clauses, extracts entities and obligations, applies Indian and global risk rules, binds evidence to findings, and exposes the result through a FastAPI backend with optional authentication and persistence.
 
-The current verification is honest rather than flattering: 179 tests pass, 7 fail closed on stale provenance, the ML score is uncalibrated, and the project makes no held-out accuracy claim. The most important engineering contribution is not a single model score but the discipline of showing the clause, the span, the search scope, and the limitation behind each finding.
+The current verification is honest rather than flattering: all 227 tests pass on restored, manifest-complete data; the ML score is uncalibrated; and the project makes no held-out accuracy claim. The most important engineering contribution is not a single model score but the discipline of showing the clause, the span, the search scope, and the limitation behind each finding.
 
 The next milestone should be a labelled evaluation corpus and conservative whole-contract reasoning. Until then, the system is a useful reviewer-assistance prototype, not a legal decision-maker.
 
@@ -610,6 +617,12 @@ Artifact regeneration is approval-gated and was not performed for this report.
 ## Appendix C — Selected recent commits
 
 ```text
+5b64da9 fix(ner): stop party-name walk-back at a second corporate suffix
+1b13c2d chore(data): restore verified processed artifacts
+128a835 fix(risk): parse written-number breach notice periods
+e2fdbb9 fix(segmentation): exact source spans; preserve multi-line preamble content
+90bb769 fix(risk): preserve review prompts for negated statutory mentions
+8b18f89 docs(audit): zero-trust integration audit + audit-only tests
 42b985c fix(obligations): recover passive by-agents and compound written deadlines
 8c60ae6 fix(risk): suppress missing-cap finding only for resolved, applicable cross-referenced caps
 ece750f merge: reconcile origin/main (5a03a1b) with local stamp/TDS commits

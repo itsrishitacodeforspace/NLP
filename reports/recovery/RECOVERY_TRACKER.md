@@ -422,3 +422,78 @@ remains pending (report §H).
 
 Not done (boundaries): no production code changes; no test weakening; no
 `data/processed/` modification; no push; no model retraining.
+
+---
+
+## Kiro session 2026-10-30, sixth pass — integration defect remediation D1–D6 + data restoration
+
+State: branch `main`. Started at audit commit `8b18f89`. All six audit defects
+fixed and verified; stale `data/processed/` restored under the authorised
+controlled procedure. Working tree clean at `3db8416` (docs). NOTE: `origin/main`
+moved externally during this session from `5a03a1b` to `90bb769` (the M1 commit
+was pushed outside this session; nothing was pushed from here). Local is 4
+commits ahead of `origin/main`.
+
+Commits this session (in order):
+- `90bb769` fix(risk): preserve review prompts for negated statutory mentions (D4)
+- `e2fdbb9` fix(segmentation): exact source spans; preserve multi-line preamble content (D1/D2/D3)
+- `128a835` fix(risk): parse written-number breach notice periods (D5) — ALSO
+  contains the D6 `_detect_parties` production change: two parallel `git add`
+  calls raced and swept `app/services/analyzer.py` into this commit. Content is
+  correct and the tree is green at this commit; recorded here for honesty
+  instead of rewriting history.
+- `5b64da9` fix(ner): stop party-name walk-back at a second corporate suffix
+  (adjacent-name gluing regression found by the adversarial verification)
+- `1b13c2d` chore(data): restore verified processed artifacts (manifests only;
+  artifacts gitignored)
+- `3db8416` docs(audit): record remediation verification evidence
+
+Root causes and fixes (full evidence: `reports/audit/remediation_verification_20261030.md`):
+- D4: presence-only statutory detection. Fix: 6-token same-sentence negation
+  window (`not/no/never/without/neither/nor/exempt`) in `nlp/ner/ner.py`;
+  sentence punctuation bounds scope; positive/boundary/post-mention controls.
+- D1/D3: offsets reconstructed with synthetic separators. Fix: span-based
+  segmentation (`_paragraph_spans`, `_normalise_items`, span-based grouping and
+  `_split_long_clause`); every `Clause.text == cleaned[char_start:char_end]`.
+  Consumers traced first: offsets feed only Neo4j persistence, API output, and
+  `length`; all `Clause.text` consumers re-tokenize, so the change is
+  representation-compatible. Offsets index the cleaned document (the pipeline's
+  documented frame); raw-file-byte fidelity is a separate documented migration.
+- D2: multi-line preamble lines dropped. Fixed by the same span-based grouping
+  (every line survives inside the exact span; >200-char first lines become body).
+- D5: digit-only breach-window regex. Fix: shared `NUMBER_TOKEN_RE` /
+  `written_number_to_int`; cross-stage consistency test added.
+- D6: `_detect_parties` noise-word truncation ("services"/"company"). Fix:
+  removed from walk-back noise set; generic-fragment guard; stop-at-second
+  suffix after adversarial verification caught adjacent-name gluing
+  ("Acme Consulting Services Pvt Ltd and Zenith Technologies Pvt Ltd" previously
+  merged into one string).
+
+Data restoration (authorised; full evidence trail in the verification record):
+pre-checks (isolated rebuild verified 0 failures, byte-identical to staging,
+stale inventory hashed, no active processes), hash-verified backup at
+`tmp/processed-backup-20261030/`, replacement via the supported builder
+(`--out-dir data/processed`), post-checks (hashes match isolated build;
+`verify_provenance.py` → 0 failures, exit 0; row lineage 9,278 / 22,450 /
+32,580 / 55,030; the 7 previously failing provenance tests pass). No source
+datasets modified; no models retrained.
+
+Verification at `5b64da9` (+ docs at `3db8416`):
+- `ruff check .` → All checks passed.
+- Full suite → **227 collected, 0 failed, 0 errors, 0 skipped** (junit-verified).
+  Before: 207 collected, 193 passed, 7 failed (provenance), 7 xfailed.
+- Focused suite (obligations, regressions, risk model/rules, P4, eval harness)
+  → **126 passed**.
+- `scripts/run_evaluation.py` → 17/17, 0 regressions, 3/3 invariants, exit 0
+  (`obligation_passive` additionally observes RISK_DATA_001 — intended D5 effect).
+- `scripts/run_demo.py` → exit 0; output identical to baseline.
+- End-to-end adversarial verification (`tmp/remediation_verify.py`) → 16/16 checks.
+- Independent two-model semantic review of `8b18f89..HEAD` dispatched via
+  workflow `wf_9c01541cb5ee4650`; outcome recorded below when complete.
+
+Remaining (documented, not defects from this milestone): raw-byte offset
+fidelity migration; advisory-note duplicate wording for one missing reference;
+`page_hint` dead field; `strip_headers_footers` dead code; two contract-id
+digest lengths; rule exceptions silently swallowed (fail-safe, hides bugs);
+ML-vs-verified-suppression presentation tension (findings stay unverified);
+P3 status enum; renewal cross-reference notices; ML calibration (approval-gated).
