@@ -1,0 +1,67 @@
+{
+  "artifact": "data/processed/cuad_keyword_bank.json",
+  "artifact_sha256": "2c6b6999906fde1be8db94cc30482712374cd64a99d0ec3dc4f4f6fb1d9b7c77",
+  "code_revision": "128a8359e948df4aef609b1cb66b485f9e44f5c8",
+  "command": "python scripts/build_training_data.py --out-dir data/processed",
+  "extra": {
+    "doc_count": 408
+  },
+  "label_counts": {
+    "Affiliate License-Licensee": 8,
+    "Affiliate License-Licensor": 2,
+    "Agreement Date": 376,
+    "Anti-Assignment": 234,
+    "Audit Rights": 182,
+    "Cap On Liability": 137,
+    "Change Of Control": 54,
+    "Competitive Restriction Exception": 19,
+    "Covenant Not To Sue": 36,
+    "Document Name": 226,
+    "Effective Date": 325,
+    "Exclusivity": 86,
+    "Expiration Date": 201,
+    "Governing Law": 219,
+    "Insurance": 179,
+    "Ip Ownership Assignment": 61,
+    "Irrevocable Or Perpetual License": 12,
+    "Joint Ip Ownership": 25,
+    "License Grant": 112,
+    "Liquidated Damages": 25,
+    "Minimum Commitment": 112,
+    "Most Favored Nation": 3,
+    "No-Solicit Of Customers": 20,
+    "No-Solicit Of Employees": 17,
+    "Non-Compete": 52,
+    "Non-Disparagement": 23,
+    "Non-Transferable License": 48,
+    "Notice Period To Terminate Renewal": 21,
+    "Parties": 1718,
+    "Post-Termination Services": 73,
+    "Price Restrictions": 5,
+    "Renewal Term": 52,
+    "Revenue/Profit Sharing": 108,
+    "Rofr/Rofo/Rofn": 72,
+    "Source Code Escrow": 20,
+    "Termination For Convenience": 125,
+    "Third Party Beneficiary": 15,
+    "Uncapped Liability": 21,
+    "Unlimited/All-You-Can-Eat-License": 8,
+    "Volume Restriction": 48,
+    "Warranty Duration": 58
+  },
+  "row_count": 5138,
+  "source_authentication": {
+    "basis": "internal-partition-consistency",
+    "checked_at": null,
+    "note": "Hashes computed locally from the checkout and validated only by internal partition consistency (train union test == CUADv1 on distinct normalized texts). No upstream CUAD checksum was consulted. Internal consistency does not prove upstream authenticity.",
+    "source": null,
+    "upstream_authenticated": false
+  },
+  "sources": [
+    {
+      "path": "data/datasets/cuad/train_separate_questions.json",
+      "sha256": "7de21d2bb741ac939e2a839ef9640634a5e0f9f40ea2b82c6833baf7db33dab4",
+      "split": "train"
+    }
+  ]
+}

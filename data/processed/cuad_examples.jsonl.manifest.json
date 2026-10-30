@@ -1,0 +1,25 @@
+{
+  "artifact": "data/processed/cuad_examples.jsonl",
+  "artifact_sha256": "3520fa8a6555216ae09874a3bd8dc03c02ec01fef7e751b96112db0e19f06701",
+  "code_revision": "128a8359e948df4aef609b1cb66b485f9e44f5c8",
+  "command": "python scripts/build_training_data.py --out-dir data/processed",
+  "extra": {
+    "doc_count": 408
+  },
+  "label_counts": {},
+  "row_count": 22450,
+  "source_authentication": {
+    "basis": "internal-partition-consistency",
+    "checked_at": null,
+    "note": "Hashes computed locally from the checkout and validated only by internal partition consistency (train union test == CUADv1 on distinct normalized texts). No upstream CUAD checksum was consulted. Internal consistency does not prove upstream authenticity.",
+    "source": null,
+    "upstream_authenticated": false
+  },
+  "sources": [
+    {
+      "path": "data/datasets/cuad/train_separate_questions.json",
+      "sha256": "7de21d2bb741ac939e2a839ef9640634a5e0f9f40ea2b82c6833baf7db33dab4",
+      "split": "train"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "artifact": "data/processed/clause_classifier.csv",
+  "artifact_sha256": "03241d80becff51ec441bd531b8ece1b04101f3900283a57506cef11e14bdcb9",
+  "code_revision": "128a8359e948df4aef609b1cb66b485f9e44f5c8",
+  "command": "python scripts/build_training_data.py --out-dir data/processed",
+  "extra": {
+    "doc_count": 408
+  },
+  "label_counts": {
+    "Assignment": 973,
+    "Audit Rights": 536,
+    "Confidentiality": 48,
+    "Definitions": 1760,
+    "Governing Law": 372,
+    "Insurance": 443,
+    "Intellectual Property": 1192,
+    "Limitation of Liability": 682,
+    "Miscellaneous": 153,
+    "Non-Compete / Non-Solicit": 687,
+    "Payment Terms": 853,
+    "Term and Renewal": 860,
+    "Termination": 565,
+    "Warranty": 154
+  },
+  "row_count": 9278,
+  "source_authentication": {
+    "basis": "internal-partition-consistency",
+    "checked_at": null,
+    "note": "Hashes computed locally from the checkout and validated only by internal partition consistency (train union test == CUADv1 on distinct normalized texts). No upstream CUAD checksum was consulted. Internal consistency does not prove upstream authenticity.",
+    "source": null,
+    "upstream_authenticated": false
+  },
+  "sources": [
+    {
+      "path": "data/datasets/cuad/train_separate_questions.json",
+      "sha256": "7de21d2bb741ac939e2a839ef9640634a5e0f9f40ea2b82c6833baf7db33dab4",
+      "split": "train"
+    }
+  ]
+}
