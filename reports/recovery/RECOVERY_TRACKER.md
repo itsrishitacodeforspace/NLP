@@ -302,3 +302,78 @@ reasoning now partially addressed), `KIRO_HANDOFF.md`.
 Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
 ML calibration; `obligation_passive` recall; renewal cross-reference notices
 remain advisory-only; P3 status enum. No push; no co-author trailer.
+
+---
+
+## Kiro session 2026-10-30, fourth pass (HEAD 58d279d -> 42b985c +docs)
+
+State: branch `main`; HEAD advanced from `58d279d` to `42b985c` + a docs commit
+(6 local commits ahead of `origin/main` at `5a03a1b`, nothing pushed). Working
+tree clean.
+
+Commits this session:
+- `42b985c` fix(obligations): recover passive by-agents and compound written deadlines
+
+Task: resolve the `obligation_passive` evaluation known limitation (the last
+one): "Personal data shall be encrypted by the Processor within twenty-four
+(24) hours of a security incident" produced subject=None, deadline=None.
+
+Root cause (two independent gaps, reproduced with a direct extractor call):
+1. The passive-agent path actually worked (`be encrypted` matched, `by the
+   Processor` was located), but `_party_after` returned None because
+   `_PARTY_ROLE` has no data-protection role nouns — "Processor" (and
+   "Controller") were missing from the party vocabulary.
+2. The extractor's local `_NUMBER_WORDS`/`_NUM_ALT` matched single tokens only
+   (and lacked "seventy"/"eighty"), so the hyphenated compound "twenty-four"
+   never matched `DEADLINE_RE`.
+
+Fix (in `nlp/obligation_extraction/extractor.py` only):
+- Deadlines now use the shared `NUMBER_TOKEN_RE` / `written_number_to_int`
+  from `app.utils.text` (the vocabulary the renewal rule already uses):
+  "twenty-four (24) hours" -> "24 hours", "sixty-five days" -> "65 days",
+  "seventy days" -> "70 days". Parenthetical-digit and single-word behaviour
+  unchanged.
+- `Processor`/`Controller` added to `_PARTY_ROLE`.
+- Passive detection recognises common irregular participles
+  (sent/made/paid/done/taken/met/held) alongside -ed/-en forms.
+
+Conservative semantics preserved and locked by tests: passive without an agent
+leaves the subject unknown; a non-party agent phrase ("by Friday") stays
+unknown; no uploader role is inferred; conditions, exceptions, counterparties,
+exact source offsets (zero-based half-open slices), and active-voice behaviour
+are unchanged ("available" is not treated as a participle); one obligation per
+sentence, no duplicates; extraction stays clause-local — cross-references
+remain advisory-only in the risk layer.
+
+Regression coverage (`tests/test_obligation_extraction.py`, 15 new tests):
+Processor/Controller by-agents, irregular participles (paid/sent), non-party
+agent phrase, agentless passive with compound deadline, compound deadlines with
+and without parenthetical digits (24/65/70), passive with leading condition
+(condition + deadline both preserved), passive with exception, adjective
+negative control, active-voice unchanged, clause-local cross-reference
+sentence, exact offsets on a passive sentence.
+
+Verification at `42b985c` (all via `uv run --no-sync`):
+- `ruff check .` -> All checks passed.
+- `pytest --tb=no -q` -> 186 collected, **179 passed, 7 failed** (junit-verified).
+  The 7 failures are the same `tests/test_no_leakage.py` provenance guards on
+  the stale main-tree `data/processed/` — unchanged data-state issue; artifacts
+  not touched.
+- Focused suite (obligations, regressions, risk model/rules, all four P4
+  suites, eval harness) -> **117 passed** (was 102; +15 new tests).
+- `scripts/run_evaluation.py` -> **17/17 pass, 0 known limitations, 0
+  regressions, 0 resolved pending**, 3/3 invariants OK, exit 0. Before the fix:
+  16/17 pass, 1 known limitation. The case's `known_limitation` note was
+  removed; the lock set in `tests/test_evaluation_harness.py` is now an
+  explicit empty set with a comment.
+- `scripts/run_demo.py` -> exit 0; output identical to the pre-fix baseline
+  (12 clauses, 13 obligations, score 100.0/critical).
+
+Reports updated: `reports/evaluations/synthetic_eval_results.{md,json}`
+(regenerated), final project report (counts, defect D15, all-limitations-resolved
+note), `KIRO_HANDOFF.md`.
+
+Not done (approval-gated / documented): main-tree `data/processed/` rebuild;
+ML calibration; renewal cross-reference notices; P3 status enum. Space-separated
+written compounds ("twenty four days") and unusual role nouns in by-agent
+phrases remain conservative misses. No push; no co-author trailer.

@@ -5,14 +5,13 @@ under `.commandcode/` and the earlier `reports/recovery/` documents. Read
 `.commandcode/BHARATCONTRACT_PROJECT_MEMORY.md` and `RECOVERY_TRACKER.md` first
 for the full prior history.
 
-Last updated: 2026-10-30 (Kiro session, third pass).
+Last updated: 2026-10-30 (Kiro session, fourth pass).
 
 ## 1. Verified repository state
 
 - Branch: `main`.
-- Starting HEAD this session: `a1aaf8b` (plus a pre-existing uncommitted merge of
-  `origin/main` `5a03a1b`, reconciled as `ece750f` — see Section 2).
-- Ending HEAD this session: `8c60ae6` + a docs commit on top (4 local commits
+- Starting HEAD this session: `58d279d`.
+- Ending HEAD this session: `42b985c` + a docs commit on top (6 local commits
   ahead of `origin/main` at `5a03a1b`; branch fast-forwards on push).
   **Nothing pushed.** Remote: `origin` (GitHub).
 - Working tree: clean after the commits below (plus repo-local `tmp/` scratch,
@@ -35,6 +34,7 @@ P4 work" is now committed at `42c25b0`, and the main working tree is clean.
   that merge in progress and 3 conflicted docs; resolving by keeping the local
   side made the merge tree identical to `a1aaf8b` (no content lost).
 - `8c60ae6` fix(risk): suppress missing-cap finding only for resolved, applicable cross-referenced caps
+- `42b985c` fix(obligations): recover passive by-agents and compound written deadlines
 
 ## 3. Key architectural decisions (unchanged, reaffirmed)
 
@@ -92,6 +92,21 @@ P4 work" is now committed at `42c25b0`, and the main working tree is clean.
   advisory-note assertions still hold.
 - Eval case `liability_cap_in_crossref` no longer declares a known limitation;
   the lock set now expects only `obligation_passive`.
+- `nlp/obligation_extraction/extractor.py` — deadlines now use the shared
+  `NUMBER_TOKEN_RE` / `written_number_to_int` (same vocabulary as the renewal
+  rule), so hyphenated compounds ("twenty-four (24) hours" -> "24 hours") and
+  "seventy"/"eighty" parse. `Processor`/`Controller` added to the party-role
+  vocabulary so a passive by-agent ("by the Processor") is recovered as the
+  responsible party. Irregular passive participles (sent/made/paid/done/taken/
+  met/held) are recognised alongside -ed/-en forms. Agentless passives and
+  non-party agent phrases ("by Friday") still leave the subject unknown; no
+  role is inferred without textual evidence.
+- `tests/test_obligation_extraction.py` — 15 new tests (passive variants,
+  compound deadlines, conditions/exceptions, negative controls, clause-local
+  cross-reference behaviour, exact offsets).
+- Eval case `obligation_passive` no longer declares a known limitation; the
+  lock set in `tests/test_evaluation_harness.py` is now empty (all 17 cases
+  pass).
 
 ## 5. Reproducible setup and verification commands
 
@@ -105,18 +120,18 @@ uv run python scripts/run_evaluation.py
 uv run python scripts/verify_provenance.py
 ```
 
-## 6. Current results (verified at `8c60ae6`)
+## 6. Current results (verified at `42b985c`)
 
 - `ruff check .` → All checks passed.
-- Full suite → **164 passed, 7 failed** (171 collected). The 7 failures are all in
+- Full suite → **179 passed, 7 failed** (186 collected). The 7 failures are all in
   `tests/test_no_leakage.py` (T1a/T1b/T2a/T2b/T3a/T3b/T8) — unchanged stale
   `data/processed/` provenance guards.
 - Focused suite (obligations, regressions, risk model/rules, P4 incl. cap
-  resolution, eval harness) → **102 passed**.
-- `scripts/run_evaluation.py` → **16/17 cases pass, 1 known limitation, 0 regressions**;
+  resolution, eval harness) → **117 passed**.
+- `scripts/run_evaluation.py` → **17/17 cases pass, 0 known limitations, 0 regressions**;
   3/3 evidence-integrity invariants hold; exit 0. Progression: 14/17 (3 known
-  limitations) → 15/17 (stamp/TDS fix) → 16/17 (cross-reference cap fix);
-  `obligation_passive` is the only remaining known limitation.
+  limitations) → 15/17 (stamp/TDS) → 16/17 (cross-ref cap) → 17/17
+  (obligation passive). The known-limitation lock set is empty.
 - `scripts/run_demo.py` → exit 0; 12 clauses, 13 obligations, score 100.0/critical;
   output identical to the pre-fix baseline.
 - `scripts/verify_provenance.py` → 5 failures (missing manifests on the stale
@@ -129,43 +144,46 @@ uv run python scripts/verify_provenance.py
    Resolution is an approval-gated rebuild: `uv run python scripts/build_training_data.py`
    then require `verify_provenance.py` 0 failures. Do **not** swap staging blindly or
    weaken the guards.
-2. **`obligation_passive`** (eval known limitation) — hyphenated written compounds
-   ("twenty-four") not normalised by the deadline parser; passive by-agent not
-   recovered in this construction.
-3. ML risk score remains uncalibrated (presentation only is fixed).
-4. P3 four-way missing-protection status has no explicit enum/consumer
+2. ML risk score remains uncalibrated (presentation only is fixed).
+3. P3 four-way missing-protection status has no explicit enum/consumer
    (see `reports/recovery/P3_STATUS_DESIGN.md`).
-5. TDS detection still requires the at-source construction: "tax deducted from the
+4. TDS detection still requires the at-source construction: "tax deducted from the
    invoice" (no "at source") is intentionally not matched, so `RISK_TDS_001` may
    still fire on contracts that address withholding in other words. This is a
    deliberate precision-over-recall choice, documented in `tests/test_regressions.py`.
-6. Cross-reference cap suppression is intentionally narrow: a cap whose party
+5. Cross-reference cap suppression is intentionally narrow: a cap whose party
    scope cannot be determined from the text ("Total liability shall not exceed
    ...") does NOT suppress, so genuine caps phrased without party language still
    produce a review prompt. Caps with carve-outs also keep the finding by design.
-7. Renewal notices in cross-referenced clauses remain advisory-only; the same
+6. Renewal notices in cross-referenced clauses remain advisory-only; the same
    conservative contract used for caps has not been applied to
    `RISK_RENEWAL_001`.
+7. Deadline parsing covers hyphenated compounds only: space-separated written
+   compounds ("twenty four days") and the party-role vocabulary are finite, so
+   unusual role nouns in a by-agent phrase still leave the subject unknown
+   (conservative, by design).
+8. No-comma leading conditions (e.g. "If required by law the Provider shall …")
+   still cannot be split reliably without a parser; the responsible party is
+   left `None` rather than guessed.
 
 ## 8. Next three prioritised actions
 
-1. **Obligation deadline + passive fix:** reuse `written_number_to_int` /
-   `NUMBER_TOKEN_RE` in the obligation extractor for hyphenated compounds, and recover
-   the passive by-agent for "shall be <verb-ed> by <party>"; resolve `obligation_passive`.
-2. **Approval-gated `data/processed/` rebuild** to clear the 7 provenance failures,
+1. **Approval-gated `data/processed/` rebuild** to clear the 7 provenance failures,
    with a full post-rebuild suite run recorded. Ask before running.
-3. **Renewal cross-reference notice** under the same fail-closed contract used
+2. **Renewal cross-reference notice** under the same fail-closed contract used
    for caps (resolved reference + verified opt-out right in the target clause),
    or **P3 status enum** if the API needs machine-readable missing-protection
    status.
+3. **ML calibration** or labelling of the raw risk score (presentation-only fix
+   is in place; retraining is approval-gated).
 
 ## 9. Continuation prompt for a future Kiro session
 
-> Resume BharatContract AI from `reports/recovery/KIRO_HANDOFF.md` at HEAD `8c60ae6`
+> Resume BharatContract AI from `reports/recovery/KIRO_HANDOFF.md` at HEAD `42b985c`
 > (+docs) on branch `main`. Verify with `uv run ruff check .` and
-> `uv run pytest --tb=no` (expect 164 passed, 7 provenance failures from stale
+> `uv run pytest --tb=no` (expect 179 passed, 7 provenance failures from stale
 > `data/processed/`), then `uv run python scripts/run_evaluation.py` (expect
-> 16/17, 1 known limitation: `obligation_passive`). Pick the next action from
+> 17/17, no known limitations; the lock set is empty). Pick the next action from
 > Section 8, work test-first in a verified milestone, keep the evaluation lock
 > list honest, do not weaken provenance guards, do not rebuild/replace
 > `data/processed/` or push without explicit approval, and do not add a
