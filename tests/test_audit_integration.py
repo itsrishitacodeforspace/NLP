@@ -215,8 +215,6 @@ def test_applicable_stamp_and_tds_mentions_still_suppress_prompts():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D1: heading+body separated by a single newline reconstructs "
-                                       "Clause.text with a synthetic \\n\\n, so char offsets do not slice the source")
 def test_d1_clause_offsets_slice_source_for_single_newline_headings():
     text = (
         "7.1 LIMITATION OF LIABILITY\n"
@@ -228,8 +226,6 @@ def test_d1_clause_offsets_slice_source_for_single_newline_headings():
         assert text[c.char_start:c.char_end] == c.text
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D2: a multi-line preamble paragraph keeps only its first "
-                                       "line; remaining lines are silently dropped from every clause")
 def test_d2_segmentation_does_not_lose_preamble_lines():
     text = (
         "This Agreement is made today.\nIt is between A and B.\n\n"
@@ -239,8 +235,6 @@ def test_d2_segmentation_does_not_lose_preamble_lines():
     assert any("between A and B" in c.text for c in clauses)
 
 
-@pytest.mark.xfail(strict=True, reason="AUDIT-D3: long-clause sub-offsets assume \\n\\n separators and "
-                                       "ignore the heading length, so split-clause offsets drift")
 def test_d3_long_clause_sub_offsets_slice_source():
     body = (
         "The Supplier shall not be liable for failures beyond its reasonable control, "
