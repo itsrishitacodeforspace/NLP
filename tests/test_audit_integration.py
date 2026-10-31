@@ -1,18 +1,4 @@
-"""Audit-originated integration tests (zero-trust audit, 2026-10-30).
-
-Originally added by the integration audit as 14 passing integration tests plus
-7 ``xfail(strict=True)`` defect records (AUDIT-D1 .. AUDIT-D6). All six defects
-were fixed in the remediation milestone that followed the audit, and every
-xfail record has been converted into a normal passing regression test (the
-``test_d<no>_`` names are kept as defect-history documentation):
-
-* D1/D2/D3 — exact source spans; multi-line preamble preserved (segmenter).
-* D4 — negated statutory mentions no longer suppress review prompts (NER).
-* D5 — written-number breach windows; cross-stage deadline consistency.
-* D6 — legal entity names containing "Services"/"Company" are preserved.
-
-See ``reports/audit/integration_audit_20261030.md`` for evidence and analysis.
-"""
+"""Regression tests for audit defects AUDIT-D1 through AUDIT-D6 (2026-10-30)."""
 from __future__ import annotations
 
 from app.models.schemas import ContractType, PartySide

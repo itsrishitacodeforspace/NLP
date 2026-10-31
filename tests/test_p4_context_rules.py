@@ -1,11 +1,4 @@
-"""P4: whole-contract context integration in liability/renewal rules.
-
-After adversarial review, suppression based on keyword presence in a related
-clause was found to be unsafe (a cap for a different party/loss category, a
-cap mentioned only in a definition, or a reminder rather than an opt-out right
-could wrongly suppress a genuine finding). The current implementation therefore
-preserves findings and records context as advisory only.
-"""
+"""Regression tests for whole-contract context handling in liability and renewal rules."""
 from __future__ import annotations
 
 from app.models.schemas import Clause, ContractSummary, ContractType

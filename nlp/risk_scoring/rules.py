@@ -19,6 +19,7 @@ from app.models.schemas import (
     RiskSeverity,
 )
 from app.utils.text import NUMBER_TOKEN_RE, written_number_to_int
+from nlp.context.resolver import resolved_reference_texts
 from nlp.risk_scoring.case_law import lookup_case_law
 
 
@@ -49,6 +50,13 @@ def _text_lower(clause: Clause) -> str:
     return (clause.text or "").lower()
 
 
+def _number_token_value(match: Optional[re.Match[str]]) -> Optional[int]:
+    """Resolve a captured digit/written number, preferring a parenthetical digit."""
+    if match is None:
+        return None
+    return written_number_to_int(match.group(2) or match.group(1))
+
+
 def _any_clause_type(clause: Clause, *types: str) -> bool:
     if not clause.clause_types:
         return False
@@ -67,12 +75,14 @@ def _any_clause_type(clause: Clause, *types: str) -> bool:
 # scope) keeps the finding as a human-review prompt.
 # ---------------------------------------------------------------------------
 
-_CAP_LANGUAGE = (
-    "shall not exceed",
-    "not exceed",
-    "limited to",
+_OWN_CLAUSE_CAP_LANGUAGE = (
     "liability cap",
+    "shall not exceed",
+    "limited to",
     "maximum liability",
+)
+_CAP_LANGUAGE = _OWN_CLAUSE_CAP_LANGUAGE + (
+    "not exceed",
     "aggregate cap",
     "cap of",
 )
@@ -139,35 +149,11 @@ def _cross_reference_states_applicable_cap(clause: Clause) -> bool:
     is never sufficient. Unresolved, missing or ambiguous references, and
     references without retrievable target text, all return False.
     """
-    ctx = clause.context if isinstance(clause.context, dict) else {}
-    if ctx.get("unresolved_references"):
-        return False
-    references = ctx.get("references") or []
-    if not references:
-        return False
-    related_ids = list(ctx.get("related_clause_ids") or [])
-    related_texts = list(ctx.get("related_clause_texts") or [])
-    # related_clause_texts is built by the analyzer in related_clause_ids
-    # order, so positional alignment recovers each target's exact text.
-    text_by_id = {
-        rid: related_texts[i]
-        for i, rid in enumerate(related_ids)
-        if i < len(related_texts)
-    }
-    candidates: List[str] = []
-    for ref in references:
-        if not isinstance(ref, dict):
-            continue
-        if ref.get("status") != "resolved":
-            return False  # ambiguous/missing reference -> human review
-        for tid in ref.get("target_clause_ids") or []:
-            if tid == clause.clause_id:
-                continue
-            text = text_by_id.get(tid)
-            if text:
-                candidates.append(text)
     assessed = clause.text or ""
-    return any(_cap_text_covers_liability(c, assessed) for c in candidates)
+    return any(
+        _cap_text_covers_liability(cap_text, assessed)
+        for cap_text in resolved_reference_texts(clause)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -207,9 +193,7 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
             ),
             score=85.0,
         )
-    has_cap_language = any(
-        t in text for t in ("liability cap", "shall not exceed", "limited to", "maximum liability")
-    )
+    has_cap_language = any(t in text for t in _OWN_CLAUSE_CAP_LANGUAGE)
     if not has_cap_language and not _has_label(clause.entities, "PAYMENT_AMOUNT"):
         # A resolved cross-reference to a clause that states a verifiably
         # applicable cap means the cap is not missing. This is reference-based
@@ -271,9 +255,7 @@ def rule_auto_renewal(clause: Clause, summary: ContractSummary) -> Optional[Risk
         )
         severity = RiskSeverity.MEDIUM
         explanation = "Contract auto-renews unless timely notice is given."
-        value = written_number_to_int(notice.group(2)) if notice and notice.group(2) else (
-            written_number_to_int(notice.group(1)) if notice else None
-        )
+        value = _number_token_value(notice)
         if not notice or value is None:
             severity = RiskSeverity.HIGH
             explanation += " No notice period detected — risk of being locked in."
@@ -330,11 +312,7 @@ def rule_data_breach_window(clause: Clause, summary: ContractSummary) -> Optiona
             text,
             re.IGNORECASE,
         )
-        value = (
-            written_number_to_int(notice.group(2))
-            if notice and notice.group(2)
-            else (written_number_to_int(notice.group(1)) if notice else None)
-        )
+        value = _number_token_value(notice)
         if notice and value is not None:
             unit = notice.group(3)
             hours = value if "hour" in unit else value * 24

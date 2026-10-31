@@ -1,12 +1,4 @@
-"""Conservative cross-reference cap resolution for RISK_LIABILITY_002.
-
-Suppression is allowed ONLY when an explicit, resolved in-clause reference
-points to a clause whose text states a liability cap that verifiably covers
-the assessed liability (mutual or matching party scope, no exclusions, no
-loss-category mismatch, no unresolved/ambiguous references). Everything else
-keeps the finding as a human-review prompt. Related clause text without a
-resolved reference never suppresses: keyword suppression stays reverted.
-"""
+"""Regression tests for conservative cross-reference cap resolution in RISK_LIABILITY_002."""
 from __future__ import annotations
 
 from app.models.schemas import Clause, ContractSummary, ContractType
@@ -98,6 +90,21 @@ def test_missing_reference_keeps_finding():
         },
     )
     assert _liability_002(c), "a missing reference never suppresses"
+
+
+def test_resolved_reference_without_target_text_keeps_finding():
+    c = _clause(
+        "c7_1", ASSESSED,
+        context={
+            "status": "partial",
+            "references": [{"raw": "Clause 7.4", "kind": "clause",
+                            "target_clause_ids": ["c7_4"], "status": "resolved"}],
+            "related_clause_ids": ["c7_4"],
+            "related_clause_texts": [],
+            "unresolved_references": [],
+        },
+    )
+    assert _liability_002(c), "coverage cannot be confirmed without target text"
 
 
 def test_ambiguous_reference_keeps_finding():

@@ -174,3 +174,36 @@ def resolve_context(clauses: Iterable) -> Dict[str, dict]:
             "unresolved_references": unresolved,
         }
     return bundles
+
+
+def resolved_reference_texts(clause: object) -> List[str]:
+    """Return target texts for resolved references, or [] when any doubt remains."""
+    context = getattr(clause, "context", None)
+    if not isinstance(context, dict):
+        return []
+    if context.get("unresolved_references"):
+        return []
+    references = context.get("references") or []
+    if not references:
+        return []
+    related_ids = list(context.get("related_clause_ids") or [])
+    related_texts = list(context.get("related_clause_texts") or [])
+    text_by_id = {
+        clause_id: related_texts[index]
+        for index, clause_id in enumerate(related_ids)
+        if index < len(related_texts)
+    }
+    own_id = getattr(clause, "clause_id", None)
+    texts: List[str] = []
+    for reference in references:
+        if not isinstance(reference, dict):
+            continue
+        if reference.get("status") != STATUS_RESOLVED:
+            return []
+        for target_id in reference.get("target_clause_ids") or []:
+            if target_id == own_id:
+                continue
+            target_text = text_by_id.get(target_id)
+            if target_text:
+                texts.append(target_text)
+    return texts

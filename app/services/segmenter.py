@@ -216,18 +216,12 @@ def _group_paragraphs_into_clauses(
         grouped.append((heading, section_num, span_start, span_end, body_start))
         buffer.clear()
 
-    for idx, (start, end, text) in enumerate(items):
+    for start, end, text in items:
         first_line = text.split("\n", 1)[0].strip()
         # Strong heading only — not every numbered body paragraph.
-        is_strong_heading = _looks_like_heading_line(first_line)
-        if idx == 0 and not buffer:
-            # Force-start the first group with whatever we see.
-            buffer.append((start, end, text))
-        elif is_strong_heading:
+        if _looks_like_heading_line(first_line):
             flush()
-            buffer.append((start, end, text))
-        else:
-            buffer.append((start, end, text))
+        buffer.append((start, end, text))
     flush()
 
     if not grouped:
