@@ -1,14 +1,18 @@
 # Recovery Tracker — BharatContract AI
 
-Last updated: 2026-10-29
+Last updated: 2026-10-31
 
-## State
-- Branch `main`; verification baseline `97f4c21` (14 local commits ahead of
-  `origin/main` `a1b4298`). This docs-only update follows that baseline. Nothing pushed.
-- Clean verification worktree: repo-local `tmp/bcc-clean-97f4c21` at `97f4c21`.
-  Main-tree user WIP remains uncommitted and untouched.
-- Historical fresh-checkout validation: `tmp/freshcheckout` at `118e8ae` (superseded by the
-  current clean run below).
+## State (2026-10-31 submission-readiness audit)
+- Branch `main`; verified code HEAD `2ca788f`; the audit-docs commit is on top
+  (local only; not pushed). `origin/main` is `2ca788f`. Working tree clean.
+- Re-ran at `2ca788f`: full suite 227 passed / 0 failed / 0 skipped; focused 126
+  passed; evaluation 17/17, 0 regressions; verifier 0 failures; ruff clean;
+  demo exit 0.
+- `data/processed/` restored and verified (manifests in `1b13c2d`); do not rebuild
+  or replace without approval.
+- Historical clean worktree: repo-local `tmp/bcc-clean-97f4c21` at `97f4c21`
+  (129/129 under `BCC_EVAL_MODE=ci`). Historical fresh-checkout validation:
+  `tmp/freshcheckout` at `118e8ae`.
 
 ## Commits this session
 - `66684a1` fix(tests): ship TC-05 synthetic fixture for fresh-checkout reproducibility
@@ -25,7 +29,7 @@ Last updated: 2026-10-29
 - `f1bf4f4` docs(recovery): record S124 scope fix and current verification
 - `be51191` docs: add final project report
 
-## Verified clean workflow — current HEAD (2026-10-29)
+## Verified clean workflow — 97f4c21 (2026-10-29, historical)
 Starting HEAD: `97f4c21`. Worktree: repo-local `tmp/bcc-clean-97f4c21`.
 
 1. `uv sync --extra dev` → exit 0 (154 packages, Python 3.12.14)
@@ -37,7 +41,7 @@ Starting HEAD: `97f4c21`. Worktree: repo-local `tmp/bcc-clean-97f4c21`.
 7. API smoke: `tests/test_api_smoke.py` passed in the full suite. A direct `uvicorn` launch
    for `/healthz` and `/docs` was blocked by `dcg`; it was not run.
 
-## Provenance diagnosis at current HEAD
+## Provenance diagnosis at 97f4c21 (historical)
 - Main tree `data/processed/` has 5 artifacts and **0 manifests**; mtimes are 2026-10-22.
   `clause_classifier.csv` header is `text,category,source` (no `doc_id`/`split` columns).
 - `scripts/verify_provenance.py` → 5 failures, 0 skipped.
@@ -478,12 +482,12 @@ stale inventory hashed, no active processes), hash-verified backup at
 32,580 / 55,030; the 7 previously failing provenance tests pass). No source
 datasets modified; no models retrained.
 
-Verification at `5b64da9` (+ docs at `3db8416`):
+Verification re-run at `2ca788f` (2026-10-31; data restoration at `1b13c2d`):
 - `ruff check .` → All checks passed.
-- Full suite → **227 collected, 0 failed, 0 errors, 0 skipped** (junit-verified).
+- Full suite → **227 collected, 0 failed, 0 errors, 0 skipped**.
   Before: 207 collected, 193 passed, 7 failed (provenance), 7 xfailed.
-- Focused suite (obligations, regressions, risk model/rules, P4, eval harness)
-  → **126 passed**.
+- Focused suite (obligations, regressions, risk model/rules, P4 including
+  `test_p4_cap_resolution.py`, eval harness) → **126 passed**.
 - `scripts/run_evaluation.py` → 17/17, 0 regressions, 3/3 invariants, exit 0
   (`obligation_passive` additionally observes RISK_DATA_001 — intended D5 effect).
 - `scripts/run_demo.py` → exit 0; output identical to baseline.

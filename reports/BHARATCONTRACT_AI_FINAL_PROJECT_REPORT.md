@@ -1,10 +1,10 @@
 # BharatContract AI — Final Project Report
 
 **Project:** BharatContract AI — Indian-context contract intelligence
-**Report date:** 30 October 2026
+**Report date:** 30 October 2026; audit revision 31 October 2026
 **Prepared by:** Project team
 **Repository:** `C:\Users\Ivermectin\Desktop\NLP\NLP`
-**Verified at commit:** `5b64da9` on branch `main` (docs/records on top)
+**Verified at commit:** `2ca788f` on branch `main` (data restoration in `1b13c2d`; audit documentation on top)
 **Report scope:** Backend, NLP pipeline, risk engine, verification, and limitations. The existing dashboard is outside the verification scope of this report.
 
 ---
@@ -13,7 +13,7 @@
 
 BharatContract AI is a working prototype for automated review of commercial contracts, with emphasis on Indian statutory and arbitration risks. The system accepts PDF, DOCX, TXT, and Markdown files; parses and segments the document; classifies clauses; extracts entities and obligations; and applies a rule-first risk playbook backed by an optional machine-learning recall booster. Findings carry evidence spans, search scope, and statutory or case-law pointers, so that a reviewer can inspect why a flag was raised rather than receiving an unexplained score.
 
-The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 227-test suite in which **all 227 tests pass** — the seven provenance guards now pass on the restored, manifest-complete `data/processed/` artifacts (an authorised, controlled replacement; before/after evidence in `reports/audit/remediation_verification_20261030.md`). A focused 126-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues. A zero-trust integration audit (`reports/audit/integration_audit_20261030.md`) and its remediation pass fixed six integration defects: negated statutory mentions, segmenter preamble loss, clause/sub-clause offset fidelity, digit-only breach-window parsing, and party-name truncation.
+The project deliberately favours deterministic, offline behaviour. Every external dependency — Neo4j, PostgreSQL, OCR, and the optional transformer stack — degrades to a no-op or fallback, so the core pipeline runs with Python alone. The implementation is verified by a 227-test suite in which **all 227 tests pass** — the seven provenance guards now pass on the restored, manifest-complete `data/processed/` artifacts (a documented, controlled replacement; before/after evidence in `reports/audit/remediation_verification_20261030.md`). A focused 126-test suite covering obligations, risk rules, risk-model wording, cross-reference behaviour, and the evaluation harness passes, and `ruff check .` reports no issues. A zero-trust integration audit (`reports/audit/integration_audit_20261030.md`) and its remediation pass fixed six integration defects (D1–D6): negated statutory mentions, preamble loss, clause offsets, long-clause sub-offsets, digit-only breach-window parsing, and party-name truncation.
 
 A deterministic evaluation harness (`nlp/evaluation/`, driven by `scripts/run_evaluation.py`) runs 17 synthetic labelled contracts through the full pipeline. At the verified commit, **all 17 cases pass, with no documented known limitations and no unexpected regressions**; three evidence-integrity invariants (model findings stay unverified; clause-level rule findings carry a direct span; contract-level findings are scoped and unverified) hold across every finding. This is a software-behaviour check on synthetic data, not a measure of legal accuracy or real-world reliability.
 
@@ -54,7 +54,7 @@ The project asks a narrower, testable question:
 
 - Legal advice or a legal opinion.
 - A production-grade frontend or dashboard.
-- Model retraining, artifact replacement, or accuracy claims on overlapping data.
+- Model retraining or replacement of bundled model artifacts, or accuracy claims on overlapping data. The processed-data restoration in Section 4.9 is separate and does not retrain models.
 - Whole-contract legal reasoning that resolves conflicting clauses automatically.
 - Validation against a held-out, human-labelled risk corpus.
 
@@ -75,7 +75,7 @@ The system therefore uses a hybrid design:
 
 ### 2.2 Datasets and taxonomy
 
-The classifier is aligned with CUAD-style clause categories through `nlp/taxonomy.py`, which is the single source of truth for internal labels and CUAD/MAUD mappings. The repository contains CUAD and MAUD source data and scripts that build train-only artifacts with manifests.
+The classifier is aligned with CUAD-style clause categories through `nlp/taxonomy.py`, which is the single source of truth for internal labels and CUAD/MAUD mappings. The repository contains CUAD and MAUD source data and scripts that build non-test artifacts with manifests (CUAD train; MAUD train and dev).
 
 A critical distinction is maintained throughout:
 
@@ -84,6 +84,8 @@ A critical distinction is maintained throughout:
 - **predictive validity** — real-world correctness.
 
 A manifest proves lineage only. It does not prove accuracy. The bundled classifier archives are explicitly marked `provenance-unverified` because their training corpus overlaps held-out CUAD documents. The project therefore reports test outcomes, not accuracy claims.
+
+The repository is marked “internal use” in `README.md`; the CUAD/MAUD source-data licences are not included or independently verified here, so redistribution requires separate review.
 
 ### 2.3 Indian legal anchors used by the playbook
 
@@ -139,7 +141,7 @@ parse -> segment -> resolve context -> classify -> NER -> obligations
       -> ML booster -> aggregate score
 ```
 
-Context resolution runs after segmentation and before rules. It is read-only enrichment: it does not change rule triggers or severity. The analyzer then attaches related clause text so rules and advisory notes can refer to cross-referenced provisions without treating a reference as proof that a conflict is resolved.
+Context resolution runs after segmentation and before rules. It is read-only enrichment and, apart from the narrow liability-cap gate in D14, does not change rule triggers or severity. The analyzer then attaches related clause text so rules and advisory notes can refer to cross-referenced provisions without treating a reference as proof that a conflict is resolved.
 
 ### 3.3 Core data model
 
@@ -270,7 +272,7 @@ Contract-level Indian rules run once, not once per clause. Findings are de-dupli
 Every rule finding receives:
 
 - `evidence_status="direct"` and a clause-text span when the finding is tied to a clause;
-- `evidence_status="unverified"` and an explicit `search_scope` when the finding is contract-level or based on absence of language.
+- `evidence_status="unverified"` and an explicit `search_scope` when the finding has no owning clause (contract-level searches). A clause-bound absence finding, such as a missing cap in a limitation clause, still carries that clause’s exact text as direct evidence.
 
 The system never fabricates a nearby clause span for a contract-level finding.
 
@@ -280,7 +282,7 @@ The system never fabricates a nearby clause span for a contract-level finding.
 
 #### Advisory cross-references
 
-Cross-reference context is advisory only. The engine records missing, ambiguous, or unresolved references and related clause snippets, but never suppresses a finding because a related clause exists or contains a matching keyword. This is deliberate: a reference that merely exists is not proof that it resolves the concern.
+Cross-reference context is advisory except for the narrow D14 liability-cap gate. The engine records missing, ambiguous, or unresolved references and related clause snippets, and never suppresses a finding merely because a related clause exists or contains a matching keyword. Only a resolved reference to a verifiably applicable cap suppresses the missing-cap finding; everything weaker remains advisory.
 
 #### ML recall booster
 
@@ -310,13 +312,13 @@ The score is not a probability. A value of 100 means “top of the critical band
 
 Generated artifacts carry `<artifact>.manifest.json` files containing source hashes, split identity, build command, code revision, and artifact hash. `scripts/verify_provenance.py` fails closed: it exits non-zero when a manifest is missing or lineage is invalid. `/healthz` exposes a provenance block, and analysis warnings carry `PROVENANCE_UNVERIFIED` or `PROVENANCE_ABSENT` tokens.
 
-The production `data/processed/` directory was restored on 2026-10-30 under an authorised controlled procedure: it now carries five artifacts **with** manifests and train-only row lineage, and the verifier reports 0 failures. The previously stale tree (five artifacts, zero manifests) is preserved as a hash-verified backup at `tmp/processed-backup-20261030/` (gitignored).
+The production `data/processed/` directory was restored on 2026-10-30 under a documented, controlled procedure: it now carries five artifacts **with** manifests and non-test row lineage (CUAD train; MAUD train and dev), and the verifier reports 0 failures. The previously stale tree (five artifacts, zero manifests) is preserved as a hash-verified backup at `tmp/processed-backup-20261030/` (gitignored).
 
 ---
 
 ## 5. Testing and Verification
 
-All results below were observed on 29 October 2026 in the repository working tree.
+All results below were re-observed on 31 October 2026 at commit `2ca788f`; the provenance restoration was performed on 30 October 2026.
 
 ### 5.1 Commands
 
@@ -329,6 +331,7 @@ uv run pytest tests/test_obligation_extraction.py \
   tests/test_p4_adversarial.py \
   tests/test_p4_context_rules.py \
   tests/test_p4_cross_reference.py \
+  tests/test_p4_cap_resolution.py \
   tests/test_evaluation_harness.py -q
 uv run ruff check .
 uv run python scripts/run_demo.py
@@ -352,11 +355,17 @@ The 227 collected tests cover parsing, segmentation (including exact source-slic
 ### 5.3 The seven provenance tests — formerly failing, now passing
 
 **Status update (2026-10-30):** the seven failures below were resolved by an
-authorised, controlled restoration of `data/processed/` (backup, supported
+documented, controlled restoration of `data/processed/` (backup, supported
 rebuild, hash verification, verifier exit 0; full evidence in
 `reports/audit/remediation_verification_20261030.md`). All seven tests now pass
 against the restored artifacts. The historical diagnosis is preserved below for
 context.
+
+Before restoration, the main tree at `0ff131e` showed **137 passed, 7 provenance
+failures**. An isolated clean worktree at `97f4c21` rebuilt five manifests and
+passed **129/129** under `BCC_EVAL_MODE=ci`, confirming that the failures were
+stale generated artifacts rather than code defects. The restored main tree now
+passes 227/227.
 
 All seven failures were in `tests/test_no_leakage.py`:
 
@@ -463,7 +472,7 @@ This harness is a behavioural and regression instrument on synthetic data. It is
 | D14 | `rule_uncapped_liability` evaluated only the clause's own text, so a clearly stated cap in a cross-referenced clause (“Except as set out in Clause 7.4” → 7.4 LIABILITY CAP) still produced a false `RISK_LIABILITY_002` | Fail-closed verification gate: suppression requires an explicit resolver reference with status `resolved` AND referenced text stating a cap that verifiably covers the assessed liability (mutual or matching party scope, no exclusions, no loss-category mismatch). Unresolved/missing/ambiguous references, related text without a resolved reference, exclusions, conflicts, and unknown party scope all keep the finding as a human-review prompt |
 | D15 | Passive obligations lost the responsible party and the deadline in “Personal data shall be encrypted by the Processor within twenty-four (24) hours”: the passive-agent vocabulary had no data-protection role nouns (“Processor”), and the deadline parser matched only single-token numbers (no hyphenated compounds; “seventy”/“eighty” missing) | Add Processor/Controller to the party-role vocabulary so “by the Processor” is recovered as the obligor; use the shared `NUMBER_TOKEN_RE`/`written_number_to_int` for deadlines so “twenty-four (24) hours” normalises to “24 hours”; recognise irregular passive participles (sent/made/paid/…). Agentless passives and non-party agent phrases (“by Friday”) still leave the subject unknown |
 
-A subsequent zero-trust integration audit (2026-10-30, `reports/audit/integration_audit_20261030.md`) found six further integration defects, all fixed in the same-authorised remediation pass (`reports/audit/remediation_verification_20261030.md`): negated stamp/TDS mentions no longer suppress review prompts; multi-line preambles keep every line; clause and long-clause sub-segment offsets slice the cleaned source exactly; the breach-window rule parses written-number notice periods; and party detection no longer truncates legal names containing “Services”/“Company” or glues adjacent names.
+A subsequent zero-trust integration audit (2026-10-30, `reports/audit/integration_audit_20261030.md`) found six further integration defects (D1–D6), all fixed in the same documented remediation pass (`reports/audit/remediation_verification_20261030.md`): negated stamp/TDS mentions no longer suppress review prompts; multi-line preambles keep every line; clause offsets slice the cleaned source exactly; long-clause sub-segment offsets slice it exactly; the breach-window rule parses written-number notice periods; and party detection no longer truncates legal names containing “Services”/“Company” or glues adjacent names.
 
 ### 6.2 Interpretation
 
@@ -520,7 +529,7 @@ The four-way missing-protection model (`present | incomplete | not_found_in_scop
 
 ### 7.5 Provenance
 
-The production `data/processed/` artifacts are now verified (manifests + train-only row lineage; verifier exit 0 since 2026-10-30). The bundled models remain `provenance-unverified` — their training corpus overlaps held-out CUAD — so no leakage-free or generalisation claim is made, and retraining remains approval-gated.
+The production `data/processed/` artifacts are now verified (manifests + non-test row lineage: CUAD train; MAUD train and dev; verifier exit 0 since 2026-10-30). The bundled models remain `provenance-unverified` — their training corpus overlaps held-out CUAD — so no leakage-free or generalisation claim is made, and retraining remains approval-gated.
 
 ### 7.6 Parsing and extraction limits
 
@@ -532,6 +541,10 @@ The production `data/processed/` artifacts are now verified (manifests + train-o
 ### 7.7 Legal review
 
 Statutory and case-law pointers are informational and abbreviated. They must be checked against the current statute or reported judgment. The project does not provide legal advice.
+
+### 7.8 Privacy and retention
+
+Contract text may contain personal data. The prototype has no retention, deletion, or data-subject-request workflow and makes no DPDP compliance claim; deployments must add these controls.
 
 ---
 
@@ -598,25 +611,22 @@ OpenAPI documentation is served at `/docs`; health and provenance status at `/he
 
 ```bash
 uv sync --extra dev
+uv run python scripts/build_training_data.py
+uv run python scripts/verify_provenance.py
 uv run pytest --tb=no
 uv run ruff check .
 uv run python scripts/run_demo.py
 uv run python scripts/run_evaluation.py
-uv run python scripts/verify_provenance.py
 ```
 
-For a clean evaluation corpus:
+On a fresh clone, build and verify the processed artifacts before running the tests: the artifacts are gitignored, so the provenance guards fail until they are regenerated. The manifests themselves are tracked.
 
-```bash
-uv run python scripts/build_training_data.py
-uv run python scripts/verify_provenance.py
-```
-
-Artifact regeneration is approval-gated and was not performed for this report.
+Processed-data restoration was performed and is recorded in `reports/audit/remediation_verification_20261030.md`; model retraining or replacement of bundled model artifacts was not performed.
 
 ## Appendix C — Selected recent commits
 
 ```text
+2ca788f docs: record integration remediation and verification
 5b64da9 fix(ner): stop party-name walk-back at a second corporate suffix
 1b13c2d chore(data): restore verified processed artifacts
 128a835 fix(risk): parse written-number breach notice periods

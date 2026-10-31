@@ -5,7 +5,19 @@ under `.commandcode/` and the earlier `reports/recovery/` documents. Read
 `.commandcode/BHARATCONTRACT_PROJECT_MEMORY.md` and `RECOVERY_TRACKER.md` first
 for the full prior history.
 
-Last updated: 2026-10-30 (Kiro session, sixth pass — D1–D6 remediation complete).
+Last updated: 2026-10-31 (submission-readiness audit).
+
+## 0. 2026-10-31 submission-readiness audit addendum
+
+- Verified code HEAD: `2ca788f`; the audit-docs commit is on top (local only;
+  not pushed). `origin/main` is `2ca788f`; working tree clean.
+- Re-ran at `2ca788f`: full suite **227 passed**; focused **126 passed**
+  (including `tests/test_p4_cap_resolution.py`); evaluation **17/17**;
+  `verify_provenance.py` **0 failures**; ruff clean; demo exit 0.
+- Corrected the final report’s commit reference, non-test lineage wording
+  (CUAD train; MAUD train+dev), evidence-binding/advisory wording, reproduction
+  order, and privacy/licensing caveats.
+- No code changes, no retraining, and no `data/processed/` rebuild.
 
 ## 1. Verified repository state
 
@@ -92,7 +104,7 @@ uv run python scripts/run_evaluation.py
 uv run python scripts/verify_provenance.py
 ```
 
-## 6. Current results (verified at `5b64da9`, docs at `3db8416`)
+## 6. Historical results (verified at `5b64da9`, docs at `3db8416`; current re-run in §0)
 
 - `ruff check .` → All checks passed.
 - Full suite → **227 collected, 227 passed, 0 failed, 0 errors, 0 skipped**
@@ -146,9 +158,9 @@ uv run python scripts/verify_provenance.py
 
 ## 9. Continuation prompt for a future Kiro session
 
-> Resume BharatContract AI from `reports/recovery/KIRO_HANDOFF.md` at HEAD
-> `3db8416` on branch `main` (4 commits ahead of `origin/main` `90bb769`,
-> which moved externally during the session). Verify with `uv run ruff check .`,
+> Resume BharatContract AI from `reports/recovery/KIRO_HANDOFF.md` at the
+> audit-docs state on branch `main` (code verified at `2ca788f`; `origin/main`
+> is `2ca788f`). Verify with `uv run ruff check .`,
 > `uv run pytest --tb=no` (expect 227 passed, 0 failed, 0 skipped),
 > `uv run python scripts/run_evaluation.py` (expect 17/17, 0 regressions), and
 > `uv run python scripts/verify_provenance.py` (expect 0 failures). Pick the next
