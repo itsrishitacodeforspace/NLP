@@ -1,0 +1,486 @@
+{
+  "version": "1.0.0",
+  "git_revision": "14ed31b8e12445c25c081c18d4a56041b50db3fc",
+  "aggregate_metrics": {
+    "classification": {
+      "macro_f1": 0.0,
+      "micro_f1": 0.0
+    },
+    "ner": {
+      "entity_f1": 0.0,
+      "boundary_f1": 0.0
+    },
+    "obligations": {
+      "detection_f1": 0.4117647058823529
+    },
+    "risks": {
+      "detection_f1": 0.16904761904761906
+    },
+    "evidence": {
+      "mean_iou": 0.018346121057118497,
+      "exact_accuracy": 0.0
+    }
+  },
+  "case_results": {
+    "uncapped_liability_tp": {
+      "metrics_computed": true,
+      "errors": [],
+      "classification": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "macro_f1": 0.0,
+        "micro_f1": 0.0
+      },
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "risks": {
+        "detection_precision": 0.25,
+        "detection_recall": 1.0,
+        "detection_f1": 0.4,
+        "true_positives": 1,
+        "false_positives": 3,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "auto_renewal_no_notice": {
+      "metrics_computed": true,
+      "errors": [],
+      "classification": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "macro_f1": 0.0,
+        "micro_f1": 0.0
+      },
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1
+      },
+      "risks": {
+        "detection_precision": 0.2,
+        "detection_recall": 1.0,
+        "detection_f1": 0.33333333333333337,
+        "true_positives": 1,
+        "false_positives": 4,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "auto_renewal_with_notice": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.06521739130434782,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "foreign_gov_law": {
+      "metrics_computed": true,
+      "errors": [],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 0,
+        "false_negatives": 1
+      },
+      "risks": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 4,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.24666666666666667,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "one_sided_termination": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 1
+      },
+      "risks": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 5,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "broad_indemnity_tp": {
+      "metrics_computed": true,
+      "errors": [],
+      "classification": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "macro_f1": 0.0,
+        "micro_f1": 0.0
+      },
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "risks": {
+        "detection_precision": 0.16666666666666666,
+        "detection_recall": 1.0,
+        "detection_f1": 0.2857142857142857,
+        "true_positives": 1,
+        "false_positives": 5,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "data_breach_tight": {
+      "metrics_computed": true,
+      "errors": [],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "capped_liability_tn": {
+      "metrics_computed": true,
+      "errors": [],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "indemnity_direct_losses": {
+      "metrics_computed": true,
+      "errors": [],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "complete_contract": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 3,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "stamp_tds_absent": {
+      "metrics_computed": true,
+      "errors": [],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "risks": {
+        "detection_precision": 0.2,
+        "detection_recall": 1.0,
+        "detection_f1": 0.33333333333333337,
+        "true_positives": 1,
+        "false_positives": 4,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "indemnity_narrow": {
+      "metrics_computed": true,
+      "errors": [],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "obligation_conditional": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "ambiguous_recipient": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 1,
+        "false_negatives": 1
+      },
+      "risks": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 4,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "liability_cap_in_crossref": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 2,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "obligation_passive": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "risks": {
+        "detection_precision": 0.0,
+        "detection_recall": 0.0,
+        "detection_f1": 0.0,
+        "true_positives": 0,
+        "false_positives": 6,
+        "false_negatives": 1
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    },
+    "stamp_tds_present_missed": {
+      "metrics_computed": true,
+      "errors": [
+        "Classification metrics error: Predictions and ground truth must have same length"
+      ],
+      "ner": {
+        "entity_precision": 0.0,
+        "entity_recall": 0.0,
+        "entity_f1": 0.0
+      },
+      "obligations": {
+        "detection_precision": 1.0,
+        "detection_recall": 1.0,
+        "detection_f1": 1.0,
+        "true_positives": 1,
+        "false_positives": 0,
+        "false_negatives": 0
+      },
+      "evidence": {
+        "mean_span_iou": 0.0,
+        "exact_span_accuracy": 0.0
+      }
+    }
+  },
+  "generated_at": "2026-11-02T21:46:17.551996",
+  "gold_annotations_version": "1.0.0"
+}

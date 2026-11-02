@@ -1,0 +1,338 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2026-11-02T21:30:00Z",
+  "git_revision": "14ed31b8e12445c25c081c18d4a56041b50db3fc",
+  "description": "Gold annotations for 17 synthetic evaluation cases",
+  "cases": {
+    "uncapped_liability_tp": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "has_cap": false,
+        "liability_type": "uncapped"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "unlimited", "subject": "Vendor", "action": "indemnify"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_LIABILITY_001", "category": "liability", "severity": "HIGH"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "uncapped_liability_tp", "start": 150, "end": 200, "type": "liability_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "auto_renewal_no_notice": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "auto_renewal": true,
+        "notice_required": false
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Supplier", "start": 12, "end": 20, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Customer", "start": 50, "end": 57, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "automatic", "subject": "Agreement", "action": "renew"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_RENEWAL_001", "category": "lock_in", "severity": "HIGH"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "auto_renewal_no_notice", "start": 200, "end": 250, "type": "renewal_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "auto_renewal_with_notice": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "auto_renewal": true,
+        "notice_required": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Provider", "start": 11, "end": 18, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Acceptor", "start": 48, "end": 55, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "written", "subject": "Party", "action": "notify"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "auto_renewal_with_notice", "start": 180, "end": 230, "type": "renewal_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "foreign_gov_law": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "governing_law": "foreign",
+        "jurisdiction": "foreign"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Company", "start": 10, "end": 16, "type": "PARTY", "role": "party_a"},
+        {"entity_id": "p2", "text": "Partner", "start": 44, "end": 50, "type": "PARTY", "role": "party_b"}
+      ],
+      "obligation_gold": [
+        {"locate": "compliance", "subject": "Party", "action": "follow"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_GOVERNING_LAW_001", "category": "jurisdiction", "severity": "MEDIUM"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "foreign_gov_law", "start": 100, "end": 150, "type": "governing_law_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "one_sided_termination": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "termination_one_sided": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Licensor", "start": 11, "end": 18, "type": "PARTY", "role": "grantor"},
+        {"entity_id": "p2", "text": "Licensee", "start": 47, "end": 54, "type": "PARTY", "role": "grantee"}
+      ],
+      "obligation_gold": [
+        {"locate": "immediate", "subject": "Licensor", "action": "terminate"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_TERMINATION_001", "category": "exit", "severity": "HIGH"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "one_sided_termination", "start": 220, "end": 280, "type": "termination_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "broad_indemnity_tp": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "indemnity_scope": "broad"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Manufacturer", "start": 10, "end": 20, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Distributor", "start": 55, "end": 66, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "all claims", "subject": "Manufacturer", "action": "indemnify"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_INDEMNITY_001", "category": "indemnity", "severity": "MEDIUM"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "broad_indemnity_tp", "start": 180, "end": 240, "type": "indemnity_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "data_breach_tight": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "data_breach_response": "defined"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Data Owner", "start": 10, "end": 19, "type": "PARTY", "role": "controller"},
+        {"entity_id": "p2", "text": "Processor", "start": 48, "end": 56, "type": "PARTY", "role": "processor"}
+      ],
+      "obligation_gold": [
+        {"locate": "24 hours", "subject": "Processor", "action": "notify"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "data_breach_tight", "start": 160, "end": 210, "type": "data_security_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "capped_liability_tn": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "liability_cap": "defined"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Buyer", "start": 44, "end": 48, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "cap", "subject": "Vendor", "action": "liability"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "capped_liability_tn", "start": 140, "end": 190, "type": "liability_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "indemnity_direct_losses": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "indemnity_scope": "direct_only"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Supplier", "start": 12, "end": 19, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "direct", "subject": "Supplier", "action": "indemnify"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "indemnity_direct_losses", "start": 170, "end": 220, "type": "indemnity_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "complete_contract": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "complete_agreement": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Party A", "start": 8, "end": 14, "type": "PARTY", "role": "party_a"},
+        {"entity_id": "p2", "text": "Party B", "start": 42, "end": 48, "type": "PARTY", "role": "party_b"}
+      ],
+      "obligation_gold": [
+        {"locate": "entire", "subject": "Agreement", "action": "supersede"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "complete_contract", "start": 200, "end": 250, "type": "entire_agreement_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "stamp_tds_absent": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "stamp_duty_paid": false,
+        "tds_applicable": false
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "pay", "subject": "Client", "action": "pay"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_STAMP_001", "category": "statutory", "severity": "HIGH"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "stamp_tds_absent", "start": 130, "end": 180, "type": "payment_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "indemnity_narrow": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "indemnity_scope": "narrow"
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Seller", "start": 9, "end": 14, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Buyer", "start": 43, "end": 47, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "third party", "subject": "Seller", "action": "indemnify"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "indemnity_narrow", "start": 165, "end": 215, "type": "indemnity_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "obligation_conditional": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "obligation_conditioned": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Buyer", "start": 44, "end": 48, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "conditional", "subject": "Vendor", "action": "perform"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "obligation_conditional", "start": 190, "end": 240, "type": "obligation_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "ambiguous_recipient": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "recipient_ambiguous": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Company", "start": 10, "end": 16, "type": "PARTY", "role": "party_a"},
+        {"entity_id": "p2", "text": "Affiliate", "start": 48, "end": 56, "type": "PARTY", "role": "party_b"}
+      ],
+      "obligation_gold": [
+        {"locate": "designated", "subject": "Party", "action": "notify"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_PARTY_001", "category": "ambiguity", "severity": "MEDIUM"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "ambiguous_recipient", "start": 175, "end": 225, "type": "notice_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "liability_cap_in_crossref": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "cross_reference_used": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Lender", "start": 9, "end": 14, "type": "PARTY", "role": "lender"},
+        {"entity_id": "p2", "text": "Borrower", "start": 47, "end": 54, "type": "PARTY", "role": "borrower"}
+      ],
+      "obligation_gold": [
+        {"locate": "Section", "subject": "Borrower", "action": "limit"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "liability_cap_in_crossref", "start": 210, "end": 260, "type": "liability_clause"}
+      ],
+      "cross_ref_gold": [
+        {"from_clause": "Section 5", "to_clause": "Section 3", "type": "liability_cap_reference"}
+      ]
+    },
+    "obligation_passive": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "obligation_passive_voice": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Provider", "start": 11, "end": 18, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "shall be", "subject": "Service", "action": "deliver"}
+      ],
+      "risk_gold": [
+        {"risk_id": "RISK_OBLIGATION_001", "category": "clarity", "severity": "LOW"}
+      ],
+      "evidence_gold": [
+        {"doc_id": "obligation_passive", "start": 185, "end": 235, "type": "obligation_clause"}
+      ],
+      "cross_ref_gold": []
+    },
+    "stamp_tds_present_missed": {
+      "classification_gold": {
+        "document_type": "commercial_contract",
+        "stamp_duty_present": true,
+        "tds_applicable": true
+      },
+      "ner_gold": [
+        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
+        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+      ],
+      "obligation_gold": [
+        {"locate": "deduct", "subject": "Client", "action": "deduct"}
+      ],
+      "risk_gold": [],
+      "evidence_gold": [
+        {"doc_id": "stamp_tds_present_missed", "start": 155, "end": 205, "type": "payment_clause"}
+      ],
+      "cross_ref_gold": []
+    }
+  }
+}
