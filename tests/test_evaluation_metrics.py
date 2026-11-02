@@ -307,3 +307,135 @@ class TestIntegration:
 
         # Abstention count
         assert metrics.abstention_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Adversarial tests (edge cases not covered by basic tests)
+# ---------------------------------------------------------------------------
+
+
+class TestAdversarialNER:
+    """Adversarial tests for NER metrics - empty sets, duplicates, partial spans."""
+
+    def test_ner_empty_predictions(self) -> None:
+        """Empty predictions with non-empty gold should give 0 metrics."""
+        from nlp.evaluation.metrics import Entity
+
+        pred_entities: list[Entity] = []
+        gold_entities = [Entity(entity_id="e1", text="John", start=0, end=4, entity_type="PERSON")]
+        all_entity_types = ["PERSON", "ORG"]
+
+        metrics = compute_ner_metrics(pred_entities, gold_entities, all_entity_types)
+
+        # Precision is undefined when no predictions; should be 0
+        assert metrics.entity_precision == 0.0
+        # Recall should be 0 (no correct predictions out of gold entities)
+        assert metrics.entity_recall == 0.0
+        assert metrics.entity_f1 == 0.0
+
+    def test_ner_empty_gold(self) -> None:
+        """Non-empty predictions with empty gold should give 0 metrics."""
+        from nlp.evaluation.metrics import Entity
+
+        pred_entities = [Entity(entity_id="e1", text="John", start=0, end=4, entity_type="PERSON")]
+        gold_entities: list[Entity] = []
+        all_entity_types = ["PERSON", "ORG"]
+
+        metrics = compute_ner_metrics(pred_entities, gold_entities, all_entity_types)
+
+        # Precision should be 0 (no gold to match)
+        assert metrics.entity_precision == 0.0
+        # Recall is undefined when no gold; should be 0
+        assert metrics.entity_recall == 0.0
+        assert metrics.entity_f1 == 0.0
+
+    def test_ner_duplicate_predictions(self) -> None:
+        """Duplicate predictions should be counted separately (penalized)."""
+        from nlp.evaluation.metrics import Entity
+
+        entity = Entity(entity_id="e1", text="John", start=0, end=4, entity_type="PERSON")
+        pred_entities = [entity, entity]  # Same entity twice
+        gold_entities = [entity]
+        all_entity_types = ["PERSON", "ORG"]
+
+        metrics = compute_ner_metrics(pred_entities, gold_entities, all_entity_types)
+
+        # Without set deduplication in TP/FP/FN: 1 exact match / 2 predictions = 0.5 precision
+        # Recall is 1.0 (1 match / 1 gold)
+        assert metrics.entity_precision == 0.5  # 1/2
+        assert metrics.entity_recall == 1.0  # 1/1
+        # F1 = 2 * 0.5 * 1.0 / (0.5 + 1.0) = 0.666...
+        assert metrics.entity_f1 == pytest.approx(2/3)
+
+    def test_ner_partial_span_start(self) -> None:
+        """Different start, same end should not be exact match."""
+        from nlp.evaluation.metrics import Entity
+
+        pred_entities = [
+            Entity(entity_id="e1", text="ohn", start=1, end=4, entity_type="PERSON"),  # 1-4
+        ]
+        gold_entities = [
+            Entity(entity_id="e1", text="John", start=0, end=4, entity_type="PERSON"),  # 0-4
+        ]
+        all_entity_types = ["PERSON", "ORG"]
+
+        metrics = compute_ner_metrics(pred_entities, gold_entities, all_entity_types)
+
+        # Should not be exact match (different start)
+        assert metrics.entity_precision == 0.0
+        assert metrics.entity_recall == 0.0
+
+    def test_ner_different_end_same_start(self) -> None:
+        """Same start, different end should not be exact match."""
+        from nlp.evaluation.metrics import Entity
+
+        pred_entities = [
+            Entity(entity_id="e1", text="Joh", start=0, end=3, entity_type="PERSON"),  # 0-3
+        ]
+        gold_entities = [
+            Entity(entity_id="e1", text="John", start=0, end=4, entity_type="PERSON"),  # 0-4
+        ]
+        all_entity_types = ["PERSON", "ORG"]
+
+        metrics = compute_ner_metrics(pred_entities, gold_entities, all_entity_types)
+
+        # Should not be exact match (different end)
+        assert metrics.entity_precision == 0.0
+        assert metrics.entity_recall == 0.0
+
+
+class TestAdversarialClassification:
+    """Adversarial tests for classification metrics."""
+
+    def test_classification_all_abstentions(self) -> None:
+        """All abstentions should result in 0 metrics."""
+        predictions = ["unclassified", "unclassified"]
+        ground_truth = ["A", "B"]
+        all_labels = ["A", "B", "unclassified"]
+
+        metrics = compute_classification_metrics(predictions, ground_truth, all_labels)
+
+        assert metrics.abstention_count == 2
+        # No true positives, no predicted positives -> P/R/F1 = 0
+        assert metrics.precision == 0.0
+        assert metrics.recall == 0.0
+        assert metrics.f1 == 0.0
+
+    def test_classification_complete_mismatch(self) -> None:
+        """All predictions wrong should result in 0 metrics."""
+        predictions = ["A", "A", "A"]
+        ground_truth = ["B", "B", "B"]
+        all_labels = ["A", "B"]
+
+        metrics = compute_classification_metrics(predictions, ground_truth, all_labels)
+
+        # No true positives at all
+        assert metrics.precision == 0.0
+        assert metrics.recall == 0.0
+        assert metrics.f1 == 0.0
+        # All predictions are false positives for A
+        assert metrics.per_class_metrics["A"]["fp"] == 3
+        # All ground truth are false negatives for B
+        assert metrics.per_class_metrics["B"]["fn"] == 3
+        # Confusion matrix should show all A->B
+        assert metrics.confusion_matrix[("A", "B")] == 3

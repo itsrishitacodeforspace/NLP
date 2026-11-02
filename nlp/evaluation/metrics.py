@@ -183,6 +183,21 @@ class Entity:
     entity_type: str
     role: Optional[str] = None
 
+    def __eq__(self, other: object) -> bool:
+        """Compare entities by value (start, end, type, role), not identity."""
+        if not isinstance(other, Entity):
+            return False
+        return (
+            self.start == other.start
+            and self.end == other.end
+            and self.entity_type == other.entity_type
+            and self.role == other.role
+        )
+
+    def __hash__(self) -> int:
+        """Hash by value for set operations."""
+        return hash((self.start, self.end, self.entity_type, self.role or ""))
+
 
 @dataclass
 class NERMetrics:
