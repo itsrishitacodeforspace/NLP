@@ -17,9 +17,41 @@ setup_logging()
 logger = get_logger()
 
 
+# Shipped development secret (see app.core.config.Settings.auth_secret_key).
+DEFAULT_AUTH_SECRET_KEY = "dev-insecure-secret-change-me"
+# Environments where starting with the default secret is a hard failure.
+PRODUCTIONISH_ENVS = {"production", "prod", "staging"}
+
+
+def guard_auth_secret(settings) -> None:
+    """Refuse (or warn) to start with the shipped default JWT secret.
+
+    With ``AUTH_ENABLED=true`` and ``AUTH_SECRET_KEY`` still the dev default,
+    every bearer token in existence is forgeable. In production-like
+    environments that is a startup error; elsewhere it is logged as CRITICAL
+    so it stands out in the logs.
+    """
+    if not settings.auth_enabled:
+        return
+    if settings.auth_secret_key != DEFAULT_AUTH_SECRET_KEY:
+        return
+    env = settings.app_env.strip().lower()
+    if env in PRODUCTIONISH_ENVS:
+        raise RuntimeError(
+            "AUTH_SECRET_KEY is the shipped development default while "
+            "AUTH_ENABLED=true in a production-like environment "
+            f"({settings.app_env!r}). Set a long random AUTH_SECRET_KEY before starting."
+        )
+    logger.critical(
+        "AUTH_ENABLED=true but AUTH_SECRET_KEY is the shipped development "
+        "default. Anyone can forge tokens — set a strong AUTH_SECRET_KEY."
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    guard_auth_secret(settings)
     logger.info("Starting {} (env={})", settings.app_name, settings.app_env)
     # Touch Neo4j once so failures show in startup logs.
     conn = Neo4jConnection.instance()
