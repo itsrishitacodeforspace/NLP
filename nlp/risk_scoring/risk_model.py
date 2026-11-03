@@ -3,8 +3,10 @@
 The rule engine in :mod:`nlp.risk_scoring.rules` is precise but brittle: it only
 fires on the phrasings it explicitly encodes. This module trains a small
 TF-IDF + Logistic-Regression model on **weak labels produced by the rule engine
-itself** over the CUAD clause corpus, so it can generalise to paraphrases the
-rules miss.
+itself** over the *train-only* CUAD clause corpus, so it can generalise to
+paraphrases the rules miss. The labels are weak supervision (no gold severity
+data exists); a clause type alone contributes at most a MEDIUM prior and never
+inflates severity by itself. Predictions are **not a calibrated probability**.
 
 It is used as a *recall booster*: for clauses the rules did **not** flag, if the
 model confidently predicts a non-trivial severity we emit an explainable
@@ -169,13 +171,17 @@ def load(path: Optional[Path] = None) -> Optional[RiskClassifier]:
     return RiskClassifier(pipeline)
 
 
-# Baseline exposure by clause type. The rule engine only fires on the phrasings
-# it explicitly encodes, so on short corpus snippets almost everything would be
-# "low". These priors give the weakly-supervised target a usable signal: a
-# clause of this type deserves attention even when no specific trigger matched.
+# Mild baseline exposure by clause type, used ONLY as a weak-label floor for
+# high-scrutiny clause types. Deliberately capped at MEDIUM: a clause's *type*
+# alone must not teach the model that every Limitation of Liability or
+# Indemnification clause is HIGH risk (the old HIGH priors made the weak
+# supervision severity-inflated by construction). Actual severity comes from
+# what the clause says — if a rule trigger fires, the rule severity wins.
+# Rationale: the model is a recall booster for paraphrases of *flagged*
+# phrasings, and a type-only prior would make it fire on routine boilerplate.
 _TYPE_BASELINE = {
-    "Limitation of Liability": RiskSeverity.HIGH,
-    "Indemnification": RiskSeverity.HIGH,
+    "Limitation of Liability": RiskSeverity.MEDIUM,
+    "Indemnification": RiskSeverity.MEDIUM,
     "Termination": RiskSeverity.MEDIUM,
     "Non-Compete / Non-Solicit": RiskSeverity.MEDIUM,
     "Data Protection": RiskSeverity.MEDIUM,
@@ -186,10 +192,13 @@ _TYPE_BASELINE = {
 def weak_label(text: str) -> str:
     """Derive a severity label for ``text`` from the rule engine (no model).
 
-    The label is the stronger of (a) the highest severity any rule assigns to the
-    clause and (b) a clause-type baseline prior. Used offline to build the
-    training set; kept here so the training script and any future evaluation
-    share exactly one definition of the label.
+    The label is the stronger of (a) the highest severity any rule assigns to
+    the clause and (b) a *mild* (at most MEDIUM) clause-type baseline floor for
+    high-scrutiny types. The floor keeps usable signal on short snippets where
+    no specific trigger matched, without teaching the model that a clause type
+    alone implies high severity. Used offline to build the training set; kept
+    here so the training script and any future evaluation share exactly one
+    definition of the label. Labels are weak supervision, not gold.
     """
     from app.models.schemas import Clause, ContractSummary
     from nlp.clause_classification.classifier import classify_clause

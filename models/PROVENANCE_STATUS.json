@@ -1,6 +1,6 @@
 {
   "$comment": "Provenance declaration for tracked model archives. A provenance verdict is a data-lineage statement only; it is not evidence of model accuracy or predictive validity.",
-  "generated_by": "P1 provenance remediation (Stage 3, Rev. 5)",
+  "generated_by": "model retraining from train-only data (2026-11-03)",
   "source_authentication": {
     "upstream_authenticated": false,
     "basis": "internal-partition-consistency",
@@ -9,15 +9,15 @@
     "note": "Hashes computed locally from the checkout and validated only by internal partition consistency (train union test == CUADv1 on distinct normalized texts). No upstream CUAD checksum was consulted. Internal consistency does not prove upstream authenticity."
   },
   "artifacts": {
-    "tfidf_classifier.7z": {
-      "status": "provenance-unverified",
-      "reason": "Trained from data/processed/clause_classifier.csv, which was built from the full data/datasets/cuad/CUADv1.json corpus (train union test). The training corpus overlaps the held-out CUAD test documents, so no leakage-free or generalization claim can be made. Retraining is a separate approval gate.",
-      "cache_sha256": "87c60eebca94b40f25c5d4403b3d6991b6467bc85e91422c252cddd0141003ae"
-    },
     "risk_classifier.7z": {
-      "status": "provenance-unverified",
-      "reason": "Weakly-supervised severity model trained from the same full-CUAD-derived clause corpus, with labels produced by the rule engine. Same corpus-overlap limitation; additionally, its labels are rule-derived rather than gold.",
-      "cache_sha256": "b40ed2b20d2eb8e8ea423e63ce2fe9f062897641aeafa916dbfa3add4447b4ce"
+      "status": "train-only-verified",
+      "reason": "Retrained 2026-11-03 from train-only data/processed/clause_classifier.csv (manifest-verified, split=train); weakly supervised by the rule engine with mild (max MEDIUM) clause-type priors. Recall booster only \u2014 not a calibrated probability; NOT a generalization guarantee; US corpus, no Indian-law validity claim.",
+      "cache_sha256": "014592bd708a3fedc5fbd90a1931ad2c336b7538fff146e440624637855f46fc"
+    },
+    "tfidf_classifier.7z": {
+      "status": "train-only-verified",
+      "reason": "Retrained 2026-11-03 from train-only data/processed/clause_classifier.csv (manifest-verified, split=train). CUAD-derived; US contracts; 14 of 26 taxonomy categories; NOT a generalization guarantee.",
+      "cache_sha256": "ef8b0167d31187f86e17aa1f6d8f9e6e181f57aaecdc8cbc7513f3c32cf5742c"
     }
   }
 }

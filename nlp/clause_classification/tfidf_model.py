@@ -4,6 +4,19 @@ The repository ships the model compressed as ``models/tfidf_classifier.7z``
 because the raw joblib is ~100 MB. We extract it on first use, so a plain
 ``pip install`` of the project has a working classifier without requiring a
 7-Zip executable on PATH.
+
+Taxonomy coverage (retrained 2026-11-03 from the train-only
+``data/processed/clause_classifier.csv``): the ML half of the hybrid can only
+emit the categories that have training rows there; the rest are detected by
+the rule classifier alone. The exact, up-to-date list is machine-readable via
+``nlp.datasets.coverage`` (``ml_supported_labels`` / ``unsupported_labels``);
+at retraining time the ML-supported categories were Assignment, Audit Rights,
+Confidentiality, Definitions, Governing Law, Insurance, Intellectual Property,
+Limitation of Liability, Miscellaneous, Non-Compete / Non-Solicit, Payment
+Terms, Term and Renewal, Termination and Warranty, and the rule-only
+categories were Indemnification, Data Protection, Dispute Resolution, Force
+Majeure, Service Levels, Change Control, Notice, Acceptance, Compliance,
+Stamp Duty, TDS / GST and Arbitration Seat.
 """
 from __future__ import annotations
 

@@ -14,6 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from nlp.clause_classification.classifier import classify_clause
+from nlp.datasets import coverage
 from nlp.datasets.manifest import load_manifest, verify
 from nlp.datasets.splits import ProvenanceError, sha256_file
 
@@ -106,6 +107,15 @@ def main() -> int:
 
     print(BANNER)
     print("A manifest proves data lineage only; it never proves accuracy or predictive validity.")
+    table = coverage.coverage(Path(args.input))
+    if table:
+        supported = [entry["label"] for entry in table.values() if entry["ml_supported"]]
+        empty = coverage.unsupported_labels(Path(args.input)) or []
+        print(
+            f"Taxonomy coverage (training rows in this corpus): {len(supported)} of "
+            f"{len(coverage.INTERNAL_LABELS)} categories ML-supported; rule-only (0 rows): "
+            + (", ".join(empty) if empty else "none")
+        )
     info = describe_input(Path(args.input), require_provenance=args.require_provenance)
     if not info.get("ok"):
         return 2

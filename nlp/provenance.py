@@ -26,6 +26,11 @@ STATUS_VERIFIED = "verified"
 STATUS_UNVERIFIED = "provenance-unverified"
 STATUS_ABSENT = "absent"
 STATUS_UNKNOWN = "unknown"
+# Lineage verified against an approved TRAIN-only source: the artifact's data
+# lineage is clean (train-only, manifest-verified), but that is a lineage
+# statement only — it says nothing about predictive validity or that the model
+# generalises beyond its training corpus.
+STATUS_TRAIN_ONLY = "train-only-verified"
 
 _HASH_CACHE: Dict[str, str] = {}
 _REGISTRY: Dict[str, dict] = {}
@@ -84,10 +89,12 @@ def _log_entry(entry: dict) -> None:
 
         log = get_logger()
         marker = token(entry.get("name", "?"), entry.get("status", STATUS_UNKNOWN))
-        if entry.get("status") == STATUS_VERIFIED:
-            log.info("{} path={} sha256={}", marker, entry.get("path"), entry.get("sha256"))
+        path = entry.get("loaded_path") or entry.get("path")
+        sha = entry.get("loaded_sha256") or entry.get("sha256")
+        if entry.get("status") in (STATUS_VERIFIED, STATUS_TRAIN_ONLY):
+            log.info("{} path={} sha256={}", marker, path, sha)
         else:
-            log.warning("{} path={} reason={}", marker, entry.get("path"), entry.get("reason"))
+            log.warning("{} path={} reason={}", marker, path, entry.get("reason"))
     except Exception:  # pragma: no cover - logging must never break loading
         pass
 

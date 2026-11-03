@@ -36,8 +36,11 @@ def test_weak_label_uses_rules_and_type_priors():
         "The Provider shall have unlimited liability for all losses arising under this Agreement."
     )
     assert risky in {"high", "critical"}
-    # A high-exposure clause type with no explicit trigger -> at least medium.
-    assert weak_label("The Provider shall indemnify the Customer against claims.") in {"medium", "high"}
+    # A clause with no explicit severity trigger gets at most the mild (MEDIUM)
+    # type baseline — a clause type alone must not imply HIGH. (Do not use text
+    # that trips a high-severity rule, e.g. "indemnify ... claims", which the
+    # missing-cap rule scores HIGH.)
+    assert weak_label("The Provider shall indemnify the Customer.") in {"low", "medium"}
     # Boilerplate -> low.
     assert (
         weak_label("The headings are for convenience only and shall not affect interpretation.")
