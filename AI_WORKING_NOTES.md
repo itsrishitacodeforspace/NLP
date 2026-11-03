@@ -331,3 +331,35 @@ docker compose -f docker/docker-compose.yml up --build   # full stack
   oversize, AUTH_USERS silent admin fallback); rules-only vs hybrid
   comparison script; abstention measurement; family-disjoint held-out set;
   Streamlit bearer-token support; P2.6 docker lockfile drift.
+
+### 2026-11-03 (autonomous execution session, 5 workstreams)
+- 5 parallel coder subagents (security, evaluation, Indian coverage,
+  risk quality, parser reliability) ran on top of `f0bad0a`; 29 commits
+  landed, HEAD now `fc400a6` + docs commit (48 ahead of origin).
+- Main-agent integration pass (this session): baseline reproduced
+  (414 tests at `f0bad0a`), final suite **560 passed, 0 failed**,
+  ruff = 3 pre-existing B008 only, provenance 0/0, demo clean, root
+  duplicates byte-identical (duplicate-drift test green), targeted
+  security suite 28 passed.
+- Key claims re-verified live on data/raw/ samples: RISK_NONCOMPETE_001
+  and RISK_DISPUTE_001 fire as designed; enrichment fields populated
+  (9/9 rule findings on sample_msa); score breakdown + caveat present;
+  obligation frequency extraction works; ML booster adds 0 redundant
+  findings (subagent-verified).
+- Honest eval numbers: rules-vs-hybrid 0.337/0.916 Acc@1 is
+  TRAIN-corpus only (banner-labeled); family-disjoint CUAD held-out is
+  0.184/0.401 — the only legitimate generalization estimate; 7/102
+  test docs family-leak; dataset licenses unverified in-repo.
+- The exit-code anomaly (560 passed, non-zero exit) did NOT reproduce
+  on clean runs — treated as environment-level.
+- Stale Phase 2B report that occupied
+  reports/engineering/autonomous_execution_20261103.md was preserved
+  as reports/engineering/autonomous_execution_phase2b_20261102.md
+  (rename, not deletion).
+- REMAINING (next session): party-detection over-counting (phantom
+  3rd party on 2/6 samples — propagates into obligations/affected
+  parties); AUTH_USERS silent admin fallback (decision needed);
+  Streamlit bearer-token support; OCR absent (scanned path = graceful
+  failure only); pdfplumber cosmetic mid-word breaks (documented).
+- Full report: reports/engineering/autonomous_execution_20261103.md.
+  No push; no history rewrite; sync.log preserved.
