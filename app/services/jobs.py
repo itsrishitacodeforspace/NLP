@@ -85,14 +85,28 @@ def get_job(job_id: str) -> Optional[JobInfo]:
     record = pg_get_job(job_id)
     if not record:
         return None
+    return _job_from_record(record)
+
+
+def _job_from_record(record: dict) -> JobInfo:
+    """Build a :class:`JobInfo` from a Postgres record.
+
+    A stored result that fails to re-validate (schema drift / corruption) is
+    kept as ``result=None`` with the failure recorded in ``result_error`` and
+    a WARNING logged — a SUCCEEDED job must not silently look result-less.
+    """
+    job_id = record["job_id"]
     result = None
+    result_error = None
     if record.get("result"):
         try:
             result = AnalysisResult.model_validate(record["result"])
-        except Exception:
+        except Exception as exc:
             result = None
+            result_error = f"Stored result could not be parsed: {exc}"
+            logger.warning("Stored result for job {} failed validation: {}", job_id, exc)
     return JobInfo(
-        job_id=record["job_id"],
+        job_id=job_id,
         contract_id=record["contract_id"] or "",
         owner=record.get("owner") or "",
         status=JobStatus(record["status"]) if record["status"] else JobStatus.QUEUED,
@@ -102,19 +116,38 @@ def get_job(job_id: str) -> Optional[JobInfo]:
         error=record["error"] or None,
         created_at=datetime.fromisoformat(record["created_at"]) if record["created_at"] else utcnow(),
         finished_at=datetime.fromisoformat(record["finished_at"]) if record["finished_at"] else None,
+        result_error=result_error,
     )
 
 
 def list_jobs(owner: Optional[str] = None) -> list[JobInfo]:
-    """List jobs, optionally scoped to a single owner (row-level security)."""
+    """List jobs, optionally scoped to a single owner (row-level security).
+
+    Merges the in-memory mirror with PostgreSQL so historical jobs survive a
+    restart or the in-memory eviction cap. Deduplicated by ``job_id`` with the
+    in-memory copy winning (it is fresher); the owner filter is applied to the
+    merged list. When Postgres is unavailable this degrades to the in-memory
+    mirror only (no-op fallback, never raises).
+    """
     with _jobs_lock:
-        jobs = list(_jobs.values())
-    if not jobs:
+        memory_jobs = {j.job_id: j for j in _jobs.values()}
+    try:
         from app.db.postgres import list_jobs as pg_list_jobs
 
-        jobs = [job for record in pg_list_jobs() if (job := get_job(record["job_id"])) is not None]
+        records = pg_list_jobs()
+    except Exception as exc:  # pragma: no cover - defensive no-op
+        logger.warning("Postgres job listing unavailable: {}", exc)
+        records = []
+    for record in records:
+        job_id = record["job_id"]
+        if job_id not in memory_jobs:
+            job = get_job(job_id)
+            if job is not None:
+                memory_jobs[job_id] = job
+    jobs = list(memory_jobs.values())
     if owner is not None:
         jobs = [j for j in jobs if j.owner == owner]
+    jobs.sort(key=lambda j: j.created_at, reverse=True)
     return jobs
 
 
@@ -129,10 +162,44 @@ def run_in_background(
     contract_id: str,
 ) -> None:
     """Run the synchronous worker in a daemon thread."""
-    def _runner():
-        info = update_job(job_id, status=JobStatus.RUNNING, progress=0.05, message="Started")
+    def _mark_failed(error: str, log: bool) -> None:
+        """Force the job to a terminal FAILED state, in memory and in Postgres.
+
+        Never raises: if the job was already evicted from the in-memory mirror
+        the update simply does not happen (Postgres still records the
+        transition when available).
+        """
         try:
-            result = func(info)
+            update_job(
+                job_id,
+                status=JobStatus.FAILED,
+                progress=1.0,
+                message="Failed",
+                error=error,
+            )
+        except KeyError:
+            # Job evicted from memory; record the transition directly.
+            with _jobs_lock:
+                stuck = _jobs.get(job_id)
+            if stuck is None or stuck.status in {JobStatus.SUCCEEDED, JobStatus.FAILED}:
+                return
+            stuck.status = JobStatus.FAILED
+            stuck.progress = 1.0
+            stuck.message = "Failed"
+            stuck.error = error
+            stuck.finished_at = utcnow()
+            _persist(stuck)
+        except Exception as persist_exc:  # pragma: no cover - defensive
+            if log:
+                logger.warning("Could not mark job {} failed: {}", job_id, persist_exc)
+
+    def _runner():
+        try:
+            update_job(job_id, status=JobStatus.RUNNING, progress=0.05, message="Started")
+        except Exception:
+            return
+        try:
+            result = func(_jobs.get(job_id) or JobInfo(job_id=job_id, contract_id=contract_id))
             update_job(
                 job_id,
                 status=JobStatus.SUCCEEDED,
@@ -140,15 +207,14 @@ def run_in_background(
                 message="Completed",
                 result=result,
             )
-        except Exception as exc:  # pragma: no cover - defensive
+        except Exception as exc:
             logger.exception("Job {} failed", job_id)
-            update_job(
-                job_id,
-                status=JobStatus.FAILED,
-                progress=1.0,
-                message="Failed",
-                error=str(exc),
-            )
+            _mark_failed(str(exc), log=True)
+        except BaseException as exc:
+            # A BaseException (KeyboardInterrupt/SystemExit) or a C-level abort
+            # must not leave the job RUNNING forever, in memory or in Postgres.
+            logger.exception("Job {} aborted", job_id)
+            _mark_failed(f"Aborted: {type(exc).__name__}", log=False)
 
     t = threading.Thread(target=_runner, name=f"job-{job_id}", daemon=True)
     t.start()
@@ -169,6 +235,10 @@ def _persist(info: JobInfo) -> None:
         "message": info.message or "",
         "result": info.result.model_dump(mode="json") if info.result else {},
         "error": info.error or "",
+        # Persist the job's own timestamps so Postgres ordering (created_at /
+        # finished_at) reflects job lifetime, not upsert time.
+        "created_at": info.created_at,
+        "finished_at": info.finished_at,
     }
     try:
         upsert_job(payload)

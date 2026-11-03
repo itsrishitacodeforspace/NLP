@@ -5,6 +5,8 @@ created on first request. Heavy use of Neo4j is preferred for relationships.
 """
 from __future__ import annotations
 
+import threading
+import time as _time
 from contextlib import contextmanager
 from typing import Iterator, Optional
 
@@ -63,6 +65,7 @@ class JobRecord(Base):
 
 _engine: Optional[object] = None
 _SessionLocal: Optional[sessionmaker] = None
+_engine_lock = threading.Lock()
 
 
 def _ensure_owner_columns(engine) -> None:
@@ -82,29 +85,49 @@ def _ensure_owner_columns(engine) -> None:
 
 
 def get_engine():
+    """Return the shared engine, initialising it on first use.
+
+    Initialisation is guarded by ``_engine_lock`` so concurrent callers
+    cannot double-initialise the engine. A failed probe is cached by
+    ``set_postgres_unavailable()`` and re-probed at most every 30 seconds,
+    so a transient outage does not permanently disable persistence while
+    the common down case still fast-fails without touching the network.
+    """
     global _engine
-    if _engine is None:
-        settings = get_settings()
-        try:
-            _engine = create_engine(
-                settings.database_url,
-                pool_pre_ping=False,
-                pool_size=5,
-                max_overflow=5,
-                future=True,
-                connect_args={"connect_timeout": 3},
-            )
-            # Probe connection with a short timeout; do not block on cold start.
-            with _engine.connect() as conn:
-                conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-            Base.metadata.create_all(_engine)
-            _ensure_owner_columns(_engine)
-            logger.info("Postgres engine initialised at {}", settings.database_url)
-        except Exception as exc:
-            logger.warning("Postgres unavailable ({}). Metadata writes will be no-ops.", exc)
-            _engine = None
-            set_postgres_unavailable()
+    if _engine is not None:
+        return _engine
+    if postgres_available():
+        with _engine_lock:
+            if _engine is None:
+                # Serialised: exactly one caller probes per window.
+                set_probe_window()
+                _init_engine()
     return _engine
+
+
+def _init_engine() -> None:
+    """Create and probe the engine. Caller must hold ``_engine_lock``."""
+    global _engine
+    settings = get_settings()
+    try:
+        _engine = create_engine(
+            settings.database_url,
+            pool_pre_ping=False,
+            pool_size=5,
+            max_overflow=5,
+            future=True,
+            connect_args={"connect_timeout": 3},
+        )
+        # Probe connection with a short timeout; do not block on cold start.
+        with _engine.connect() as conn:
+            conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+        Base.metadata.create_all(_engine)
+        _ensure_owner_columns(_engine)
+        logger.info("Postgres engine initialised at {}", settings.database_url)
+    except Exception as exc:
+        logger.warning("Postgres unavailable ({}). Metadata writes will be no-ops.", exc)
+        _engine = None
+        set_postgres_unavailable()
 
 
 def get_sessionmaker() -> Optional[sessionmaker]:
@@ -134,16 +157,40 @@ def session_scope() -> Iterator[Optional[Session]]:
         session.close()
 
 
-_AVAILABLE_CACHE: dict[str, bool] = {"postgres": True}
+# Availability cache. A failed probe is remembered as a *bounded* outage:
+# callers fast-fail for ``PROBE_RETRY_SECONDS`` and then get one re-probe
+# attempt, so a transient outage cannot permanently disable persistence.
+_PROBE_RETRY_SECONDS = 30.0
+_AVAILABLE_CACHE: dict[str, object] = {"postgres": True}
 
 
 def postgres_available() -> bool:
-    """Cheap check; if engine init failed once, skip for the rest of this process."""
-    return _AVAILABLE_CACHE.get("postgres", False)
+    """Cheap check; unavailability fast-fails but is re-probed periodically.
+
+    Once the engine probe has failed, this returns ``False`` without
+    touching the network for up to ``PROBE_RETRY_SECONDS``. When that window
+    has elapsed the flag is reset to ``True`` so a single caller may attempt
+    to re-probe (via :func:`get_engine`, which serialises the attempts).
+    """
+    cache = _AVAILABLE_CACHE
+    value = cache.get("postgres", True)
+    if value is not False:
+        return True
+    since = cache.get("unavailable_since")
+    if since is None or _time.monotonic() - since >= _PROBE_RETRY_SECONDS:
+        cache["postgres"] = True
+    return cache.get("postgres", False) is not False
 
 
 def set_postgres_unavailable() -> None:
+    """Mark Postgres as down, fast-failing callers for a bounded window."""
     _AVAILABLE_CACHE["postgres"] = False
+    _AVAILABLE_CACHE["unavailable_since"] = _time.monotonic()
+
+
+def set_probe_window() -> None:
+    """Arm the fast-fail window so at most one re-probe is attempted per window."""
+    _AVAILABLE_CACHE["unavailable_since"] = _time.monotonic()
 
 
 def upsert_contract_metadata(record: dict) -> bool:
@@ -194,11 +241,11 @@ def upsert_job(record: dict) -> bool:
                 "message",
                 "result",
                 "error",
+                "created_at",
+                "finished_at",
             ):
-                if key in record:
+                if key in record and record[key] is not None:
                     setattr(obj, key, record[key])
-            if record.get("status") in {"succeeded", "failed"}:
-                obj.finished_at = utcnow()
             return True
     except Exception as exc:
         logger.warning("Job write failed: {}", exc)
@@ -214,18 +261,7 @@ def get_job(job_id: str) -> Optional[dict]:
         obj = session.get(JobRecord, job_id)
         if obj is None:
             return None
-        return {
-            "job_id": obj.job_id,
-            "contract_id": obj.contract_id,
-            "owner": obj.owner or "",
-            "status": obj.status,
-            "progress": obj.progress,
-            "message": obj.message,
-            "result": obj.result,
-            "error": obj.error,
-            "created_at": obj.created_at.isoformat() if obj.created_at else None,
-            "finished_at": obj.finished_at.isoformat() if obj.finished_at else None,
-        }
+        return _job_record_dict(obj)
 
 
 def list_job_ids_for_contract(
@@ -247,7 +283,14 @@ def list_job_ids_for_contract(
         query = session.query(JobRecord.job_id).filter(JobRecord.contract_id == contract_id)
         if owner is not None:
             query = query.filter(JobRecord.owner == owner)
-        rows = query.order_by(JobRecord.created_at.desc()).limit(limit).all()
+        rows = (
+            query.order_by(
+                JobRecord.finished_at.desc().nulls_last(),
+                JobRecord.created_at.desc(),
+            )
+            .limit(limit)
+            .all()
+        )
         return [r[0] for r in rows]
 
 
@@ -264,6 +307,39 @@ def list_jobs(limit: int = 200) -> list[dict]:
             .all()
         )
         return [{"job_id": r.job_id} for r in rows]
+
+
+def get_jobs_by_ids(job_ids: list[str], *, owner: Optional[str] = None) -> list[dict]:
+    """Fetch full job records in a single batched ``WHERE job_id IN (...)`` query.
+
+    Mirrors the :func:`get_job` record shape. When ``owner`` is given the rows
+    are additionally scoped to that owner (row-level security).
+    """
+    if not postgres_available() or not job_ids:
+        return []
+    with session_scope() as session:
+        if session is None:
+            return []
+        query = session.query(JobRecord).filter(JobRecord.job_id.in_(job_ids))
+        if owner is not None:
+            query = query.filter(JobRecord.owner == owner)
+        return [_job_record_dict(r) for r in query.all()]
+
+
+def _job_record_dict(obj: JobRecord) -> dict:
+    """Build the plain-dict shape shared by ``get_job`` and ``get_jobs_by_ids``."""
+    return {
+        "job_id": obj.job_id,
+        "contract_id": obj.contract_id,
+        "owner": obj.owner or "",
+        "status": obj.status,
+        "progress": obj.progress,
+        "message": obj.message,
+        "result": obj.result,
+        "error": obj.error,
+        "created_at": obj.created_at.isoformat() if obj.created_at else None,
+        "finished_at": obj.finished_at.isoformat() if obj.finished_at else None,
+    }
 
 
 def list_contracts(limit: int = 100) -> list[dict]:

@@ -17,6 +17,7 @@ from app.models.schemas import (
     AnalysisResult,
     ContractType,
     JobInfo,
+    JobStatus,
     PartySide,
 )
 from app.services.analyzer import analyse_bytes
@@ -110,35 +111,64 @@ async def upload_contract(
     return job
 
 
+def _job_or_error(job: Optional[JobInfo], *, processing_detail: str) -> JobInfo:
+    """Translate the job lookup result into the appropriate HTTP response.
+
+    - no job at all -> 404 (truly unknown contract, or RLS-scoped out)
+    - job in QUEUED/RUNNING -> 409 with the job status in the body
+    - job FAILED -> 409 with the job's error message
+    - job finished but its stored result is unreadable -> 500
+    """
+    if job is None:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    if job.status in {JobStatus.QUEUED, JobStatus.RUNNING}:
+        raise HTTPException(status_code=409, detail=processing_detail)
+    if job.status == JobStatus.FAILED:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Analysis failed: {job.error or job.message or 'no error recorded'}",
+        )
+    if job.result is None:
+        raise HTTPException(
+            status_code=500,
+            detail=job.result_error or "Stored result is missing or unreadable",
+        )
+    return job
+
+
 @router.get("/{contract_id}/summary")
 def contract_summary(contract_id: str, principal: Principal = Depends(get_current_principal)):
-    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
-    if not job or not job.result:
-        raise HTTPException(status_code=404, detail="Contract not found or still processing")
+    job = _job_or_error(
+        _latest_job_for(contract_id, owner=_owner_scope(principal)),
+        processing_detail="Contract not found or still processing",
+    )
     return job.result.contract
 
 
 @router.get("/{contract_id}/clauses")
 def contract_clauses(contract_id: str, principal: Principal = Depends(get_current_principal)):
-    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
-    if not job or not job.result:
-        raise HTTPException(status_code=404, detail="Contract not found")
+    job = _job_or_error(
+        _latest_job_for(contract_id, owner=_owner_scope(principal)),
+        processing_detail="Contract still processing",
+    )
     return {"clauses": job.result.clauses}
 
 
 @router.get("/{contract_id}/obligations")
 def contract_obligations(contract_id: str, principal: Principal = Depends(get_current_principal)):
-    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
-    if not job or not job.result:
-        raise HTTPException(status_code=404, detail="Contract not found")
+    job = _job_or_error(
+        _latest_job_for(contract_id, owner=_owner_scope(principal)),
+        processing_detail="Contract still processing",
+    )
     return {"obligations": job.result.obligations}
 
 
 @router.get("/{contract_id}/risks")
 def contract_risks(contract_id: str, principal: Principal = Depends(get_current_principal)):
-    job = _latest_job_for(contract_id, owner=_owner_scope(principal))
-    if not job or not job.result:
-        raise HTTPException(status_code=404, detail="Contract not found")
+    job = _job_or_error(
+        _latest_job_for(contract_id, owner=_owner_scope(principal)),
+        processing_detail="Contract still processing",
+    )
     return {"risks": job.result.risks}
 
 
@@ -170,26 +200,51 @@ def _owner_scope(principal: Principal) -> Optional[str]:
     return principal.username if principal.authenticated else None
 
 
+def _candidate_key(job: JobInfo) -> tuple:
+    """Sort key for picking the newest job: finished (or created) time desc,
+    preferring succeeded jobs."""
+    ts = job.finished_at or job.created_at
+    return (ts, job.status == JobStatus.SUCCEEDED)
+
+
 def _latest_job_for(contract_id: str, owner: Optional[str] = None) -> Optional[JobInfo]:
-    """Return the newest completed job for a contract.
+    """Return the newest job with a result for a contract.
 
-    Prefers the in-memory job cache, then falls back to PostgreSQL so results
-    survive the in-memory eviction cap (``MAX_IN_MEMORY_JOBS``) or a restart.
-    When ``owner`` is given, only that owner's jobs are considered.
+    Queries PostgreSQL directly (``list_job_ids_for_contract`` + batched
+    ``get_jobs_by_ids``) so evicted or post-restart jobs are found regardless
+    of the in-memory mirror state; the in-memory cache is preferred for any
+    job id it still holds (it is fresher). When Postgres is unavailable the
+    in-memory mirror is used alone. When ``owner`` is given, only that owner's
+    jobs are considered (row-level security).
     """
-    from app.services.jobs import get_job, list_jobs
+    from app.db.postgres import get_jobs_by_ids, list_job_ids_for_contract
+    from app.services.jobs import _job_from_record, get_job, list_jobs
 
-    candidates = [
-        j for j in list_jobs(owner=owner) if j.contract_id == contract_id and j.result
-    ]
-    if candidates:
-        candidates.sort(key=lambda j: j.created_at, reverse=True)
-        return candidates[0]
+    # In-memory candidates (fresher than any DB copy).
+    candidates = [j for j in list_jobs(owner=owner) if j.contract_id == contract_id]
+    candidate_ids = {j.job_id for j in candidates}
 
-    from app.db.postgres import list_job_ids_for_contract
+    # DB candidates: fetch the ids for this contract, then batch the full rows.
+    try:
+        job_ids = list_job_ids_for_contract(contract_id, owner=owner)
+    except Exception:
+        job_ids = []
+    if job_ids:
+        try:
+            records = get_jobs_by_ids(job_ids, owner=owner)
+        except Exception:
+            records = []
+        by_id = {r.get("job_id"): r for r in records if r.get("job_id")}
+        for job_id in job_ids:
+            if job_id in candidate_ids or job_id not in by_id:
+                continue
+            job = get_job(job_id) or _job_from_record(by_id[job_id])
+            if job is not None and job.contract_id == contract_id:
+                candidates.append(job)
+                candidate_ids.add(job_id)
 
-    for job_id in list_job_ids_for_contract(contract_id, owner=owner):
-        job = get_job(job_id)
-        if job and job.result:
-            return job
-    return None
+    usable = [j for j in candidates if j.result is not None] or candidates
+    if not usable:
+        return None
+    usable.sort(key=_candidate_key, reverse=True)
+    return usable[0]
