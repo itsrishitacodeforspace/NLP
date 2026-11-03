@@ -2,6 +2,15 @@
 
 This directory contains the evaluation infrastructure for BharatContract AI.
 
+> ## ⚠️ What these metrics can and cannot tell you
+>
+> **Gold annotations are derived from the pipeline + manual adjudication on 17
+> synthetic cases; they support BEHAVIOUR regression checking, NOT accuracy
+> claims.** The synthetic corpus is not ground truth from real contracts, so
+> integrated scores (classification/NER/obligation/risk/evidence) measure
+> conformance to the pipeline's own labelled expectations, not legal or
+> predictive accuracy. See `DEEP_AUDIT_20261103.md` §2.4 (findings C1–C2).
+
 ## Components
 
 ### Core Modules
@@ -11,8 +20,9 @@ This directory contains the evaluation infrastructure for BharatContract AI.
 | `harness.py` | Main execution engine for evaluation cases |
 | `cases.py` | 17 synthetic evaluation contracts |
 | `metrics.py` | Core evaluation metrics implementation |
-| `reporter.py` | Report generation for evaluation results |
-| `baseline.py` | Baseline measurements for regression detection |
+| `metrics_integration.py` | Computes integrated metrics against `gold_annotations/cases_gold.json` |
+| `regression_detector.py` | Regression detection against a committed baseline |
+| `gold_annotations/cases_gold.json` | Gold annotations (verified against real case text + real engine rule IDs) |
 
 ### Tests
 
@@ -104,8 +114,8 @@ print(f"Macro F1: {metrics.macro_f1:.3f}")
 
 | Dataset | Location | Status |
 |---------|----------|--------|
-| CUAD | `data/datasets/cuad/` | Available (MIT-like license) |
-| MAUD | `data/datasets/maud/` | Available (Apache 2.0) |
+| CUAD | `data/datasets/cuad/` | Available (license per dataset documentation in `data/datasets/` — verify before redistribution) |
+| MAUD | `data/datasets/maud/` | Available (license per dataset documentation in `data/datasets/` — verify before redistribution) |
 | Processed Classification | `data/processed/clause_classifier.csv` | 9,278 rows |
 | Processed CUAD Examples | `data/processed/cuad_examples.jsonl` | 22,450 rows |
 | Processed MAUD Examples | `data/processed/maud_examples.jsonl` | 32,580 rows |
@@ -126,10 +136,10 @@ Expected output: `0 failure(s), 0 skipped`
 
 | Metric | Value |
 |--------|-------|
-| Synthetic Cases | 17/17 passing |
-| Integration Tests | 228 passing |
-| Provenance Verification | 0 failures |
-| Ruff Linting | Clean |
+| Synthetic Cases | see `reports/evaluations/synthetic_eval_results.md` (run `uv run python scripts/run_evaluation.py`) — 17/17 (as of 2026-11-03, commit be1359f) |
+| Test suite | see `uv run pytest tests/ -q` (as of 2026-11-03, commit be1359f: 262) |
+| Provenance Verification | 0 failures (as of 2026-11-03, commit be1359f) |
+| Ruff Linting | Clean (as of 2026-11-03, commit be1359f) |
 
 ### Known Limitations
 

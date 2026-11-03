@@ -90,9 +90,9 @@
       "known_limitation": null,
       "observed_rule_ids": [
         "MISSING_CLAUSE_GOVERNING_LAW",
-        "MISSING_CLAUSE_LIMITATION_OF_LIABILITY",
         "MISSING_CLAUSE_TERMINATION",
         "RISK_DATA_001",
+        "RISK_LIABILITY_002",
         "RISK_STAMP_001",
         "RISK_TDS_001"
       ],

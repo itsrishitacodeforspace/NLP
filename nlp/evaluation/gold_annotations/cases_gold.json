@@ -1,8 +1,8 @@
 {
-  "version": "1.0.0",
-  "generated_at": "2026-11-02T21:30:00Z",
-  "git_revision": "14ed31b8e12445c25c081c18d4a56041b50db3fc",
-  "description": "Gold annotations for 17 synthetic evaluation cases",
+  "version": "1.1.0",
+  "generated_at": "2026-11-03T11:20:00Z",
+  "git_revision": "2ae9ff46b010b3a3579839d35f71f8398cbef2e3",
+  "description": "Gold annotations for 17 synthetic evaluation cases. Derived from the actual case text in nlp/evaluation/cases.py (party names, offsets and evidence spans verified against the text) and real engine rule IDs from nlp/risk_scoring/rules.py, with manual adjudication. These support BEHAVIOUR regression checking only; they are NOT a measure of legal accuracy. See DEEP_AUDIT_20261103.md sections C1/C2.",
   "cases": {
     "uncapped_liability_tp": {
       "classification_gold": {
@@ -11,17 +11,16 @@
         "liability_type": "uncapped"
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Provider", "start": 58, "end": 66, "type": "PARTY", "role": "provider"}
       ],
       "obligation_gold": [
-        {"locate": "unlimited", "subject": "Vendor", "action": "indemnify"}
+        {"locate": "unlimited", "subject": "Provider", "action": "bear"}
       ],
       "risk_gold": [
-        {"risk_id": "RISK_LIABILITY_001", "category": "liability", "severity": "HIGH"}
+        {"risk_id": "RISK_LIABILITY_001", "category": "liability", "severity": "CRITICAL"}
       ],
       "evidence_gold": [
-        {"doc_id": "uncapped_liability_tp", "start": 150, "end": 200, "type": "liability_clause"}
+        {"doc_id": "uncapped_liability_tp", "start": 54, "end": 152, "type": "liability_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -31,18 +30,13 @@
         "auto_renewal": true,
         "notice_required": false
       },
-      "ner_gold": [
-        {"entity_id": "p1", "text": "Supplier", "start": 12, "end": 20, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Customer", "start": 50, "end": 57, "type": "PARTY", "role": "buyer"}
-      ],
-      "obligation_gold": [
-        {"locate": "automatic", "subject": "Agreement", "action": "renew"}
-      ],
+      "ner_gold": [],
+      "obligation_gold": [],
       "risk_gold": [
         {"risk_id": "RISK_RENEWAL_001", "category": "lock_in", "severity": "HIGH"}
       ],
       "evidence_gold": [
-        {"doc_id": "auto_renewal_no_notice", "start": 200, "end": 250, "type": "renewal_clause"}
+        {"doc_id": "auto_renewal_no_notice", "start": 41, "end": 61, "type": "renewal_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -52,16 +46,14 @@
         "auto_renewal": true,
         "notice_required": true
       },
-      "ner_gold": [
-        {"entity_id": "p1", "text": "Provider", "start": 11, "end": 18, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Acceptor", "start": 48, "end": 55, "type": "PARTY", "role": "buyer"}
+      "ner_gold": [],
+      "obligation_gold": [],
+      "risk_gold": [
+        {"risk_id": "RISK_RENEWAL_001", "category": "lock_in", "severity": "MEDIUM"}
       ],
-      "obligation_gold": [
-        {"locate": "written", "subject": "Party", "action": "notify"}
-      ],
-      "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "auto_renewal_with_notice", "start": 180, "end": 230, "type": "renewal_clause"}
+        {"doc_id": "auto_renewal_with_notice", "start": 41, "end": 61, "type": "renewal_clause"},
+        {"doc_id": "auto_renewal_with_notice", "start": 118, "end": 172, "type": "renewal_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -71,18 +63,13 @@
         "governing_law": "foreign",
         "jurisdiction": "foreign"
       },
-      "ner_gold": [
-        {"entity_id": "p1", "text": "Company", "start": 10, "end": 16, "type": "PARTY", "role": "party_a"},
-        {"entity_id": "p2", "text": "Partner", "start": 44, "end": 50, "type": "PARTY", "role": "party_b"}
-      ],
-      "obligation_gold": [
-        {"locate": "compliance", "subject": "Party", "action": "follow"}
-      ],
+      "ner_gold": [],
+      "obligation_gold": [],
       "risk_gold": [
-        {"risk_id": "RISK_GOVERNING_LAW_001", "category": "jurisdiction", "severity": "MEDIUM"}
+        {"risk_id": "RISK_GOV_001", "category": "jurisdiction", "severity": "HIGH"}
       ],
       "evidence_gold": [
-        {"doc_id": "foreign_gov_law", "start": 100, "end": 150, "type": "governing_law_clause"}
+        {"doc_id": "foreign_gov_law", "start": 72, "end": 101, "type": "governing_law_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -92,17 +79,16 @@
         "termination_one_sided": true
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Licensor", "start": 11, "end": 18, "type": "PARTY", "role": "grantor"},
-        {"entity_id": "p2", "text": "Licensee", "start": 47, "end": 54, "type": "PARTY", "role": "grantee"}
+        {"entity_id": "p1", "text": "Provider", "start": 32, "end": 40, "type": "PARTY", "role": "terminator"}
       ],
       "obligation_gold": [
-        {"locate": "immediate", "subject": "Licensor", "action": "terminate"}
+        {"locate": "terminate", "subject": "Provider", "action": "terminate"}
       ],
       "risk_gold": [
-        {"risk_id": "RISK_TERMINATION_001", "category": "exit", "severity": "HIGH"}
+        {"risk_id": "RISK_TERM_001", "category": "exit", "severity": "HIGH"}
       ],
       "evidence_gold": [
-        {"doc_id": "one_sided_termination", "start": 220, "end": 280, "type": "termination_clause"}
+        {"doc_id": "one_sided_termination", "start": 28, "end": 119, "type": "termination_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -112,17 +98,17 @@
         "indemnity_scope": "broad"
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Manufacturer", "start": 10, "end": 20, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Distributor", "start": 55, "end": 66, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Supplier", "start": 34, "end": 42, "type": "PARTY", "role": "indemnitor"},
+        {"entity_id": "p2", "text": "Customer", "start": 63, "end": 71, "type": "PARTY", "role": "indemnitee"}
       ],
       "obligation_gold": [
-        {"locate": "all claims", "subject": "Manufacturer", "action": "indemnify"}
+        {"locate": "indemnify", "subject": "Supplier", "action": "indemnify"}
       ],
       "risk_gold": [
-        {"risk_id": "RISK_INDEMNITY_001", "category": "indemnity", "severity": "MEDIUM"}
+        {"risk_id": "RISK_INDEMNITY_001", "category": "indemnity", "severity": "HIGH"}
       ],
       "evidence_gold": [
-        {"doc_id": "broad_indemnity_tp", "start": 180, "end": 240, "type": "indemnity_clause"}
+        {"doc_id": "broad_indemnity_tp", "start": 30, "end": 130, "type": "indemnity_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -132,15 +118,17 @@
         "data_breach_response": "defined"
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Data Owner", "start": 10, "end": 19, "type": "PARTY", "role": "controller"},
-        {"entity_id": "p2", "text": "Processor", "start": 48, "end": 56, "type": "PARTY", "role": "processor"}
+        {"entity_id": "p1", "text": "Processor", "start": 64, "end": 73, "type": "PARTY", "role": "processor"},
+        {"entity_id": "p2", "text": "Controller", "start": 91, "end": 101, "type": "PARTY", "role": "controller"}
       ],
       "obligation_gold": [
-        {"locate": "24 hours", "subject": "Processor", "action": "notify"}
+        {"locate": "notify", "subject": "Processor", "action": "notify"}
       ],
-      "risk_gold": [],
+      "risk_gold": [
+        {"risk_id": "RISK_DATA_001", "category": "data_security", "severity": "MEDIUM"}
+      ],
       "evidence_gold": [
-        {"doc_id": "data_breach_tight", "start": 160, "end": 210, "type": "data_security_clause"}
+        {"doc_id": "data_breach_tight", "start": 29, "end": 118, "type": "data_security_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -149,16 +137,11 @@
         "document_type": "commercial_contract",
         "liability_cap": "defined"
       },
-      "ner_gold": [
-        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Buyer", "start": 44, "end": 48, "type": "PARTY", "role": "buyer"}
-      ],
-      "obligation_gold": [
-        {"locate": "cap", "subject": "Vendor", "action": "liability"}
-      ],
+      "ner_gold": [],
+      "obligation_gold": [],
       "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "capped_liability_tn", "start": 140, "end": 190, "type": "liability_clause"}
+        {"doc_id": "capped_liability_tn", "start": 98, "end": 114, "type": "liability_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -168,15 +151,15 @@
         "indemnity_scope": "direct_only"
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Supplier", "start": 12, "end": 19, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Supplier", "start": 34, "end": 42, "type": "PARTY", "role": "indemnitor"},
+        {"entity_id": "p2", "text": "Customer", "start": 63, "end": 71, "type": "PARTY", "role": "indemnitee"}
       ],
       "obligation_gold": [
-        {"locate": "direct", "subject": "Supplier", "action": "indemnify"}
+        {"locate": "indemnify", "subject": "Supplier", "action": "indemnify"}
       ],
       "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "indemnity_direct_losses", "start": 170, "end": 220, "type": "indemnity_clause"}
+        {"doc_id": "indemnity_direct_losses", "start": 80, "end": 98, "type": "indemnity_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -186,16 +169,11 @@
         "complete_agreement": true
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Party A", "start": 8, "end": 14, "type": "PARTY", "role": "party_a"},
-        {"entity_id": "p2", "text": "Party B", "start": 42, "end": 48, "type": "PARTY", "role": "party_b"}
+        {"entity_id": "p1", "text": "Customer", "start": 317, "end": 325, "type": "PARTY", "role": "buyer"}
       ],
-      "obligation_gold": [
-        {"locate": "entire", "subject": "Agreement", "action": "supersede"}
-      ],
+      "obligation_gold": [],
       "risk_gold": [],
-      "evidence_gold": [
-        {"doc_id": "complete_contract", "start": 200, "end": 250, "type": "entire_agreement_clause"}
-      ],
+      "evidence_gold": [],
       "cross_ref_gold": []
     },
     "stamp_tds_absent": {
@@ -205,17 +183,18 @@
         "tds_applicable": false
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Customer", "start": 30, "end": 38, "type": "PARTY", "role": "buyer"},
+        {"entity_id": "p2", "text": "Provider", "start": 53, "end": 61, "type": "PARTY", "role": "seller"}
       ],
       "obligation_gold": [
-        {"locate": "pay", "subject": "Client", "action": "pay"}
+        {"locate": "pay", "subject": "Customer", "action": "pay"}
       ],
       "risk_gold": [
-        {"risk_id": "RISK_STAMP_001", "category": "statutory", "severity": "HIGH"}
+        {"risk_id": "RISK_STAMP_001", "category": "statutory", "severity": "MEDIUM"},
+        {"risk_id": "RISK_TDS_001", "category": "statutory", "severity": "LOW"}
       ],
       "evidence_gold": [
-        {"doc_id": "stamp_tds_absent", "start": 130, "end": 180, "type": "payment_clause"}
+        {"doc_id": "stamp_tds_absent", "start": 62, "end": 74, "type": "payment_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -225,15 +204,17 @@
         "indemnity_scope": "narrow"
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Seller", "start": 9, "end": 14, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Buyer", "start": 43, "end": 47, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Supplier", "start": 34, "end": 42, "type": "PARTY", "role": "indemnitor"},
+        {"entity_id": "p2", "text": "Customer", "start": 63, "end": 71, "type": "PARTY", "role": "indemnitee"}
       ],
       "obligation_gold": [
-        {"locate": "third party", "subject": "Seller", "action": "indemnify"}
+        {"locate": "indemnify", "subject": "Supplier", "action": "indemnify"}
       ],
-      "risk_gold": [],
+      "risk_gold": [
+        {"risk_id": "RISK_S124_001", "category": "statutory", "severity": "MEDIUM"}
+      ],
       "evidence_gold": [
-        {"doc_id": "indemnity_narrow", "start": 165, "end": 215, "type": "indemnity_clause"}
+        {"doc_id": "indemnity_narrow", "start": 80, "end": 149, "type": "indemnity_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -243,15 +224,15 @@
         "obligation_conditioned": true
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Buyer", "start": 44, "end": 48, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Customer", "start": 33, "end": 41, "type": "PARTY", "role": "buyer"},
+        {"entity_id": "p2", "text": "Provider", "start": 95, "end": 103, "type": "PARTY", "role": "seller"}
       ],
       "obligation_gold": [
-        {"locate": "conditional", "subject": "Vendor", "action": "perform"}
+        {"locate": "shall pay", "subject": "Customer", "action": "pay"}
       ],
       "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "obligation_conditional", "start": 190, "end": 240, "type": "obligation_clause"}
+        {"doc_id": "obligation_conditional", "start": 81, "end": 127, "type": "obligation_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -261,17 +242,14 @@
         "recipient_ambiguous": true
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Company", "start": 10, "end": 16, "type": "PARTY", "role": "party_a"},
-        {"entity_id": "p2", "text": "Affiliate", "start": 48, "end": 56, "type": "PARTY", "role": "party_b"}
+        {"entity_id": "p1", "text": "Provider", "start": 30, "end": 38, "type": "PARTY", "role": "provider"}
       ],
       "obligation_gold": [
-        {"locate": "designated", "subject": "Party", "action": "notify"}
+        {"locate": "comply", "subject": "Provider", "action": "comply"}
       ],
-      "risk_gold": [
-        {"risk_id": "RISK_PARTY_001", "category": "ambiguity", "severity": "MEDIUM"}
-      ],
+      "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "ambiguous_recipient", "start": 175, "end": 225, "type": "notice_clause"}
+        {"doc_id": "ambiguous_recipient", "start": 61, "end": 93, "type": "compliance_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -280,20 +258,16 @@
         "document_type": "commercial_contract",
         "cross_reference_used": true
       },
-      "ner_gold": [
-        {"entity_id": "p1", "text": "Lender", "start": 9, "end": 14, "type": "PARTY", "role": "lender"},
-        {"entity_id": "p2", "text": "Borrower", "start": 47, "end": 54, "type": "PARTY", "role": "borrower"}
-      ],
+      "ner_gold": [],
       "obligation_gold": [
-        {"locate": "Section", "subject": "Borrower", "action": "limit"}
+        {"locate": "7.4", "subject": "neither party", "action": "liable"}
       ],
       "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "liability_cap_in_crossref", "start": 210, "end": 260, "type": "liability_clause"}
+        {"doc_id": "liability_cap_in_crossref", "start": 68, "end": 78, "type": "liability_clause"},
+        {"doc_id": "liability_cap_in_crossref", "start": 184, "end": 220, "type": "liability_clause"}
       ],
-      "cross_ref_gold": [
-        {"from_clause": "Section 5", "to_clause": "Section 3", "type": "liability_cap_reference"}
-      ]
+      "cross_ref_gold": []
     },
     "obligation_passive": {
       "classification_gold": {
@@ -301,17 +275,16 @@
         "obligation_passive_voice": true
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Provider", "start": 11, "end": 18, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Processor", "start": 69, "end": 78, "type": "PARTY", "role": "processor"}
       ],
       "obligation_gold": [
-        {"locate": "shall be", "subject": "Service", "action": "deliver"}
+        {"locate": "encrypted", "subject": "Processor", "action": "encrypted"}
       ],
       "risk_gold": [
-        {"risk_id": "RISK_OBLIGATION_001", "category": "clarity", "severity": "LOW"}
+        {"risk_id": "RISK_DATA_001", "category": "data_security", "severity": "MEDIUM"}
       ],
       "evidence_gold": [
-        {"doc_id": "obligation_passive", "start": 185, "end": 235, "type": "obligation_clause"}
+        {"doc_id": "obligation_passive", "start": 79, "end": 108, "type": "obligation_clause"}
       ],
       "cross_ref_gold": []
     },
@@ -322,15 +295,15 @@
         "tds_applicable": true
       },
       "ner_gold": [
-        {"entity_id": "p1", "text": "Vendor", "start": 10, "end": 16, "type": "PARTY", "role": "seller"},
-        {"entity_id": "p2", "text": "Client", "start": 45, "end": 50, "type": "PARTY", "role": "buyer"}
+        {"entity_id": "p1", "text": "Customer", "start": 30, "end": 38, "type": "PARTY", "role": "buyer"}
       ],
       "obligation_gold": [
-        {"locate": "deduct", "subject": "Client", "action": "deduct"}
+        {"locate": "pay", "subject": "Customer", "action": "pay"}
       ],
       "risk_gold": [],
       "evidence_gold": [
-        {"doc_id": "stamp_tds_present_missed", "start": 155, "end": 205, "type": "payment_clause"}
+        {"doc_id": "stamp_tds_present_missed", "start": 85, "end": 111, "type": "payment_clause"},
+        {"doc_id": "stamp_tds_present_missed", "start": 174, "end": 192, "type": "payment_clause"}
       ],
       "cross_ref_gold": []
     }

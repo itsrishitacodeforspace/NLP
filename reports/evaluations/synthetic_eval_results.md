@@ -51,7 +51,7 @@ Deterministic run of the synthetic corpus in `nlp/evaluation/cases.py` through t
 ### data_breach_tight — PASS
 - Category: `risk_true_positive`
 - Expected: A <=24h breach-notification window is flagged as operationally tight.
-- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_LIMITATION_OF_LIABILITY, MISSING_CLAUSE_TERMINATION, RISK_DATA_001, RISK_STAMP_001, RISK_TDS_001
+- Observed rule findings: MISSING_CLAUSE_GOVERNING_LAW, MISSING_CLAUSE_TERMINATION, RISK_DATA_001, RISK_LIABILITY_002, RISK_STAMP_001, RISK_TDS_001
 
 ### capped_liability_tn — PASS
 - Category: `risk_true_negative`

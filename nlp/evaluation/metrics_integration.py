@@ -40,6 +40,30 @@ class IntegratedEvaluationReport:
     errors: list[str] = field(default_factory=list)
 
 
+def current_git_revision() -> str:
+    """Best-effort git HEAD of the repo containing this file.
+
+    Returns the full revision, or the empty string when unavailable (not a
+    git checkout, git not installed, or read failure) — callers must not
+    present an unknown revision as a real one.
+    """
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=Path(__file__).parent,
+        )
+        if out.returncode == 0:
+            return out.stdout.strip()
+    except Exception:
+        pass
+    return ""
+
+
 def load_gold_annotations() -> dict[str, Any]:
     import json
     with open(GOLD_ANNOTATIONS_PATH) as f:
@@ -95,7 +119,7 @@ def compute_case_metrics(case: EvalCase, result: AnalysisResult) -> CaseMetrics:
                 if any("RISK_RENEWAL_001" in str(f) for f in result.risks or []):
                     pred_labels.append("auto_renewal_no_notice")
             if classification_gold.get("termination_one_sided"):
-                if any("RISK_TERMINATION_001" in str(f) for f in result.risks or []):
+                if any("RISK_TERM_001" in str(f) for f in result.risks or []):
                     pred_labels.append("termination_one_sided")
             if classification_gold.get("indemnity_scope") == "broad":
                 pred_labels.append("indemnity_broad")
@@ -275,7 +299,12 @@ def run_integrated_evaluation() -> IntegratedEvaluationReport:
 
 
 def generate_integrated_report_json(report: IntegratedEvaluationReport) -> dict:
-    output = {"version": "1.0.0", "git_revision": "unknown", "aggregate_metrics": report.aggregate, "case_results": {}}
+    output = {
+        "version": "1.0.0",
+        "git_revision": current_git_revision() or "unknown",
+        "aggregate_metrics": report.aggregate,
+        "case_results": {},
+    }
     for case_id, cm in report.case_metrics.items():
         case_output = {"metrics_computed": cm.metrics_computed, "errors": cm.errors}
         if cm.classification:
