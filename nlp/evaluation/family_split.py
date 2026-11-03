@@ -14,6 +14,7 @@ disjoint families can still cite the same boilerplate or jurisdiction.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -121,6 +122,48 @@ def family_map_for(path, *, threshold: float = 0.5) -> FamilyMap:
     for doc in load_cuad_docs(path):
         fmap.add(doc["key"], doc["title"], doc["shingles"])
     return fmap
+
+
+_LEAKAGE_CACHE_PATH = Path(__file__).resolve().parents[2] / "tmp" / "family_leakage_cache.json"
+
+
+def leakage_report_cached(
+    train_path: Path,
+    test_path: Path,
+    *,
+    threshold: float = 0.5,
+) -> Dict:
+    """``leakage_report`` with a content-addressed on-disk cache.
+
+    The cross-family shingle check is O(train_docs x test_docs) set
+    intersections (~7 min on the real CUAD splits), so repeated runs reuse a
+    cached result keyed on both files' sha256 + threshold.
+    """
+    cache_key = {
+        "train": str(train_path),
+        "train_sha256": hashlib.sha256(Path(train_path).read_bytes()).hexdigest(),
+        "test": str(test_path),
+        "test_sha256": hashlib.sha256(Path(test_path).read_bytes()).hexdigest(),
+        "threshold": threshold,
+    }
+    try:
+        if _LEAKAGE_CACHE_PATH.exists():
+            cache = json.loads(_LEAKAGE_CACHE_PATH.read_text(encoding="utf-8"))
+            if cache.get("key") == cache_key:
+                return cache["report"]
+    except Exception:  # pragma: no cover - corrupt cache: recompute
+        pass
+    report = leakage_report(
+        family_map_for(train_path, threshold=threshold),
+        family_map_for(test_path, threshold=threshold),
+        threshold=threshold,
+    )
+    try:
+        _LEAKAGE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _LEAKAGE_CACHE_PATH.write_text(json.dumps({"key": cache_key, "report": report}, ensure_ascii=False), encoding="utf-8")
+    except Exception:  # pragma: no cover - cache is best-effort
+        pass
+    return report
 
 
 def leakage_report(

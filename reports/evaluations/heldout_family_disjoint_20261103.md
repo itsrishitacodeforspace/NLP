@@ -5,9 +5,10 @@
 ## Family leakage (the realistic held-out set)
 
 - Train docs: 408 across 375 families; test docs: 102 across 99 families (shingle threshold 0.5).
-- Test docs whose family ALSO appears in train: **7** (excluded from evaluation).
+- Test docs whose family ALSO appears in train: **7** (excluded from evaluation): AFSALABANCORPINC_08_01_1996-EX-1.1-AGENCY AGREEMENT, GALERATHERAPEUTICS,INC_02_14_2020-EX-99.A-JOINT FILING AGREEMENT, IdeanomicsInc_20151124_8-K_EX-10.2_9354744_EX-10.2_Content License Agreement, N2KINC_10_16_1997-EX-10.16-SPONSORSHIP AGREEMENT, PaperexchangeComInc_20000322_S-1A_EX-10.4_5202103_EX-10.4_Co-Branding Agreement, SPOKHOLDINGS,INC_06_19_2020-EX-10.1-COOPERATION AGREEMENT, WOMENSGOLFUNLIMITEDINC_03_29_2000-EX-10.13-ENDORSEMENT AGREEMENT.
 - **Test docs family-disjoint from train: 95** (evaluated set).
 - Reverse: train docs whose family appears in test: 14.
+- Method: title equality (normalised) + 8-gram character-shingle near-duplicate proxy (overlap fraction of the smaller set >= threshold) between the whole documents of the two splits. This measures template-family separation, NOT legal independence.
 
 Evaluated 5039 CUAD-annotated examples from those 95 disjoint documents.
 

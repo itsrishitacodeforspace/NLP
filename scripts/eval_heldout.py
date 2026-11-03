@@ -35,8 +35,7 @@ from nlp.evaluation.classifier_metrics import (
 )
 from nlp.evaluation.family_split import (
     disjoint_test_keys,
-    family_map_for,
-    leakage_report,
+    leakage_report_cached,
 )
 
 BANNER = (
@@ -85,9 +84,7 @@ def build_report(
     threshold: float = DEFAULT_THRESHOLD,
 ) -> Dict:
     started = time.monotonic()
-    train_map = family_map_for(train_path, threshold=threshold)
-    test_map = family_map_for(test_path, threshold=threshold)
-    leak = leakage_report(train_map, test_map, threshold=threshold)
+    leak = leakage_report_cached(train_path, test_path, threshold=threshold)
     disjoint_keys = disjoint_test_keys(leak)
 
     rows = _collect_disjoint_examples(test_path, disjoint_keys, None)
@@ -120,11 +117,13 @@ def build_report(
             "train": str(train_path),
             "test": str(test_path),
             "shingle_threshold": threshold,
+            "leakage_method": (
+                "title equality (normalised) + 8-gram character-shingle near-duplicate "
+                "proxy (overlap fraction of the smaller set >= threshold) between the "
+                "whole documents of the two splits"
+            ),
         },
-        "family_leakage": {k: v for k, v in leak.items() if k != "test_docs_in_train_family"} | {
-            "test_docs_in_train_family_count": len(leak["test_docs_in_train_family"]),
-            "train_docs_in_test_family_count": len(leak["train_docs_in_test_family"]),
-        },
+        "family_leakage": leak,
         "evaluated_examples": len(rows),
         "gold_category_counts": dict(sorted(gold_counts.items(), key=lambda kv: -kv[1])),
         "metrics": metrics,
@@ -164,9 +163,12 @@ def render_md(report: Dict) -> str:
     L.append(f"- Train docs: {leak['train_docs']} across {leak['train_families']} families; "
              f"test docs: {leak['test_docs']} across {leak['test_families']} families "
              f"(shingle threshold {leak['threshold']}).")
-    L.append(f"- Test docs whose family ALSO appears in train: **{c['test_in_train_family']}** (excluded from evaluation).")
+    L.append(f"- Test docs whose family ALSO appears in train: **{c['test_in_train_family']}** (excluded from evaluation): "
+             + ", ".join(leak["test_docs_in_train_family"]) + ".")
     L.append(f"- **Test docs family-disjoint from train: {c['test_family_disjoint']}** (evaluated set).")
-    L.append(f"- Reverse: train docs whose family appears in test: {leak['train_docs_in_test_family_count']}.")
+    L.append(f"- Reverse: train docs whose family appears in test: {len(leak['train_docs_in_test_family'])}.")
+    L.append(f"- Method: {report['inputs']['leakage_method']}. This measures template-family "
+             "separation, NOT legal independence.")
     L.append("")
     L.append(f"Evaluated {report['evaluated_examples']} CUAD-annotated examples from those "
              f"{c['test_family_disjoint']} disjoint documents.")
