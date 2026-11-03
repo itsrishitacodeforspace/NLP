@@ -1,0 +1,1243 @@
+{
+  "report": "rules_vs_hybrid",
+  "date": "20261103",
+  "banner": "IN-DISTRIBUTION TRAINING-CORPUS COMPARISON — NOT A GENERALIZATION ESTIMATE. CUAD is a US dataset; template-family separation from the keyword-bank source documents is not guaranteed.",
+  "input": {
+    "csv": "data/processed/clause_classifier.csv",
+    "total_rows": 9278,
+    "evaluated_rows": 2000,
+    "sampled": true,
+    "seed": 20261103
+  },
+  "active_components": {
+    "rule_engine": {
+      "present": true,
+      "keyword_patterns": 2021
+    },
+    "tfidf_model": {
+      "present": true,
+      "labels": [
+        "Assignment",
+        "Audit Rights",
+        "Confidentiality",
+        "Definitions",
+        "Governing Law",
+        "Insurance",
+        "Intellectual Property",
+        "Limitation of Liability",
+        "Miscellaneous",
+        "Non-Compete / Non-Solicit",
+        "Payment Terms",
+        "Term and Renewal",
+        "Termination",
+        "Warranty"
+      ],
+      "label_count": 14
+    },
+    "keyword_bank": {
+      "path": "/marimo/nlp/data/processed/cuad_keyword_bank.json",
+      "loaded": true,
+      "provenance": "verified"
+    }
+  },
+  "metrics": {
+    "rule_only": {
+      "top1": {
+        "per_class": {
+          "<abstained>": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Acceptance": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Assignment": {
+            "precision": 0.7632,
+            "recall": 0.435,
+            "f1": 0.5541,
+            "support": 200
+          },
+          "Audit Rights": {
+            "precision": 0.9444,
+            "recall": 0.4513,
+            "f1": 0.6108,
+            "support": 113
+          },
+          "Compliance": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Confidentiality": {
+            "precision": 0.0172,
+            "recall": 0.1667,
+            "f1": 0.0312,
+            "support": 6
+          },
+          "Data Protection": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Definitions": {
+            "precision": 0.4545,
+            "recall": 0.0378,
+            "f1": 0.0698,
+            "support": 397
+          },
+          "Dispute Resolution": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Force Majeure": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Governing Law": {
+            "precision": 0.9221,
+            "recall": 0.8068,
+            "f1": 0.8606,
+            "support": 88
+          },
+          "Indemnification": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Insurance": {
+            "precision": 0.875,
+            "recall": 0.8046,
+            "f1": 0.8383,
+            "support": 87
+          },
+          "Intellectual Property": {
+            "precision": 0.6103,
+            "recall": 0.3347,
+            "f1": 0.4323,
+            "support": 248
+          },
+          "Limitation of Liability": {
+            "precision": 0.9483,
+            "recall": 0.3691,
+            "f1": 0.5314,
+            "support": 149
+          },
+          "Miscellaneous": {
+            "precision": 0.0092,
+            "recall": 0.2,
+            "f1": 0.0176,
+            "support": 30
+          },
+          "Non-Compete / Non-Solicit": {
+            "precision": 0.5455,
+            "recall": 0.0408,
+            "f1": 0.0759,
+            "support": 147
+          },
+          "Notice": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Payment Terms": {
+            "precision": 0.4466,
+            "recall": 0.2644,
+            "f1": 0.3321,
+            "support": 174
+          },
+          "Service Levels": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Stamp Duty": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Term and Renewal": {
+            "precision": 0.3541,
+            "recall": 0.655,
+            "f1": 0.4596,
+            "support": 200
+          },
+          "Termination": {
+            "precision": 0.3763,
+            "recall": 0.2778,
+            "f1": 0.3196,
+            "support": 126
+          },
+          "Warranty": {
+            "precision": 0.6296,
+            "recall": 0.4857,
+            "f1": 0.5484,
+            "support": 35
+          }
+        },
+        "macro_f1": 0.2367,
+        "weighted_f1": 0.3818,
+        "excluded_rows": 0
+      },
+      "top3": {
+        "per_class": {
+          "<abstained>": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Acceptance": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Assignment": {
+            "precision": 0.646,
+            "recall": 0.52,
+            "f1": 0.5762,
+            "support": 200
+          },
+          "Audit Rights": {
+            "precision": 0.9286,
+            "recall": 0.6903,
+            "f1": 0.7919,
+            "support": 113
+          },
+          "Compliance": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Confidentiality": {
+            "precision": 0.0116,
+            "recall": 0.1667,
+            "f1": 0.0217,
+            "support": 6
+          },
+          "Data Protection": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Definitions": {
+            "precision": 0.3571,
+            "recall": 0.0504,
+            "f1": 0.0883,
+            "support": 397
+          },
+          "Dispute Resolution": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Force Majeure": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Governing Law": {
+            "precision": 0.9024,
+            "recall": 0.8409,
+            "f1": 0.8706,
+            "support": 88
+          },
+          "Indemnification": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Insurance": {
+            "precision": 0.8384,
+            "recall": 0.954,
+            "f1": 0.8925,
+            "support": 87
+          },
+          "Intellectual Property": {
+            "precision": 0.5706,
+            "recall": 0.4073,
+            "f1": 0.4753,
+            "support": 248
+          },
+          "Limitation of Liability": {
+            "precision": 0.9,
+            "recall": 0.4228,
+            "f1": 0.5753,
+            "support": 149
+          },
+          "Miscellaneous": {
+            "precision": 0.0105,
+            "recall": 0.2333,
+            "f1": 0.0202,
+            "support": 30
+          },
+          "Non-Compete / Non-Solicit": {
+            "precision": 0.5,
+            "recall": 0.068,
+            "f1": 0.1198,
+            "support": 147
+          },
+          "Notice": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Payment Terms": {
+            "precision": 0.3169,
+            "recall": 0.3333,
+            "f1": 0.3249,
+            "support": 174
+          },
+          "Service Levels": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Stamp Duty": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Term and Renewal": {
+            "precision": 0.3119,
+            "recall": 0.75,
+            "f1": 0.4405,
+            "support": 200
+          },
+          "Termination": {
+            "precision": 0.3231,
+            "recall": 0.3333,
+            "f1": 0.3281,
+            "support": 126
+          },
+          "Warranty": {
+            "precision": 0.4808,
+            "recall": 0.7143,
+            "f1": 0.5747,
+            "support": 35
+          }
+        },
+        "macro_f1": 0.2542,
+        "weighted_f1": 0.411,
+        "excluded_rows": 0
+      },
+      "abstention": {
+        "total_rows": 2000,
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "by_gold_category": {}
+      },
+      "rule_misc_fallback": {
+        "total_rows": 2000,
+        "misc_fallback": 642,
+        "misc_fallback_rate": 0.321,
+        "misc_fallback_by_gold_category": {
+          "Definitions": 273,
+          "Intellectual Property": 71,
+          "Payment Terms": 70,
+          "Non-Compete / Non-Solicit": 59,
+          "Limitation of Liability": 38,
+          "Term and Renewal": 34,
+          "Assignment": 33,
+          "Termination": 25,
+          "Audit Rights": 18,
+          "Governing Law": 10,
+          "Miscellaneous": 5,
+          "Confidentiality": 3,
+          "Insurance": 2,
+          "Warranty": 1
+        }
+      },
+      "accuracy_top1": 0.337,
+      "accuracy_top3": 0.408
+    },
+    "hybrid": {
+      "top1": {
+        "per_class": {
+          "<abstained>": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Assignment": {
+            "precision": 0.9519,
+            "recall": 0.89,
+            "f1": 0.9199,
+            "support": 200
+          },
+          "Audit Rights": {
+            "precision": 0.9911,
+            "recall": 0.9823,
+            "f1": 0.9867,
+            "support": 113
+          },
+          "Confidentiality": {
+            "precision": 0.7143,
+            "recall": 0.8333,
+            "f1": 0.7692,
+            "support": 6
+          },
+          "Definitions": {
+            "precision": 0.9289,
+            "recall": 0.8892,
+            "f1": 0.9086,
+            "support": 397
+          },
+          "Governing Law": {
+            "precision": 0.9888,
+            "recall": 1.0,
+            "f1": 0.9944,
+            "support": 88
+          },
+          "Insurance": {
+            "precision": 0.9884,
+            "recall": 0.977,
+            "f1": 0.9827,
+            "support": 87
+          },
+          "Intellectual Property": {
+            "precision": 0.9065,
+            "recall": 0.8992,
+            "f1": 0.9028,
+            "support": 248
+          },
+          "Limitation of Liability": {
+            "precision": 0.9801,
+            "recall": 0.9933,
+            "f1": 0.9867,
+            "support": 149
+          },
+          "Miscellaneous": {
+            "precision": 0.8966,
+            "recall": 0.8667,
+            "f1": 0.8814,
+            "support": 30
+          },
+          "Non-Compete / Non-Solicit": {
+            "precision": 0.8199,
+            "recall": 0.898,
+            "f1": 0.8571,
+            "support": 147
+          },
+          "Payment Terms": {
+            "precision": 0.9645,
+            "recall": 0.9368,
+            "f1": 0.9504,
+            "support": 174
+          },
+          "Term and Renewal": {
+            "precision": 0.7834,
+            "recall": 0.85,
+            "f1": 0.8153,
+            "support": 200
+          },
+          "Termination": {
+            "precision": 0.8788,
+            "recall": 0.9206,
+            "f1": 0.8992,
+            "support": 126
+          },
+          "Warranty": {
+            "precision": 1.0,
+            "recall": 0.9714,
+            "f1": 0.9855,
+            "support": 35
+          }
+        },
+        "macro_f1": 0.856,
+        "weighted_f1": 0.9167,
+        "excluded_rows": 0
+      },
+      "top3": {
+        "per_class": {
+          "<abstained>": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Acceptance": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Assignment": {
+            "precision": 0.7169,
+            "recall": 0.975,
+            "f1": 0.8263,
+            "support": 200
+          },
+          "Audit Rights": {
+            "precision": 0.9417,
+            "recall": 1.0,
+            "f1": 0.97,
+            "support": 113
+          },
+          "Compliance": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Confidentiality": {
+            "precision": 0.0543,
+            "recall": 0.8333,
+            "f1": 0.102,
+            "support": 6
+          },
+          "Data Protection": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Definitions": {
+            "precision": 0.8,
+            "recall": 0.9874,
+            "f1": 0.8839,
+            "support": 397
+          },
+          "Dispute Resolution": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Force Majeure": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Governing Law": {
+            "precision": 0.9167,
+            "recall": 1.0,
+            "f1": 0.9565,
+            "support": 88
+          },
+          "Indemnification": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Insurance": {
+            "precision": 0.86,
+            "recall": 0.9885,
+            "f1": 0.9198,
+            "support": 87
+          },
+          "Intellectual Property": {
+            "precision": 0.6873,
+            "recall": 0.9839,
+            "f1": 0.8093,
+            "support": 248
+          },
+          "Limitation of Liability": {
+            "precision": 0.8976,
+            "recall": 1.0,
+            "f1": 0.946,
+            "support": 149
+          },
+          "Miscellaneous": {
+            "precision": 0.0408,
+            "recall": 0.9333,
+            "f1": 0.0782,
+            "support": 30
+          },
+          "Non-Compete / Non-Solicit": {
+            "precision": 0.673,
+            "recall": 0.966,
+            "f1": 0.7933,
+            "support": 147
+          },
+          "Notice": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Payment Terms": {
+            "precision": 0.5556,
+            "recall": 0.977,
+            "f1": 0.7083,
+            "support": 174
+          },
+          "Service Levels": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Stamp Duty": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "support": 0
+          },
+          "Term and Renewal": {
+            "precision": 0.3521,
+            "recall": 1.0,
+            "f1": 0.5208,
+            "support": 200
+          },
+          "Termination": {
+            "precision": 0.5207,
+            "recall": 1.0,
+            "f1": 0.6848,
+            "support": 126
+          },
+          "Warranty": {
+            "precision": 0.5763,
+            "recall": 0.9714,
+            "f1": 0.7234,
+            "support": 35
+          }
+        },
+        "macro_f1": 0.4134,
+        "weighted_f1": 0.7951,
+        "excluded_rows": 0
+      },
+      "abstention": {
+        "total_rows": 2000,
+        "abstained": 0,
+        "abstention_rate": 0.0,
+        "by_gold_category": {}
+      },
+      "rule_misc_fallback": {
+        "total_rows": 2000,
+        "misc_fallback": 4,
+        "misc_fallback_rate": 0.002,
+        "misc_fallback_by_gold_category": {
+          "Miscellaneous": 4
+        }
+      },
+      "accuracy_top1": 0.916,
+      "accuracy_top3": 0.986
+    }
+  },
+  "elapsed_seconds": 47.7,
+  "hybrid_confusion_top1": {
+    "Payment Terms": {
+      "Payment Terms": 163,
+      "Term and Renewal": 1,
+      "Termination": 4,
+      "Indemnification": 0,
+      "Limitation of Liability": 1,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 3,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 1,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 1,
+      "Stamp Duty": 0
+    },
+    "Term and Renewal": {
+      "Payment Terms": 1,
+      "Term and Renewal": 170,
+      "Termination": 1,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 1,
+      "Non-Compete / Non-Solicit": 1,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 26,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Termination": {
+      "Payment Terms": 0,
+      "Term and Renewal": 5,
+      "Termination": 116,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 1,
+      "Non-Compete / Non-Solicit": 1,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 3,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Indemnification": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Limitation of Liability": {
+      "Payment Terms": 0,
+      "Term and Renewal": 1,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 148,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Warranty": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 1,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 34,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Confidentiality": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 5,
+      "Data Protection": 0,
+      "Intellectual Property": 1,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Data Protection": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Intellectual Property": {
+      "Payment Terms": 2,
+      "Term and Renewal": 1,
+      "Termination": 1,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 223,
+      "Non-Compete / Non-Solicit": 16,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 3,
+      "Audit Rights": 0,
+      "Insurance": 1,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 1,
+      "Stamp Duty": 0
+    },
+    "Non-Compete / Non-Solicit": {
+      "Payment Terms": 1,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 1,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 10,
+      "Non-Compete / Non-Solicit": 132,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 2,
+      "Audit Rights": 1,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Governing Law": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 88,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Dispute Resolution": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Force Majeure": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Assignment": {
+      "Payment Terms": 0,
+      "Term and Renewal": 1,
+      "Termination": 5,
+      "Indemnification": 0,
+      "Limitation of Liability": 1,
+      "Warranty": 0,
+      "Confidentiality": 1,
+      "Data Protection": 0,
+      "Intellectual Property": 5,
+      "Non-Compete / Non-Solicit": 6,
+      "Governing Law": 1,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 178,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 1,
+      "Miscellaneous": 1,
+      "Stamp Duty": 0
+    },
+    "Audit Rights": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 2,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 111,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Insurance": {
+      "Payment Terms": 1,
+      "Term and Renewal": 0,
+      "Termination": 1,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 85,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Compliance": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Service Levels": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Notice": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Acceptance": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Definitions": {
+      "Payment Terms": 1,
+      "Term and Renewal": 38,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 3,
+      "Non-Compete / Non-Solicit": 2,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 353,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    },
+    "Miscellaneous": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 1,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 1,
+      "Data Protection": 0,
+      "Intellectual Property": 2,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 26,
+      "Stamp Duty": 0
+    },
+    "Stamp Duty": {
+      "Payment Terms": 0,
+      "Term and Renewal": 0,
+      "Termination": 0,
+      "Indemnification": 0,
+      "Limitation of Liability": 0,
+      "Warranty": 0,
+      "Confidentiality": 0,
+      "Data Protection": 0,
+      "Intellectual Property": 0,
+      "Non-Compete / Non-Solicit": 0,
+      "Governing Law": 0,
+      "Dispute Resolution": 0,
+      "Force Majeure": 0,
+      "Assignment": 0,
+      "Audit Rights": 0,
+      "Insurance": 0,
+      "Compliance": 0,
+      "Service Levels": 0,
+      "Notice": 0,
+      "Acceptance": 0,
+      "Definitions": 0,
+      "Miscellaneous": 0,
+      "Stamp Duty": 0
+    }
+  },
+  "hybrid_multi_label_note": "Multi-label handling: the hybrid classifier emits a ranked list of up to 5 labels (union of TF-IDF and rule labels). Top-1 metrics use label[0]; the confusion matrix maps each row to its single top-1 prediction, so multi-label agreement is under-represented here — top-3 is the fairer single-number view.",
+  "mode_delta": {
+    "rows_compared": 2000,
+    "top1_changed": 1308,
+    "top1_changed_rate": 0.654,
+    "hybrid_abstained_but_rule_labeled": 0,
+    "rule_misc_fallback_rescued_by_hybrid": 638
+  },
+  "risk_booster_delta": {
+    "model_present": true,
+    "n_docs": 300,
+    "n_clauses_off": 572,
+    "n_clauses_on": 572,
+    "rule_flags_off": 1270,
+    "rule_flags_on": 1270,
+    "ml_flags_added": 63,
+    "ml_redundant_with_rule_flag": 0,
+    "clause_score_changed": 63,
+    "clause_level_changed": 63,
+    "overall_changed": 60
+  }
+}
