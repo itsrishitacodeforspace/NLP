@@ -10,8 +10,8 @@ supported deployment shape for this feature).
 """
 from __future__ import annotations
 
-import time
 import threading
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm

@@ -320,7 +320,6 @@ def test_rls_after_eviction_falls_back_to_postgres_scoped(monkeypatch):
     owner via the Postgres fallback, and still 404 for other users (RLS)."""
     from fastapi.testclient import TestClient
 
-    from app.api import routes_contracts
     from app.core.config import get_settings
     from app.core.security import user_store
     from app.db import postgres
