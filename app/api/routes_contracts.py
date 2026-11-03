@@ -53,14 +53,16 @@ async def upload_contract(
     if ext not in _ALLOWED_EXT:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: {ext}")
 
+    # ``max_upload_mb`` is an int in MB, so the cap is always >= 1 MiB and
+    # comfortably above Starlette's internal chunk size: reading
+    # ``max_bytes + 1`` is guaranteed to return the whole file (the extra byte
+    # only shows up when the upload is truly oversize) — the oversize check is
+    # therefore complete, and a file exactly at the limit is accepted.
     max_bytes = settings.max_upload_mb * 1024 * 1024
-    if getattr(file, "size", None) is not None and file.size > max_bytes:
-        raise HTTPException(
-            status_code=413,
-            detail=f"File exceeds the {settings.max_upload_mb} MB limit.",
-        )
     contents = await file.read(max_bytes + 1)
     if len(contents) > max_bytes:
+        # True oversize: reject with 413 (Payload Too Large) instead of
+        # truncating and analysing a partial document.
         raise HTTPException(
             status_code=413,
             detail=f"File exceeds the {settings.max_upload_mb} MB limit.",

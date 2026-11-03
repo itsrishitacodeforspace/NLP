@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # 1. Default-secret guard
 # ---------------------------------------------------------------------------
@@ -87,10 +86,8 @@ def auth_client(monkeypatch):
     user_store.reset()
 
 
-def test_token_throttle_locks_after_five_failures(auth_client, monkeypatch):
+def test_token_throttle_locks_after_five_failures(auth_client):
     """5 bad passwords -> the 6th attempt within the window returns 429."""
-    from app.api import routes_auth
-
     for i in range(5):
         r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
         assert r.status_code == 401, f"attempt {i + 1}: {r.status_code}"
@@ -144,8 +141,6 @@ def test_token_throttle_usernames_are_independent(auth_client):
 
 def test_token_throttle_window_resets_with_time(auth_client, monkeypatch):
     """After the lockout window elapses (faked clock), attempts are allowed again."""
-    import time as _time
-
     from app.api import routes_auth
 
     now = [1000.0]
@@ -164,3 +159,76 @@ def test_token_throttle_window_resets_with_time(auth_client, monkeypatch):
     r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
     assert r.status_code == 401, r.text
     assert routes_auth._throttle_snapshot()["ana"][0] == 1
+
+
+# ---------------------------------------------------------------------------
+# 3. True oversize 413 on upload
+# ---------------------------------------------------------------------------
+
+# The route computes ``max_bytes = settings.max_upload_mb * 1024 * 1024``. The
+# setting is an int number of MB, so the tests patch it on the cached
+# Settings singleton; the cap used here is 2 MiB (small payloads suffice).
+_KIB = 1024
+
+
+@pytest.fixture
+def small_upload_cap(monkeypatch):
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    original = settings.max_upload_mb
+    monkeypatch.setattr(settings, "max_upload_mb", 2)  # 2 MiB cap
+    yield 2 * 1024 * 1024  # the effective byte cap
+    monkeypatch.setattr(settings, "max_upload_mb", original)
+
+
+def _upload_bytes(file_bytes: bytes) -> "object":
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as client:
+        return client.post(
+            "/api/v1/contracts/upload",
+            files={"file": ("c.txt", file_bytes, "text/plain")},
+        )
+
+
+def test_oversize_upload_is_413(small_upload_cap):
+    cap = small_upload_cap
+    r = _upload_bytes(b"x" * (cap + 1))
+    assert r.status_code == 413, r.text
+    assert "limit" in r.text.lower()
+
+
+def test_upload_exactly_at_limit_is_accepted(small_upload_cap):
+    from app.services import jobs
+
+    saved = dict(jobs._jobs)
+    with jobs._jobs_lock:
+        jobs._jobs.clear()
+    cap = small_upload_cap
+    try:
+        r = _upload_bytes(b"x" * cap)
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] in {"queued", "running"}, r.text
+    finally:
+        # Drain the (fake-analysis) job so it cannot bleed into other tests.
+        import time
+
+        job_id = r.json()["job_id"]
+        for _ in range(200):
+            with jobs._jobs_lock:
+                j = jobs._jobs.get(job_id)
+            if j is None or j.status.value in {"succeeded", "failed"}:
+                break
+            time.sleep(0.05)
+        with jobs._jobs_lock:
+            jobs._jobs.clear()
+            jobs._jobs.update(saved)
+
+
+def test_upload_just_over_limit_is_413(small_upload_cap):
+    cap = small_upload_cap
+    r = _upload_bytes(b"x" * (cap + _KIB))
+    assert r.status_code == 413, r.text
