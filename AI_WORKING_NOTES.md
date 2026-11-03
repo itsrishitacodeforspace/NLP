@@ -263,3 +263,71 @@ docker compose -f docker/docker-compose.yml up --build   # full stack
   CONFIRMED vs REPORTED split, verified-good list, and a prioritized P0-P3
   fix plan. NOTHING has been fixed yet; the fix plan awaits user approval.
 - Subagent session IDs for follow-up are in DEEP_AUDIT_20261103.md §5.
+
+### 2026-11-03 (implementation session, same day)
+- User approved starting the P0/P1 fix work with subagents. Ran 6 parallel
+  coder subagents; each committed its own work locally (NEVER pushed):
+  - `6251674` fix(nlp) — negation-aware risk rules (reuses NER's negation
+    logic), symmetric cap detection suppressing RISK_LIABILITY_002,
+    context-gated arbitration-seat detection, DURATION vs NOTICE_PERIOD
+    split, governing-law rule rewritten on detect_governing_law
+    (now catches Singapore/Delaware/England variants, still skips India),
+    obligation severity table (deadline urgency is a bounded +1 modifier),
+    tight evidence spans. +32 tests (tests/test_negation_and_context.py).
+  - `db45431` fix(jobs) — created_at/finished_at persisted to Postgres;
+    list_jobs merges memory+DB (dedup, in-memory wins); _latest_job_for
+    batched DB lookup independent of memory state; stuck-runner → FAILED
+    via BaseException catch; corrupt result → 500 + result_error field,
+    failed job → 409 with error, in-flight → 409; thread-safe get_engine
+    + 30s bounded re-probe instead of once-down-forever. +16 tests
+    (tests/test_jobs_backend.py).
+  - `2ae9ff4` fix(parser) — DOCX tables extracted in document order;
+    image-only PDF detection (min-meaningful-content gate + OCR warnings);
+    strip_headers_footers wired in per page (word-boundary regex);
+    page_hint stamped from offset→page map; binary-garbage .txt rejected;
+    party detection scans first+last 3 clauses with zero-party warning;
+    _first_date context-scored (effective/made-on cues, amendment-aware);
+    whitespace-aware long-clause splits. +18 tests
+    (tests/test_pipeline_hardening.py).
+  - `4b1a9ca` fix(eval) — cases_gold.json regenerated from REAL case text
+    (party names that exist, real rule IDs, anchored offsets);
+    RISK_TERMINATION_001→RISK_TERM_001 in metrics_integration; regression
+    detector now detects self-comparison (exit 1), reports zero-baseline
+    metrics as "uninformative" instead of silent pass, --create-baseline
+    is explicit; new baseline + regenerated reports; +gold-validation test.
+  - `3187c0f` feat(models) — BOTH bundled classifiers retrained from
+    train-only data/processed (model≠data gap closed); _TYPE_BASELINE
+    HIGH→MEDIUM prior; PROVENANCE_STATUS.json now "train-only-verified"
+    with new sha256; nlp/provenance.py understands the new status;
+    nlp/datasets/coverage.py = 14 ML-supported vs 12 rule-only categories;
+    reports/evaluations/model_retraining_20261103.md (training-set-only
+    metrics, explicit non-claims, old/new hashes).
+  - `6e20252` chore(docs+hygiene) — case_law.py: DPDP s.8(6) fix (s.33 is
+    penalties), s.28 ICA caveat for RISK_GOV_001, 4 new entries
+    (RISK_TERM_001 plain-law note, RISK_RENEWAL_001 "see counsel",
+    RISK_INDEMNITY_001 Parelkar, RISK_LIABILITY_002 Saw Pipes),
+    "abreviated" typo fixed; CaseLawReference += verified_on/verify_note
+    (all entries honestly marked unverified); risk_card.py shows
+    verify_note caption; plan.md row counts + provenance bullet corrected;
+    README provenance state corrected; nlp/evaluation/README fixed;
+    phase_2c report got a CORRENDUM banner (not rewritten); Dockerfile/
+    README docker honesty notes; AGENTS.md deep-audit note; root
+    duplicates resynced; tests/test_no_stale_duplicates.py locks root
+    dupes to identical-or-exempt (caught real drift during this session).
+  - `7fbbabe` chore(hygiene) — git rm of 6.6 MB committed
+    command-code-session-* dumps + tests/*.bak (the docs agent's git rm
+    had been lost to parallel commits); .gitignore += both patterns.
+- Orchestrator re-verified after the parallel work merged: all reproduced
+  bugs fixed (negation cases, seat detection, durations, gov law,
+  obligation severity — see session commands), 414 tests pass, ruff clean
+  (3 pre-existing B008), provenance 0/0, demo works (12 clauses, parties,
+  seat Singapore), regression gate: normal run exit 0, self-comparison
+  exit 1.
+- Concurrent-editing hazard was real (agents reverted each other's
+  in-flight edits once); resolved by orchestrator re-syncing root dupes
+  and committing the docs agent's staged-but-uncommitted work.
+- REMAINING (P2, not yet done): security hardening (contract_id
+  collisions, token re-validation, /token rate limit, 413 on true
+  oversize, AUTH_USERS silent admin fallback); rules-only vs hybrid
+  comparison script; abstention measurement; family-disjoint held-out set;
+  Streamlit bearer-token support; P2.6 docker lockfile drift.
