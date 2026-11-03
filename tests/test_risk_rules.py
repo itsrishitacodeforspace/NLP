@@ -333,3 +333,205 @@ def test_breach_window_one_day_boundary_is_flagged():
         _summary(),
     )
     assert flag is not None and flag.rule_id == "RISK_DATA_001"
+
+
+# ------------------------------------------------- post-employment non-compete
+
+
+def _nc_clause(text: str, *, types: list[str] | None = None, heading: str = "5. Non-Compete") -> Clause:
+    return _clause("cn", heading=heading, text=text, types=types or ["Non-Compete / Non-Solicit"])
+
+
+def test_non_compete_fires_on_post_employment_restraint():
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    flag = rule_post_employment_non_compete(
+        _nc_clause(
+            "Following the termination of his employment for any reason, the Employee "
+            "shall not, directly or indirectly, engage in or be associated with any "
+            "business that competes with the Employer."
+        ),
+        _summary(),
+    )
+    assert flag is not None and flag.rule_id == "RISK_NONCOMPETE_001"
+    assert flag.severity == RiskSeverity.MEDIUM
+
+
+def test_non_compete_fires_on_post_consulting_restraint():
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    flag = rule_post_employment_non_compete(
+        _nc_clause(
+            "For twelve months following the termination of this Agreement, the "
+            "Consultant shall not directly or indirectly compete with the Client."
+        ),
+        _summary(),
+    )
+    assert flag is not None and flag.rule_id == "RISK_NONCOMPETE_001"
+
+
+def test_non_compete_does_not_fire_on_in_employment_non_solicit():
+    """In-employment non-solicits are standard and potentially enforceable —
+    they must NOT trigger the post-employment rule."""
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    assert rule_post_employment_non_compete(
+        _nc_clause(
+            "During the Employee's employment, the Employee shall not solicit any "
+            "customer of the Employer."
+        ),
+        _summary(),
+    ) is None
+
+
+def test_non_compete_does_not_fire_on_confidentiality_only():
+    """A confidentiality clause that mentions a competitor but has no
+    post-employment competing action must NOT trigger the rule."""
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    assert rule_post_employment_non_compete(
+        _nc_clause(
+            "The Employee shall keep all trade secrets of the Employer strictly "
+            "confidential during and for two years after the employment, and shall "
+            "not disclose them to any person, including any competitor."
+        ),
+        _summary(),
+    ) is None
+
+
+def test_non_compete_does_not_fire_on_in_employment_compete():
+    """An in-employment restraint (no post-termination window) must NOT
+    trigger the post-employment rule."""
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    assert rule_post_employment_non_compete(
+        _nc_clause(
+            "During employment the Employee shall not establish or acquire any "
+            "business that competes with the Employer."
+        ),
+        _summary(),
+    ) is None
+
+
+def test_non_compete_does_not_fire_without_competing_action():
+    """A post-termination clause with no competing action (e.g. a parking
+    restriction) must NOT trigger the rule."""
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    assert rule_post_employment_non_compete(
+        _nc_clause(
+            "After the termination of employment the Employee shall not, within "
+            "the same building, use the parking lot."
+        ),
+        _summary(),
+    ) is None
+
+
+def test_non_compete_out_of_scope_for_non_indian_jurisdiction():
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    assert rule_post_employment_non_compete(
+        _nc_clause(
+            "Following the termination of his employment, the Employee shall not "
+            "compete with the Employer."
+        ),
+        _summary_with(jurisdiction="United States"),
+    ) is None
+
+
+def test_non_compete_requires_nc_label():
+    """A clause labelled Confidentiality (not Non-Compete / Non-Solicit)
+    must NOT trigger the rule even if it contains post-termination
+    competing language."""
+    from nlp.risk_scoring.rules import rule_post_employment_non_compete
+
+    assert rule_post_employment_non_compete(
+        _clause(
+            "cn",
+            heading="4. Confidentiality",
+            text="Following the termination of the Agreement, the Employee shall not "
+                 "compete with the Employer.",
+            types=["Confidentiality"],
+        ),
+        _summary(),
+    ) is None
+
+
+# ------------------------------------------- missing dispute resolution
+
+
+def _contract_clauses(*texts: str) -> list[Clause]:
+    return [
+        _clause(f"cd{i}", heading=f"{i+1}. Clause", text=t, types=["Miscellaneous"])
+        for i, t in enumerate(texts)
+    ]
+
+
+def test_missing_dispute_resolution_fires_when_absent():
+    from nlp.risk_scoring.rules import rule_missing_dispute_resolution
+
+    clauses = _contract_clauses(
+        "The parties shall perform their obligations under this Agreement.",
+        "The fees shall be paid within 30 days of invoice.",
+    )
+    flag = rule_missing_dispute_resolution(clauses, _summary())
+    assert flag is not None and flag.rule_id == "RISK_DISPUTE_001"
+    assert flag.severity == RiskSeverity.MEDIUM
+    assert flag.clause_id is None  # contract-level
+    assert flag.search_scope  # has a search scope
+
+
+def test_missing_dispute_resolution_through_apply_rules_is_unverified():
+    """When run through apply_rules (which calls _bind_evidence), the
+    contract-level finding gets evidence_status='unverified'."""
+    from nlp.risk_scoring.rules import apply_rules
+
+    clauses = _contract_clauses(
+        "The parties shall perform their obligations under this Agreement.",
+        "The fees shall be paid within 30 days of invoice.",
+    )
+    findings = [f for f in apply_rules(clauses, _summary()) if f.rule_id == "RISK_DISPUTE_001"]
+    assert len(findings) == 1
+    assert findings[0].evidence_status == "unverified"
+    assert findings[0].search_scope
+
+
+def test_missing_dispute_resolution_does_not_fire_with_arbitration():
+    from nlp.risk_scoring.rules import rule_missing_dispute_resolution
+
+    clauses = _contract_clauses(
+        "Any dispute arising out of this Agreement shall be finally settled by "
+        "arbitration in Bengaluru in accordance with the Arbitration and "
+        "Conciliation Act, 1996.",
+    )
+    assert rule_missing_dispute_resolution(clauses, _summary()) is None
+
+
+def test_missing_dispute_resolution_does_not_fire_with_courts():
+    from nlp.risk_scoring.rules import rule_missing_dispute_resolution
+
+    clauses = _contract_clauses(
+        "Each party irrevocably submits to the jurisdiction of the courts at "
+        "Mumbai for any dispute arising out of this Agreement.",
+    )
+    assert rule_missing_dispute_resolution(clauses, _summary()) is None
+
+
+def test_missing_dispute_resolution_ignores_negated_arbitration():
+    """A negated mention ('there is no arbitration clause') must NOT count
+    as a dispute-resolution mechanism."""
+    from nlp.risk_scoring.rules import rule_missing_dispute_resolution
+
+    clauses = _contract_clauses(
+        "There is no arbitration clause in this Agreement. The parties shall "
+        "resolve disputes amicably.",
+    )
+    flag = rule_missing_dispute_resolution(clauses, _summary())
+    assert flag is not None and flag.rule_id == "RISK_DISPUTE_001"
+
+
+def test_missing_dispute_resolution_out_of_scope_for_non_indian():
+    from nlp.risk_scoring.rules import rule_missing_dispute_resolution
+
+    clauses = _contract_clauses("The parties shall perform their obligations.")
+    assert rule_missing_dispute_resolution(clauses, _summary_with(jurisdiction="United States")) is None

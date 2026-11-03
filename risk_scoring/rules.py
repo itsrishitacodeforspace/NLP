@@ -1084,13 +1084,24 @@ def _non_compete_action_is_negated(lowered: str, trigger_start: int) -> bool:
 
     For the non-compete rule, the trigger should fire when the action IS
     negated (prohibited) — "shall not compete with" is the non-compete.
-    This is the OPPOSITE of the standard trigger guard: a negated action
-    is the non-compete we want to detect, not a negation to suppress.
 
-    Returns True when the action is in a negated (prohibited) context,
-    which means it IS a non-compete and the rule should fire.
+    The standard 6-token negation window is too tight for non-compete
+    clauses, which often use long adverbial phrases ("shall not, directly
+    or indirectly, engage in ... business that competes with ..."). We use
+    a wider window (the full sentence) and check for a negation cue
+    anywhere before the trigger in the same sentence.
     """
-    return _trigger_is_negated(lowered, trigger_start)
+    prefix = lowered[:trigger_start]
+    boundary = max(
+        prefix.rfind("."), prefix.rfind("!"), prefix.rfind("?"),
+        prefix.rfind(";"), prefix.rfind("\n"),
+    )
+    window = prefix[boundary + 1:] if boundary != -1 else prefix
+    tokens = [t.strip("(),:\"'") for t in window.split()]
+    # Check for any negation cue in the FULL sentence (not just the last 6
+    # tokens). This handles "shall not, directly or indirectly, ... compete".
+    negation_cues = ("not", "no", "never", "without", "neither", "nor")
+    return any(tok in negation_cues for tok in tokens)
 
 
 def rule_post_employment_non_compete(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:

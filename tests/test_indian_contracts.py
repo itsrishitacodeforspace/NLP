@@ -98,12 +98,13 @@ def _span_check(result) -> None:
 # --- sample_nda.txt: one-way NDA -------------------------------------------
 
 
-def test_nda_missing_dispute_resolution():
-    """POSITIVE: the NDA has no arbitration or court clause, so the new
-    RISK_DISPUTE_001 (missing dispute resolution) must fire."""
+def test_nda_dispute_resolution_present_no_missing():
+    """NEGATIVE: the NDA has a court jurisdiction clause ('submits to the
+    jurisdiction of the courts at Bengaluru'), so RISK_DISPUTE_001 must NOT
+    fire (a dispute-resolution mechanism is present)."""
     r = _analyse("sample_nda.txt", "nda")
-    assert _has(r, "RISK_DISPUTE_001"), (
-        "NDA has no arbitration or court clause; RISK_DISPUTE_001 should fire"
+    assert _not_has(r, "RISK_DISPUTE_001"), (
+        "NDA has a court jurisdiction clause; RISK_DISPUTE_001 should not fire"
     )
 
 
