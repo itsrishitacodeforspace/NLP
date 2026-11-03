@@ -54,3 +54,9 @@ models/*.joblib
 models/*.7z
 !models/tfidf_classifier.7z
 !models/risk_classifier.7z
+
+# Agent session dumps (large, non-source)
+command-code-session-*
+
+# Backup files
+*.bak
