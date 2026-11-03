@@ -6,7 +6,7 @@
 - Gold: the `category` column of the CSV, which is the taxonomy category the row's snippet was *derived* from (training labels, not human adjudication).
 - **Active components:** rule engine (2021 compiled keyword patterns, incl. CUAD bank) | TF-IDF model **ACTIVE (14 labels)** | keyword bank **LOADED (verified)**.
 - TF-IDF labels (the only classes the ML half can emit): Assignment, Audit Rights, Confidentiality, Definitions, Governing Law, Insurance, Intellectual Property, Limitation of Liability, Miscellaneous, Non-Compete / Non-Solicit, Payment Terms, Term and Renewal, Termination, Warranty.
-- Elapsed: 47.7s.
+- Elapsed: 47.4s.
 
 ## Summary (top-1 / top-3)
 

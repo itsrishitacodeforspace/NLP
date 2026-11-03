@@ -82,10 +82,38 @@ def build_report(
     test_path: Path,
     *,
     threshold: float = DEFAULT_THRESHOLD,
+    evaluate: bool = True,
 ) -> Dict:
     started = time.monotonic()
     leak = leakage_report_cached(train_path, test_path, threshold=threshold)
     disjoint_keys = disjoint_test_keys(leak)
+
+    if not evaluate:
+        # --leakage-only mode: pure family-leakage artifact (no classification).
+        report: Dict = {
+            "report": "cuad_family_leakage",
+            "date": "20261103",
+            "description": (
+                "CUAD template-family leakage between train and test splits. "
+                "Family proxy: exact normalised-title equality OR >= threshold "
+                "overlap of 8-character shingles (fraction of the smaller set). "
+                "This measures template-family separation, NOT legal independence."
+            ),
+            "inputs": {
+                "train": str(train_path),
+                "test": str(test_path),
+                "shingle_threshold": threshold,
+            },
+            "family_leakage": leak,
+            "non_claims": [
+                "Proxy-based estimate: the title is a proxy for SEC-filing "
+                "identity (not verified against EDGAR); shingle similarity is "
+                "not legal independence.",
+                "The threshold is a hyperparameter: lower = more conservative "
+                "(more docs grouped as same family).",
+            ],
+        }
+        return report
 
     rows = _collect_disjoint_examples(test_path, disjoint_keys, None)
 
@@ -219,15 +247,23 @@ def main() -> int:
     parser.add_argument("--train", default=DEFAULT_TRAIN)
     parser.add_argument("--test", default=DEFAULT_TEST)
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    parser.add_argument(
+        "--leakage-only", action="store_true",
+        help="write only the family-leakage artifact (no classification run)",
+    )
     parser.add_argument("--out-json", default=DEFAULT_OUT_JSON)
     parser.add_argument("--out-md", default=DEFAULT_OUT_MD)
     args = parser.parse_args()
 
-    report = build_report(Path(args.train), Path(args.test), threshold=args.threshold)
+    report = build_report(Path(args.train), Path(args.test), threshold=args.threshold,
+                          evaluate=not args.leakage_only)
 
     out_json = Path(args.out_json)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    if args.leakage_only:
+        print(f"wrote {out_json}")
+        return 0
     Path(args.out_md).write_text(render_md(report), encoding="utf-8")
     c = report["family_leakage"]["counts"]
     print(f"family-disjoint test docs: {c['test_family_disjoint']}/{c['test_total']}; "

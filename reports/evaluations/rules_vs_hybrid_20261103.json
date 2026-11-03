@@ -641,7 +641,7 @@
       "accuracy_top3": 0.986
     }
   },
-  "elapsed_seconds": 47.7,
+  "elapsed_seconds": 47.4,
   "hybrid_confusion_top1": {
     "Payment Terms": {
       "Payment Terms": 163,
@@ -1230,10 +1230,10 @@
   "risk_booster_delta": {
     "model_present": true,
     "n_docs": 300,
-    "n_clauses_off": 572,
-    "n_clauses_on": 572,
-    "rule_flags_off": 1270,
-    "rule_flags_on": 1270,
+    "n_clauses_off": 580,
+    "n_clauses_on": 580,
+    "rule_flags_off": 1531,
+    "rule_flags_on": 1531,
     "ml_flags_added": 63,
     "ml_redundant_with_rule_flag": 0,
     "clause_score_changed": 63,
