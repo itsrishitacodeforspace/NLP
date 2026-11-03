@@ -61,7 +61,10 @@ export function ErrorState({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-10 text-center', className)}>
+    <div
+      role="alert"
+      className={cn('flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-10 text-center', className)}
+    >
       <h3 className="text-sm font-medium text-destructive">{title}</h3>
       {description ? <p className="max-w-sm text-sm text-muted-foreground">{description}</p> : null}
       {action ? <div className="mt-2">{action}</div> : null}

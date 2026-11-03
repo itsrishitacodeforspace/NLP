@@ -45,8 +45,16 @@ describe('features/obligations/ics.ts — shouldIncludeInIcs', () => {
 });
 
 describe('features/obligations/ics.ts — buildIcs', () => {
-  it('produces a well-formed VCALENDAR wrapper', () => {
+  it('produces a well-formed VCALENDAR wrapper with no events when empty', () => {
     const ics = buildIcs([]);
+    expect(ics).toContain('BEGIN:VCALENDAR');
+    expect(ics).toContain('END:VCALENDAR');
+    expect(ics).toContain('VERSION:2.0');
+    expect(ics).not.toContain('BEGIN:VEVENT');
+  });
+
+  it('produces a well-formed VCALENDAR when there are events', () => {
+    const ics = buildIcs([base]);
     expect(ics).toContain('BEGIN:VCALENDAR');
     expect(ics).toContain('END:VCALENDAR');
     expect(ics).toContain('VERSION:2.0');
@@ -77,6 +85,7 @@ describe('features/obligations/ics.ts — buildIcs', () => {
 
   it('escapes RFC 5545 special characters in summary/description', () => {
     const ics = buildIcs([{ ...base, text: 'Pay 50%; notify, promptly' }]);
-    expect(ics).toContain('SUMMARY:Obligation: Pay 50\\%; notify\\, promptly');
+    // RFC 5545 does NOT require escaping '%' — only \ ; , and newlines are.
+    expect(ics).toContain('SUMMARY:Obligation: Pay 50%\\; notify\\, promptly');
   });
 });
