@@ -1544,16 +1544,18 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
 
     # Data protection presence if personal data is referenced.
     mentions_personal_data = "personal data" in text_corpus or "personal information" in text_corpus
-    # Presence check: classification OR any of the phrases below (the keyword
-    # list is intentionally narrow; a protection phrased in a different way
-    # still triggers the "not found" honesty note rather than being silently
-    # assumed).
+    # Presence check: classification OR an explicit *protection* phrase.
+    # "personal data" alone is NOT a protection phrase — it only establishes
+    # that the contract handles personal data (the trigger condition). A
+    # genuine data-protection clause must say something about protecting,
+    # processing, or securing that data.
     has_dp = "Data Protection" in detected_types or any(
         k in text_corpus
         for k in (
-            "data protection", "data breach", "personal data",
-            "data protection policy", "privacy policy", "data security",
-            "security incident", "information security", "data fiduciary",
+            "data protection", "data breach", "data protection policy",
+            "privacy policy", "data security", "security incident",
+            "information security", "data fiduciary",
+            "personal data protection", "protect personal data",
         )
     )
     if mentions_personal_data and not has_dp:

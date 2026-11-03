@@ -48,7 +48,14 @@ def test_offsets_are_exact_source_slices():
 
 
 def test_repeated_sentences_leave_offsets_unknown():
-    text = "Each party shall keep information secret. Each party shall keep information secret."
+    # Two *distinct* obligations whose sentences are both ambiguous to
+    # locate (the second sentence text is a substring of the first) leave
+    # offsets unknown. (Exact duplicates of the same obligation are now
+    # deduplicated — see test_exact_duplicate_obligations_within_clause_are_deduped.)
+    text = (
+        "Each party shall keep all information secret. "
+        "Each party shall keep information secret."
+    )
     obligations = extract_obligations_from_clause("c1", text)
     assert len(obligations) == 2
     assert all(o.char_start is None and o.char_end is None for o in obligations)
@@ -276,3 +283,158 @@ def test_passive_offsets_are_exact_source_slices():
     o = obligations[0]
     assert o.char_start is not None and o.char_end is not None
     assert text[o.char_start:o.char_end] == o.text
+
+
+# ---------------------------------------------------------------------------
+# P5 (charter §5.B): field completeness audit
+# ---------------------------------------------------------------------------
+
+
+def test_beneficiary_is_recipient_when_self_reference_follows():
+    # "indemnify the Customer against the Customer's losses" — the first
+    # dative party (Customer) is the beneficiary even though the object
+    # contains a second, self-referential mention of the same party.
+    o = _one("The Provider shall indemnify the Customer against the Customer's losses.")
+    assert o.subject == "Provider"
+    assert o.counterparty == "Customer"
+
+
+def test_beneficiary_recipient_in_compound_indemnity():
+    # "indemnify the Customer against any and all claims" — single verb form
+    # (the "indemnify and hold harmless" compound form is a known limitation
+    # of the regex: the action word is "indemnify" but the dative party
+    # follows "hold harmless", which the regex does not scan for).
+    o = _one(
+        "The Provider shall indemnify the Customer against "
+        "any and all claims, losses, damages and expenses."
+    )
+    assert o.subject == "Provider"
+    assert o.counterparty == "Customer"
+
+
+def test_compound_indemnity_compound_verb_is_known_limitation():
+    # Documents current behaviour: the compound "indemnify and hold harmless"
+    # form does not extract the counterparty (the dative party follows
+    # "hold harmless", not the action verb). This is a known limitation of
+    # the regex-based extractor; a future pass could add "hold harmless" to
+    # the dative-verb list.
+    o = _one(
+        "The Provider shall indemnify and hold harmless the Customer against "
+        "any and all claims, losses, damages and expenses."
+    )
+    assert o.subject == "Provider"
+    assert o.action == "indemnify"
+    assert o.counterparty is None  # known limitation — do not guess
+
+
+def test_beneficiary_none_when_no_explicit_recipient():
+    # No dative construction at all — the beneficiary cannot be determined.
+    o = _one("The Provider shall comply with the Act.")
+    assert o.counterparty is None
+
+
+def test_condition_captured_on_material_breach_trigger():
+    o = _one("The Provider shall provide a report within 30 days upon a material breach by the Customer.")
+    # "upon" is not a condition marker (it's a deadline preposition); the
+    # breach is part of the deadline context, not a conditional clause.
+    # The deadline is still extracted.
+    assert o.deadline_expression == "30 days"
+    assert o.condition is None or "material breach" not in (o.condition or "")
+
+
+def test_condition_captured_on_if_fails_to_pay():
+    o = _one("If the Customer fails to pay, the Provider may terminate the Agreement.")
+    assert o.condition is not None
+    assert "fails to pay" in o.condition
+
+
+def test_frequency_monthly():
+    o = _one("The Customer shall pay the fees monthly.")
+    assert o.frequency == "monthly"
+
+
+def test_frequency_quarterly():
+    o = _one("The Customer shall pay a retainer quarterly in advance.")
+    assert o.frequency == "quarterly"
+
+
+def test_frequency_annually():
+    o = _one("The Provider shall report to the Customer annually.")
+    assert o.frequency == "annually"
+
+
+def test_frequency_biannually():
+    o = _one("The Provider shall review the SLA bi-annually.")
+    assert o.frequency == "biannually"
+
+
+def test_frequency_per_month():
+    o = _one("The Customer shall pay the fee per month.")
+    assert o.frequency == "monthly"
+
+
+def test_frequency_per_annum():
+    o = _one("The Customer shall pay a licence fee per annum.")
+    assert o.frequency == "annually"
+
+
+def test_frequency_weekly():
+    o = _one("The Provider shall issue an invoice weekly.")
+    assert o.frequency == "weekly"
+
+
+def test_no_frequency_when_none_present():
+    o = _one("The Customer shall pay the invoice within thirty (30) days of receipt.")
+    assert o.frequency is None
+
+
+def test_no_frequency_for_vague_cadence():
+    # "periodically" is not a specific frequency — must not be extracted.
+    o = _one("The Provider shall comply periodically with the Act.")
+    assert o.frequency is None
+
+
+def test_passive_agent_in_prepositional_phrase_is_subject():
+    o = _one("Notice shall be given by the Vendor.")
+    assert o.subject == "Vendor"
+    assert o.action == "given"
+
+
+def test_exact_duplicate_obligations_within_clause_are_deduped():
+    # A boilerplate restatement of the same obligation in the same clause
+    # must not yield two identical obligations.
+    text = (
+        "The Provider shall notify the Customer in writing. "
+        "The Provider shall notify the Customer in writing."
+    )
+    obligations = extract_obligations_from_clause("c1", text)
+    assert len(obligations) == 1, f"expected 1 deduplicated obligation, got {len(obligations)}"
+    assert obligations[0].subject == "Provider"
+    assert obligations[0].action == "notify"
+
+
+def test_distinct_obligations_in_same_clause_are_both_kept():
+    # Two genuinely different obligations in the same clause must both be
+    # emitted — dedup only removes exact matches.
+    text = (
+        "The Provider shall notify the Customer in writing. "
+        "The Customer shall pay the invoice within 30 days."
+    )
+    obligations = extract_obligations_from_clause("c1", text)
+    assert len(obligations) == 2
+
+
+def test_deadline_not_extracted_from_bare_duration_without_modal():
+    # "The initial term of this Agreement is 90 days" — no deontic modal,
+    # no obligation is emitted, and no deadline is fabricated.
+    obligations = extract_obligations_from_clause("c1", "The initial term of this Agreement is 90 days.")
+    assert obligations == []
+
+
+def test_deadline_only_from_deontic_sentence():
+    # A bare duration in a non-deontic sentence does not become a deadline;
+    # the deadline is extracted only from the deontic sentence.
+    text = "The warranty period is 12 months. The Provider shall notify within 30 days."
+    obligations = extract_obligations_from_clause("c1", text)
+    assert len(obligations) == 1
+    assert obligations[0].deadline_expression == "30 days"

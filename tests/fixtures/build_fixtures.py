@@ -28,16 +28,17 @@ from typing import List
 # ---------------------------------------------------------------------------
 W, H = 595, 842
 MARGIN = 72
-FONT_SIZE = 11
-LEADING = 13
+FONT_SIZE = 10
+LEADING = 12
 HEADER_Y = 50
 FOOTER_Y = 810
 BODY_Y0 = 90
 BODY_YMAX = 780
-# Keep wrapped lines under ~90 chars: PyMuPDF silently clips base-14 text at
-# ~107 chars/line at 11pt, and lines near that width make pdfplumber emit
-# spurious mid-word line breaks (e.g. "se\nrvice") that fragment clauses.
-CHARS_PER_LINE = 90
+# At 10pt base-14 on A4 the right margin sits at ~120 chars. Lines wrapped at
+# 95 chars stay clear of pdfplumber's re-wrap threshold (which produces
+# spurious mid-word breaks like "stateme\nnt" when lines are ~100 chars at
+# this font). 95 keeps the per-page line budget workable too.
+CHARS_PER_LINE = 95
 
 
 def _wrap(text: str, width: int = CHARS_PER_LINE) -> List[str]:
@@ -143,10 +144,13 @@ _CLAUSES: List[tuple[str, str]] = [
         "scale of the Services materially changes, provided that no amendment "
         "shall reduce the availability target below the level in force at the "
         "date of the original signature. Each party shall keep its service "
-        "level monitoring records for a period of two years from the date of "
-        "the relevant month, and shall make them available to the other party "
+        "level monitoring records, including raw availability logs and "
+        "incident tickets, for a period of two years from the date of the "
+        "relevant month, and shall make them available to the other party "
         "upon reasonable written request for the purposes of verifying a "
-        "claimed service credit or disputed service level measurement."
+        "claimed service credit, resolving a disputed service level "
+        "measurement, or supporting a claim that a failure was caused by an "
+        "event beyond the Provider's reasonable control."
     )),
     ("Confidentiality", (
         "Each party shall keep the other party's Confidential Information "

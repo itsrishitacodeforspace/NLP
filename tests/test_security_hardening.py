@@ -4,9 +4,10 @@ Covers:
   - default AUTH_SECRET_KEY guard (refuse in production, CRITICAL in dev);
   - /token rate limiting;
   - true 413 on oversize uploads;
-  - bounded job worker pool;
   - error hygiene (no exception details in production response bodies);
-  - RLS fallback after in-memory eviction.
+  - RLS fallback after in-memory eviction (Postgres-scoped).
+
+The bounded job worker pool regression test lives in tests/test_jobs_backend.py.
 """
 from __future__ import annotations
 
@@ -280,3 +281,109 @@ def test_500_body_is_generic_in_production(monkeypatch):
     finally:
         if probe is not None:
             main.app.router.routes.remove(probe)
+
+
+# ---------------------------------------------------------------------------
+# 5. RLS after in-memory eviction (Postgres fallback path)
+# ---------------------------------------------------------------------------
+
+
+def _pg_record_ana(job_id: str, contract_id: str) -> dict:
+    from datetime import datetime
+
+    from app.models.schemas import AnalysisResult, ContractSummary
+
+    result = AnalysisResult(
+        contract=ContractSummary(
+            contract_id=contract_id,
+            title="T",
+            file_name="f.txt",
+            analyzed_at=datetime(2026, 10, 22, 12, 0, 0),
+        )
+    )
+    return {
+        "job_id": job_id,
+        "contract_id": contract_id,
+        "owner": "ana",
+        "status": "succeeded",
+        "progress": 1.0,
+        "message": "Done",
+        "result": result.model_dump(mode="json"),
+        "error": "",
+        "created_at": "2026-10-22T12:00:00",
+        "finished_at": "2026-10-22T12:05:00",
+    }
+
+
+def test_rls_after_eviction_falls_back_to_postgres_scoped(monkeypatch):
+    """A job evicted from the in-memory dict must still be readable by its
+    owner via the Postgres fallback, and still 404 for other users (RLS)."""
+    from fastapi.testclient import TestClient
+
+    from app.api import routes_contracts
+    from app.core.config import get_settings
+    from app.core.security import user_store
+    from app.db import postgres
+    from app.main import app
+    from app.services import jobs
+
+    monkeypatch.setenv("AUTH_ENABLED", "true")
+    monkeypatch.setenv("AUTH_SECRET_KEY", "test-secret")
+    monkeypatch.setenv(
+        "AUTH_USERS",
+        '[{"username": "ana", "password": "pw", "role": "analyst"},'
+        ' {"username": "vie", "password": "pw", "role": "analyst"}]',
+    )
+    get_settings.cache_clear()
+    user_store.reset()
+    user_store._seed()
+
+    # Fake the Postgres layer: ana's job row exists for this contract, scoped
+    # to its owner exactly as the real queries would be.
+    cid = "c_evicted_test"
+    monkeypatch.setattr(
+        postgres,
+        "list_job_ids_for_contract",
+        lambda c, owner=None, limit=20: ["j_evicted"] if owner in (None, "ana") else [],
+    )
+    monkeypatch.setattr(
+        postgres,
+        "get_jobs_by_ids",
+        lambda ids, owner=None: (
+            [_pg_record_ana("j_evicted", cid)] if owner in (None, "ana") else []
+        )
+        if "j_evicted" in ids
+        else [],
+    )
+    monkeypatch.setattr(postgres, "get_job", lambda job_id: None)
+    monkeypatch.setattr(postgres, "list_jobs", lambda limit=200: [])
+
+    # Evict ana's job from the in-memory mirror (module-level _jobs dict).
+    saved = dict(jobs._jobs)
+    with jobs._jobs_lock:
+        jobs._jobs.pop("j_evicted", None)
+    jobs._jobs.clear()
+
+    def _login(username: str) -> dict:
+        with TestClient(app) as client:
+            r = client.post("/api/v1/auth/token", data={"username": username, "password": "pw"})
+            assert r.status_code == 200, r.text
+            return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+    try:
+        with TestClient(app) as client:
+            ana = _login("ana")
+            vie = _login("vie")
+            # Owner still reads the evicted job via the Postgres fallback.
+            assert client.get(f"/api/v1/contracts/{cid}/summary", headers=ana).status_code == 200
+            # Another user is RLS-scoped out: 404, not 403.
+            assert client.get(f"/api/v1/contracts/{cid}/summary", headers=vie).status_code == 404
+    finally:
+        with jobs._jobs_lock:
+            jobs._jobs.clear()
+            jobs._jobs.update(saved)
+        monkeypatch.delenv("AUTH_ENABLED", raising=False)
+        monkeypatch.delenv("AUTH_SECRET_KEY", raising=False)
+        monkeypatch.delenv("AUTH_USERS", raising=False)
+        get_settings.cache_clear()
+        user_store.reset()
