@@ -1063,46 +1063,34 @@ _POST_EMPLOYMENT_WINDOW_TRIGGERS = (
 _NON_COMPETE_ACTION_TRIGGERS = (
     "compete with",
     "competing with",
+    "competes with",
     "engag[ei]ng in any business that competes",
     "carry on any business similar",
     "be engaged in any business similar",
     "carry on a similar business",
     "carry on or be engaged in any business",
     "be associated with any business that competes",
+    "be associated with any business that compete",
     "establish or acquire any business that competes",
+    "establish or acquire any business that compete",
     "solicit any customer",
     "solicit any client",
+    "solicit any employee",
 )
 
 
 def _non_compete_action_is_negated(lowered: str, trigger_start: int) -> bool:
     """Check if a non-compete action trigger is in a negated context.
 
-    Uses the standard negation cues (including "nor"). In a sentence like
-    "shall not solicit any employee, nor solicit any customer", the "nor"
-    within 6 tokens of "solicit any customer" correctly negates it — both
-    items are part of the same prohibition. This is the desired behaviour:
-    the trigger should NOT fire on a negated (prohibited) action, because
-    the clause is already saying "you shall not do this" — which is the
-    non-compete we want to flag, not a negation of the non-compete.
+    For the non-compete rule, the trigger should fire when the action IS
+    negated (prohibited) — "shall not compete with" is the non-compete.
+    This is the OPPOSITE of the standard trigger guard: a negated action
+    is the non-compete we want to detect, not a negation to suppress.
 
-    Wait — that's wrong. The trigger IS the non-compete action. If the
-    sentence says "shall not ... solicit any customer", the trigger
-    "solicit any customer" is NEGATED (the employee is prohibited from
-    soliciting). That's exactly what we want to detect as a non-compete.
-    So the negation check should return False (not negated) for the
-    purpose of the non-compete rule, because a negated action IS the
-    non-compete.
-
-    The correct logic: a non-compete action trigger should fire when it
-    appears in a NEGATED context (the employee is prohibited from doing
-    the action). This is the opposite of the standard trigger guard.
+    Returns True when the action is in a negated (prohibited) context,
+    which means it IS a non-compete and the rule should fire.
     """
-    # For the non-compete rule, we want the trigger to fire when it IS
-    # negated (prohibited). So we return the OPPOSITE of the standard
-    # negation check: if the action is negated, it's a non-compete (fire);
-    # if it's not negated, it's not a non-compete (don't fire).
-    return not _trigger_is_negated(lowered, trigger_start)
+    return _trigger_is_negated(lowered, trigger_start)
 
 
 def rule_post_employment_non_compete(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:

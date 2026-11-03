@@ -58,23 +58,19 @@ def test_repeated_sentences_leave_offsets_unknown():
 
 
 def test_repeated_distinct_sentences_with_ambiguous_offsets():
-    # Two distinct obligations where one sentence is a *proper* substring of
-    # the other (the word "the" separates them): the shorter sentence
-    # matches twice (once inside the longer sentence, once standalone), so
-    # its offsets must be None (never fabricated).
+    # The "The" prefix is normalised away by the sentence locator's token
+    # boundary check, so a near-duplicate sentence is not ambiguous after
+    # all: both are located uniquely. This test locks that behaviour —
+    # distinct obligations both get correct offsets (no false ambiguity).
     text = (
         "The Provider shall keep the information secret. "
         "The Provider shall keep information secret."
     )
     obligations = extract_obligations_from_clause("c1", text)
     assert len(obligations) == 2
-    first = [o for o in obligations if o.object == "the information secret"]
-    second = [o for o in obligations if o.object == "information secret"]
-    assert first and second
-    # The longer sentence is unique — offsets are set.
-    assert first[0].char_start is not None
-    # The shorter sentence is a substring of the longer one — ambiguous.
-    assert second[0].char_start is None and second[0].char_end is None
+    for o in obligations:
+        assert o.char_start is not None and o.char_end is not None
+        assert text[o.char_start:o.char_end] == o.text
 
 
 def test_counterparty_is_not_greedy_around_amounts():
