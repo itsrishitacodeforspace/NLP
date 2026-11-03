@@ -232,3 +232,51 @@ def test_upload_just_over_limit_is_413(small_upload_cap):
     cap = small_upload_cap
     r = _upload_bytes(b"x" * (cap + _KIB))
     assert r.status_code == 413, r.text
+
+
+# ---------------------------------------------------------------------------
+# 4. Error hygiene: no exception details in production response bodies
+# ---------------------------------------------------------------------------
+
+# A message that would be an obvious leak if echoed verbatim: a class name and
+# an internal path, plus a sentinel that is trivially greppable in the body.
+_LEAK_SENTINEL = "ZqxLeakProbe731"
+
+
+def _app_env(monkeypatch, env: str):
+    """Point the app's module-level settings binding at a fresh Settings."""
+    from app import main
+    from app.core import config as _cfg
+
+    s = _cfg.Settings(app_env=env)
+    monkeypatch.setattr(main, "settings", s, raising=False)
+    return s
+
+
+def test_500_body_is_generic_in_production(monkeypatch):
+    """A raised exception with a distinctive message must not leak its class
+    name or internal path in production-like response bodies."""
+    from fastapi.testclient import TestClient
+
+    from app import main
+
+    _app_env(monkeypatch, "production")
+
+    probe = None
+    try:
+
+        @main.app.get("/_probe_500")
+        def _probe():
+            raise RuntimeError(f"{_LEAK_SENTINEL} /marimo/nlp/app/secret/internal.py")
+
+        probe = main.app.router.routes[-1]
+        client = TestClient(main.app, raise_server_exceptions=False)
+        r = client.get("/_probe_500")
+        assert r.status_code == 500, r.text
+        body = r.text
+        assert "RuntimeError" not in body, f"class name leaked in production: {body}"
+        assert _LEAK_SENTINEL not in body, f"exception message leaked: {body}"
+        assert "/marimo/nlp" not in body, f"internal path leaked: {body}"
+    finally:
+        if probe is not None:
+            main.app.router.routes.remove(probe)
