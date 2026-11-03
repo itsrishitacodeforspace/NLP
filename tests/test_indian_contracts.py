@@ -14,10 +14,7 @@ Run: ``uv run pytest tests/test_indian_contracts.py -q``
 """
 from __future__ import annotations
 
-import re
 from pathlib import Path
-
-import pytest
 
 from app.models.schemas import ContractType, PartySide
 from app.services.analyzer import analyse_path
