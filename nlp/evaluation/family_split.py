@@ -16,9 +16,8 @@ from __future__ import annotations
 
 import json
 import re
-from collections import Counter
 from pathlib import Path
-from typing import Dict, Iterable, List, Set
+from typing import Dict, List, Set
 
 # 8-character shingles over lowercase, whitespace-collapsed text.
 _SHINGLE_LEN = 8

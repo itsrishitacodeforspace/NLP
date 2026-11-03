@@ -76,7 +76,6 @@ class TestFamilyMap:
         # Non-repeating, sentence-like text: doc B reuses roughly half of
         # doc A's wording (in the first half of the document).
         part_a = "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon "
-        part_b = "first section second section third section fourth fifth sixth seventh eighth ninth tenth eleventh "
         a = text_shingles(part_a + "one two three four five six seven eight nine ten eleven twelve ")
         b = text_shingles(part_a + "twenty thirty forty fifty sixty seventy eighty ninety hundred thousand million ")
         overlap = shingle_overlap(a, b)

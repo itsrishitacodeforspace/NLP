@@ -19,7 +19,6 @@ import argparse
 import csv
 import json
 import random
-import re
 import sys
 import time
 from collections import Counter
@@ -175,7 +174,7 @@ def _mode_delta(rule_rows: List[Dict], hybrid_rows: List[Dict]) -> Dict[str, obj
     top1_changed = 0
     hybrid_abstains_not_rule = 0
     rule_fallback_rescued = 0
-    for rr, hr in zip(rule_rows, hybrid_rows):
+    for rr, hr in zip(rule_rows, hybrid_rows, strict=True):
         if (rr["preds"] or [ABSTAIN_LABEL])[0] != (hr["preds"] or [ABSTAIN_LABEL])[0]:
             top1_changed += 1
         if not (hr["preds"] or []) and (rr["preds"] or []):
@@ -260,7 +259,7 @@ def render_md(report: Dict) -> str:
              f"({m['rule_only']['rule_misc_fallback']['misc_fallback_rate']:.1%}).")
     fb = m["rule_only"]["rule_misc_fallback"]["misc_fallback_by_gold_category"]
     if fb:
-        L.append(f"  - fallback distribution over gold: " + ", ".join(f"{k}={v}" for k, v in list(fb.items())[:8]))
+        L.append("  - fallback distribution over gold: " + ", ".join(f"{k}={v}" for k, v in list(fb.items())[:8]))
     L.append(f"- **hybrid**: empty label list after the 0.15 TF-IDF threshold: {ab_h['abstained']}/{ab_h['total_rows']} rows "
              f"({ab_h['abstention_rate']:.1%}).")
     if ab_h["by_gold_category"]:

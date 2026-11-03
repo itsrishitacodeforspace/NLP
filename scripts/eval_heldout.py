@@ -34,13 +34,10 @@ from nlp.evaluation.classifier_metrics import (
     rule_fallback_stats,
 )
 from nlp.evaluation.family_split import (
-    FamilyMap,
     disjoint_test_keys,
     family_map_for,
-    load_cuad_docs,
     leakage_report,
 )
-from nlp.taxonomy import INTERNAL_LABELS
 
 BANNER = (
     "CUAD test split, family-disjoint by title+shingle proxy; US contracts; "

@@ -13,8 +13,8 @@ Conventions (documented in the generated reports):
 """
 from __future__ import annotations
 
-from collections import Counter, defaultdict
-from typing import Dict, List, Optional, Sequence, Tuple
+from collections import Counter
+from typing import Dict, Sequence, Tuple
 
 ABSTAIN_LABEL = "Miscellaneous"
 EMPTY_LABEL = "<abstained>"
