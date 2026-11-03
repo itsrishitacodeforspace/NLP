@@ -232,6 +232,9 @@ def run_in_background(
     def _runner():
         try:
             update_job(job_id, status=JobStatus.RUNNING, progress=0.05, message="Started")
+        except KeyError:
+            # Evicted before the runner even started: nothing left to update.
+            return
         except Exception:
             return
         try:
@@ -244,6 +247,11 @@ def run_in_background(
                 result=result,
             )
         except Exception as exc:
+            if isinstance(exc, KeyError):
+                # Job evicted from the in-memory mirror mid-run (the 200-cap
+                # can remove it while the worker is still going): a normal
+                # lifecycle race, not a failure.
+                return
             logger.exception("Job {} failed", job_id)
             _mark_failed(str(exc), log=True)
         except BaseException as exc:
