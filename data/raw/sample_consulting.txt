@@ -1,0 +1,35 @@
+CONSULTING AGREEMENT
+
+SYNTHETIC SAMPLE — fictional parties and details, created for pipeline testing only; not a real contract.
+
+This Consulting Agreement (this "Agreement") is made on 3 February 2025 between Topaz Advisory Services LLP (LLPIN AABCT1234P000123), having its registered office at Gurugram, Haryana (the "Consultant") and Quicksilver Retail Private Limited, a company incorporated under the Companies Act, 2013 having CIN U52100HR2011PTC888999, having its registered office at Faridabad, Haryana (the "Client").
+
+1. Scope of Services
+
+1.1 The Consultant shall provide the management consulting services described in each statement of work, including the preparation of reports, models and presentations (the "Deliverables").
+
+2. Fees and Payment
+
+2.1 The Client shall pay the Consultant the fees set out in each statement of work, within 30 days of receipt of a valid invoice. All fees are exclusive of goods and services tax, which shall be charged additionally.
+
+3. Intellectual Property in Deliverables
+
+3.1 Upon full payment of the applicable fees, all right, title and interest in the Deliverables shall vest in the Client. The Consultant retains ownership of its pre-existing methodologies, frameworks and tools, and grants the Client a non-exclusive, non-transferable licence to use them solely as incorporated in the Deliverables.
+
+4. Indemnification
+
+4.1 The Consultant shall indemnify and hold harmless the Client against third-party claims alleging that the Deliverables infringe any intellectual property right, provided the Client gives prompt written notice and sole control of the defence. The Consultant's aggregate liability under this Agreement, whether in contract, tort or otherwise, shall not exceed the fees paid by the Client in the twelve (12) months preceding the claim.
+
+5. Termination
+
+5.1 Either party may terminate this Agreement on 30 days prior written notice. The rights and obligations of the parties relating to payment of fees for services rendered before termination, and sections 3 and 4, shall survive termination of this Agreement.
+
+6. Governing Law
+
+6.1 This Agreement shall be governed by and construed in accordance with the laws of the State of Delaware, United States of America.
+
+IN WITNESS WHEREOF the parties have executed this Agreement on the date first above written.
+
+For Topaz Advisory Services LLP
+
+For Quicksilver Retail Private Limited

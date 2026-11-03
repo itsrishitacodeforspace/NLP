@@ -22,6 +22,11 @@ uploads/*
 data/raw/*
 !data/raw/.gitkeep
 !data/raw/sample_msa.txt
+!data/raw/sample_nda.txt
+!data/raw/sample_employment.txt
+!data/raw/sample_vsa.txt
+!data/raw/sample_data_processing.txt
+!data/raw/sample_consulting.txt
 data/processed/*
 !data/processed/.gitkeep
 # Provenance manifests are reviewable metadata: keep them tracked.

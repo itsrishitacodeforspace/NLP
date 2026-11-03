@@ -512,7 +512,6 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
             m = pat.search(search_text)
             if not m:
                 continue
-            break
             for grp in (m.group(1), m.group(2)):
                 name = grp.strip().strip(",.;:")
                 if not name:

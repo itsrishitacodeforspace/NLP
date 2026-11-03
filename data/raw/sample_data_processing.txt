@@ -1,0 +1,35 @@
+DATA PROCESSING AGREEMENT (ANNEX A TO MASTER SERVICES AGREEMENT)
+
+SYNTHETIC SAMPLE — fictional parties and details, created for pipeline testing only; not a real contract.
+
+This Data Processing Agreement (this "Agreement") is made on 12 June 2025 as Annex A to the Master Services Agreement dated 12 June 2025 between Marigold Health Technologies Pvt Ltd, a company incorporated under the Companies Act, 2013 having CIN U72300KA2020PTC666777, having its registered office at Bengaluru, Karnataka (the "Controller") and Nimbus Cloud Services Limited, a company incorporated under the Companies Act, 2013 having CIN L62100MH2016PLC777888, having its registered office at Pune, Maharashtra (the "Processor").
+
+1. Definitions
+
+1.1 "Personal Data" has the meaning given in the Digital Personal Data Protection Act, 2023. "Data Protection Laws" means the Digital Personal Data Protection Act, 2023 and the rules and orders made under it.
+
+2. Processing Obligations
+
+2.1 The Processor shall process Personal Data only on documented instructions from the Controller and only to the extent required to perform its obligations under the master services agreement.
+
+2.2 The Processor shall implement and maintain appropriate technical and organisational measures to protect Personal Data, including encryption in transit and at rest, role-based access controls and audit logging.
+
+3. Data Breach Notification
+
+3.1 The Processor shall notify the Controller of any personal data breach or security incident without undue delay and in any event within twenty-four (24) hours of becoming aware of it. The notification shall describe the nature of the breach, the categories of Personal Data affected, and the mitigation measures taken or proposed.
+
+3.2 Each party shall cooperate with the other in meeting its notification duties to the Data Protection Board of India under the Data Protection Laws.
+
+4. Cross-Border Transfer
+
+4.1 The Processor shall not transfer Personal Data to any country outside India except with the prior written consent of the Controller, and only where the transfer is required for the performance of the master services agreement.
+
+5. Term and Survival
+
+5.1 This Agreement takes effect on the Effective Date and continues for so long as the Processor processes Personal Data on the Controller's behalf. Sections 2, 3 and 4 shall survive termination or expiry of this Agreement.
+
+IN WITNESS WHEREOF the parties have caused this Agreement to be executed on the date first above written.
+
+For Marigold Health Technologies Pvt Ltd
+
+For Nimbus Cloud Services Limited

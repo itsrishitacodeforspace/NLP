@@ -1,0 +1,41 @@
+CONFIDENTIALITY AND NON-DISCLOSURE AGREEMENT (ONE-WAY)
+
+SYNTHETIC SAMPLE — fictional parties and details, created for pipeline testing only; not a real contract.
+
+This Confidentiality and Non-Disclosure Agreement (this "Agreement") is made and entered into on 10 March 2025 between Redwood Analytics Private Limited, a company incorporated under the Companies Act, 2013 having CIN U72900MH2018PTC111222, having its registered office at Pune, Maharashtra (the "Disclosing Party") and Silverline Media Pvt Ltd, a company incorporated under the Companies Act, 2013 having CIN U74999KA2016PTC333444, having its registered office at Bengaluru, Karnataka (the "Receiving Party").
+
+1. Definitions
+
+1.1 "Confidential Information" means all non-public information disclosed by the Disclosing Party to the Receiving Party, whether orally, in writing or in any other form, including business plans, financial information, customer lists, technical data, trade secrets and software.
+
+2. Non-Disclosure
+
+2.1 The Receiving Party shall keep the Confidential Information strictly confidential and shall not disclose it to any third party, or use it for any purpose other than evaluating a potential business relationship with the Disclosing Party, without the prior written consent of the Disclosing Party.
+
+2.2 The Receiving Party shall not copy, reverse engineer, decompile or disassemble any Confidential Information, and shall not solicit, hire or employ any employee or contractor of the Disclosing Party during the Term.
+
+3. Term
+
+3.1 This Agreement shall commence on the Effective Date and shall remain in force for a period of two years from the Effective Date, after which it shall expire automatically.
+
+4. Return of Materials
+
+4.1 Upon the written request of the Disclosing Party, the Receiving Party shall promptly return or destroy all documents, records and materials containing Confidential Information and shall certify such return or destruction in writing.
+
+5. Intellectual Property
+
+5.1 No licence or other right or interest in or to any intellectual property of the Disclosing Party is granted to the Receiving Party under this Agreement, expressly or by implication. All Confidential Information remains the exclusive property of the Disclosing Party.
+
+6. No Licence
+
+6.1 Nothing in this Agreement shall be construed as granting the Receiving Party any right, title or interest in or to the Confidential Information or in any intellectual property of the Disclosing Party.
+
+7. Governing Law
+
+7.1 This Agreement is governed by the laws of India. Each party irrevocably submits to the jurisdiction of the courts at Bengaluru for any dispute arising out of or in connection with this Agreement.
+
+IN WITNESS WHEREOF the parties have caused this Agreement to be executed on the date first above written.
+
+For Redwood Analytics Private Limited
+
+For Silverline Media Pvt Ltd

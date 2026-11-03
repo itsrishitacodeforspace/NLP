@@ -1,0 +1,45 @@
+VENDOR PROCUREMENT AGREEMENT
+
+SYNTHETIC SAMPLE — fictional parties and details, created for pipeline testing only; not a real contract.
+
+This Vendor Procurement Agreement (this "Agreement") is made on 5 May 2025 between Cobalt Data Systems Pvt Ltd, a company incorporated under the Companies Act, 2013 having CIN U74120DL2017PTC444555, having its registered office at New Delhi (the "Customer") and Ironclad Office Supplies Private Limited, a company incorporated under the Companies Act, 2013 having CIN U51909MH2014PTC555666, having its registered office at Mumbai, Maharashtra and GSTIN 27ABCDE1234F1Z5 (the "Vendor").
+
+1. Goods and Services
+
+1.1 The Vendor shall supply the hardware, software and consumables described in each purchase order issued under this Agreement, in accordance with the specifications agreed by the parties.
+
+2. Payment Terms
+
+2.1 The Customer shall pay each valid invoice within 45 days of receipt. Late payments shall attract interest at 1.5% per month on the overdue amount from the due date until payment.
+
+2.2 All fees are exclusive of goods and services tax, which shall be charged in addition at the applicable rate, with a valid GSTIN quoted on every invoice. Payments are subject to any tax deducted at source as required by applicable law.
+
+2.3 This Agreement is executed on duly stamped paper, and stamp duty payable on it shall be borne by the Customer.
+
+3. Service Levels and Penalties
+
+3.1 The Vendor shall maintain an order fulfilment accuracy of 98% measured quarterly. If the Vendor fails to meet a service level in any quarter, the Customer shall be entitled to a service credit of 10% of that quarter's fees for each full percentage point below the target.
+
+3.2 Failure by the Vendor to rectify a material service level shortfall within 30 days of written notice shall entitle the Customer to terminate this Agreement for cause.
+
+4. Insurance
+
+4.1 The Vendor shall maintain public liability insurance with a sum insured of not less than ₹50,000,000 and professional indemnity insurance with a sum insured of not less than ₹25,000,000 for the term of this Agreement, and shall provide certificates on request.
+
+5. Term and Renewal
+
+5.1 This Agreement shall commence on the Effective Date and continue for an initial term of one year. Thereafter it shall automatically renew for successive terms of one year unless either party gives written notice of non-renewal at least 60 days prior to the end of the then-current term.
+
+6. Termination
+
+6.1 The Customer may terminate this Agreement at any time for convenience by giving 60 days prior written notice. The Vendor may terminate this Agreement for cause on the Customer's material breach remaining uncured for 30 days after written notice.
+
+7. Governing Law and Dispute Resolution
+
+7.1 This Agreement is governed by the laws of India. Any dispute arising out of or in connection with this Agreement shall be finally settled by arbitration in New Delhi in accordance with the Arbitration and Conciliation Act, 1996.
+
+IN WITNESS WHEREOF the parties have executed this Agreement on the date first above written.
+
+For Cobalt Data Systems Pvt Ltd
+
+For Ironclad Office Supplies Private Limited
