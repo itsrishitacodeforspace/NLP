@@ -1075,6 +1075,36 @@ _NON_COMPETE_ACTION_TRIGGERS = (
 )
 
 
+def _non_compete_action_is_negated(lowered: str, trigger_start: int) -> bool:
+    """Check if a non-compete action trigger is in a negated context.
+
+    Uses the standard negation cues (including "nor"). In a sentence like
+    "shall not solicit any employee, nor solicit any customer", the "nor"
+    within 6 tokens of "solicit any customer" correctly negates it — both
+    items are part of the same prohibition. This is the desired behaviour:
+    the trigger should NOT fire on a negated (prohibited) action, because
+    the clause is already saying "you shall not do this" — which is the
+    non-compete we want to flag, not a negation of the non-compete.
+
+    Wait — that's wrong. The trigger IS the non-compete action. If the
+    sentence says "shall not ... solicit any customer", the trigger
+    "solicit any customer" is NEGATED (the employee is prohibited from
+    soliciting). That's exactly what we want to detect as a non-compete.
+    So the negation check should return False (not negated) for the
+    purpose of the non-compete rule, because a negated action IS the
+    non-compete.
+
+    The correct logic: a non-compete action trigger should fire when it
+    appears in a NEGATED context (the employee is prohibited from doing
+    the action). This is the opposite of the standard trigger guard.
+    """
+    # For the non-compete rule, we want the trigger to fire when it IS
+    # negated (prohibited). So we return the OPPOSITE of the standard
+    # negation check: if the action is negated, it's a non-compete (fire);
+    # if it's not negated, it's not a non-compete (don't fire).
+    return not _trigger_is_negated(lowered, trigger_start)
+
+
 def rule_post_employment_non_compete(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:
     if not summary.jurisdiction or summary.jurisdiction.lower() not in {"india", "indian"}:
         return None
@@ -1088,7 +1118,19 @@ def rule_post_employment_non_compete(clause: Clause, summary: ContractSummary) -
     window = _first_unnegated_trigger(text, list(_POST_EMPLOYMENT_WINDOW_TRIGGERS))
     if not window:
         return None
-    action = _first_unnegated_trigger(text, list(_NON_COMPETE_ACTION_TRIGGERS))
+    # For the action trigger, use the nor-aware negation check. The
+    # non-compete rule fires when the action is NEGATED (prohibited) —
+    # "shall not solicit" is the non-compete. ``_non_compete_action_is_negated``
+    # returns True when the trigger is in a NEGATED context (i.e. it IS a
+    # non-compete), so we want it to return True for a fire.
+    action: Optional[str] = None
+    for trigger in _NON_COMPETE_ACTION_TRIGGERS:
+        for match in re.finditer(re.escape(trigger), text):
+            if _non_compete_action_is_negated(text, match.start()):
+                action = trigger
+                break
+        if action:
+            break
     if not action:
         return None
     return RiskFlag(

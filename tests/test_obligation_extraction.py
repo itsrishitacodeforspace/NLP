@@ -48,17 +48,33 @@ def test_offsets_are_exact_source_slices():
 
 
 def test_repeated_sentences_leave_offsets_unknown():
-    # Two *distinct* obligations whose sentences are both ambiguous to
-    # locate (the second sentence text is a substring of the first) leave
-    # offsets unknown. (Exact duplicates of the same obligation are now
-    # deduplicated — see test_exact_duplicate_obligations_within_clause_are_deduped.)
+    # A sentence that appears twice verbatim in the clause cannot be
+    # located unambiguously — offsets are left None (never fabricated).
+    text = "Each party shall keep information secret. Each party shall keep information secret."
+    obligations = extract_obligations_from_clause("c1", text)
+    # Both sentences are identical obligations; dedup collapses them to one.
+    assert len(obligations) == 1
+    assert obligations[0].char_start is None and obligations[0].char_end is None
+
+
+def test_repeated_distinct_sentences_with_ambiguous_offsets():
+    # Two distinct obligations where one sentence is a *proper* substring of
+    # the other (the word "the" separates them): the shorter sentence
+    # matches twice (once inside the longer sentence, once standalone), so
+    # its offsets must be None (never fabricated).
     text = (
-        "Each party shall keep all information secret. "
-        "Each party shall keep information secret."
+        "The Provider shall keep the information secret. "
+        "The Provider shall keep information secret."
     )
     obligations = extract_obligations_from_clause("c1", text)
     assert len(obligations) == 2
-    assert all(o.char_start is None and o.char_end is None for o in obligations)
+    first = [o for o in obligations if o.object == "the information secret"]
+    second = [o for o in obligations if o.object == "information secret"]
+    assert first and second
+    # The longer sentence is unique — offsets are set.
+    assert first[0].char_start is not None
+    # The shorter sentence is a substring of the longer one — ambiguous.
+    assert second[0].char_start is None and second[0].char_end is None
 
 
 def test_counterparty_is_not_greedy_around_amounts():
