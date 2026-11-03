@@ -18,6 +18,7 @@ from app.models.schemas import (
 )
 from app.services.parser import parse_bytes, parse_document
 from app.services.segmenter import segment_clauses
+from app.utils.text import clean_text
 from nlp.clause_classification.classifier import classify_clause
 from nlp.context import resolve_context
 from nlp.ner.ner import (
@@ -33,6 +34,10 @@ from nlp.risk_scoring.rules import apply_rules
 from nlp.risk_scoring.scorer import severity_to_score
 
 logger = get_logger()
+
+# Maximum number of parties reported per contract (keeps the summary
+# focused; guarantees/guarantors beyond this must be reviewed manually).
+MAX_PARTIES = 4
 
 
 def analyse_path(
@@ -56,6 +61,7 @@ def analyse_path(
         title=parsed.title,
         file_name=parsed.file_name,
         warnings=parsed.warnings,
+        pages=parsed.pages,
         contract_type=contract_type,
         user_role=user_role,
         jurisdiction=jurisdiction,
@@ -84,6 +90,7 @@ def analyse_bytes(
         title=parsed.title,
         file_name=parsed.file_name,
         warnings=parsed.warnings,
+        pages=parsed.pages,
         contract_type=contract_type,
         user_role=user_role,
         jurisdiction=jurisdiction,
@@ -102,6 +109,7 @@ def _analyse(
     title: str,
     file_name: str,
     warnings: List[str],
+    pages: Optional[list] = None,
     contract_type: ContractType,
     user_role: PartySide,
     jurisdiction: str,
@@ -111,6 +119,9 @@ def _analyse(
     # 1. Clause segmentation
     raw_clauses = segment_clauses(full_text, contract_id=contract_id)
     logger.info("Segmented into {} clauses", len(raw_clauses))
+    # Stamp page-level provenance (char offset -> page number). Never
+    # guesses: clauses that cannot be located on a page keep page_hint=None.
+    _stamp_page_hints(raw_clauses, pages)
     # P1: resolve cross-references/definitions/precedence (read-only enrichment;
     # no rule, severity or trigger behaviour is changed).
     context_bundle = resolve_context(raw_clauses)
@@ -218,6 +229,8 @@ def _analyse(
 
     # 7. Surface runtime provenance verdicts (data-lineage only, not accuracy).
     analysis_warnings = list(warnings)
+    if not summary_draft.parties:
+        analysis_warnings.append("No parties detected — review the preamble manually")
     try:
         from nlp import provenance as _provenance
 
@@ -237,6 +250,46 @@ def _analyse(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _stamp_page_hints(raw_clauses: List, pages: Optional[list]) -> None:
+    """Set ``clause.page_hint`` from parser page boundaries.
+
+    The segmenter works on ``clean_text(full_text)``, and the parser built
+    ``full_text`` by joining its (already cleaned, header-stripped) page
+    texts — so rebuilding that join puts us in exactly the segmenter's
+    coordinate space. Each non-empty page is located inside the joined text;
+    a page whose text cannot be located (cleaning changed it) is left out,
+    and a clause falling in a gap between located pages keeps
+    ``page_hint=None`` unless the gap is pure whitespace (a page that
+    cleaned away to nothing).
+    """
+    if not pages or not raw_clauses:
+        return
+    doc = clean_text("\n\n".join(pg.text for pg in pages if pg.text))
+    bounds: List[tuple[int, int, int]] = []  # (start, end, page_number)
+    for pg in pages:
+        if not pg.text.strip():
+            continue
+        found = doc.find(pg.text)
+        if found == -1:
+            continue
+        bounds.append((found, found + len(pg.text), pg.page_number))
+    if not bounds:
+        return
+    for clause in raw_clauses:
+        page_at: Optional[int] = None
+        for start, end, num in bounds:
+            if start <= clause.char_start < end:
+                page_at = num
+                break
+        if page_at is None:
+            for (_s1, e1, n1), (s2, _e2, _n2) in zip(bounds, bounds[1:], strict=False):
+                if e1 < clause.char_start < s2:
+                    if doc[e1:s2].isspace():
+                        page_at = n1
+                    break
+        clause.page_hint = page_at
 
 
 _ML_FALLBACK_SCORE = {"medium": 45.0, "high": 60.0, "critical": 75.0}
@@ -402,14 +455,19 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
                     return found
         return found
 
-    # 1. Scan the heading + body of the first 3 clauses (preamble often
-    # appears as the heading of clause 0).
-    for c in clauses[:3]:
+    # 1. Scan the heading + body of the first AND last 3 clauses (preamble
+    # often appears as the heading of clause 0; parties sometimes appear
+    # only in the signature block at the end). Union is de-duplicated.
+    window: List[Clause] = []
+    for c in list(clauses[:3]) + list(clauses[-3:]):
+        if c not in window:
+            window.append(c)
+    for c in window:
         for chunk in ((c.heading or ""), (c.text or "")[:2000]):
             for name in _scan(chunk):
                 if name not in parties:
                     parties.append(name)
-            if len(parties) >= 4:
+            if len(parties) >= MAX_PARTIES:
                 break
 
     # 2. NER entities (PARTY/ORG) from the first 6 clauses.
@@ -425,7 +483,7 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
                     continue
                 if re.search(r"\b[A-Z][A-Za-z]+\s+[A-Z][A-Za-z]+\b", t) and t not in parties:
                     parties.append(t)
-            if len(parties) >= 4:
+            if len(parties) >= MAX_PARTIES:
                 break
 
     # 3. Preamble "between X and Y" pattern (last-ditch).
@@ -450,6 +508,7 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
             m = pat.search(search_text)
             if not m:
                 continue
+            break
             for grp in (m.group(1), m.group(2)):
                 name = grp.strip().strip(",.;:")
                 if not name:
@@ -462,7 +521,8 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
                     name = " ".join(name.split()[:-1])
                 if 3 <= len(name) <= 80 and name not in parties:
                     parties.append(name)
-            break
+            if len(parties) >= MAX_PARTIES:
+                break
 
     # Dedupe case-insensitively, prefer the most-complete spelling.
     deduped: List[str] = []
@@ -473,24 +533,78 @@ def _detect_parties(clauses: List[Clause]) -> List[str]:
             continue
         seen_lower.add(key)
         deduped.append(name)
-    return deduped[:4]
+    return deduped[:MAX_PARTIES]
+
+
+# Context cues that mark a date as the *operative/effective* one rather
+# than a recital of the original instrument's date. Bare "dated" is
+# deliberately NOT a cue ("Agreement dated 1 January 2020" recites the
+# original instrument).
+_EFFECTIVE_DATE_CUES = re.compile(
+    r"(?ix)\b(?:effective\s+date|effective\s+as\s+of|commence[sd]?|"
+    r"made\s+on|entered\s+into|dated\s+as\s+of)\b"
+)
+
+# "was amended on" is an effective-date cue: for a document that is an
+# amendment, the amendment date is its operative date ("This Agreement
+# dated 1 January 2020 was amended on 15 April 2024 ...").
+_AMENDMENT_RECITAL_RE = re.compile(
+    r"(?ix)\bwas\s+amended\s+on\b|\bwere\s+amended\s+on\b"
+)
+
+# Sentence splitter good enough for cue scoring (dates rarely straddle
+# paragraph boundaries).
+_SENTENCE_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+
+_GENERIC_DATE_RE = re.compile(
+    r"\b(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{2,4})\b",
+    re.IGNORECASE,
+)
+
+
+def _effective_date_cues(sentence: str) -> bool:
+    """Whether a sentence carries an effective-date cue."""
+    if _EFFECTIVE_DATE_CUES.search(sentence):
+        return True
+    return bool(_AMENDMENT_RECITAL_RE.search(sentence))
 
 
 def _first_date(clauses: List[Clause]) -> Optional[str]:
-    """Prefer entities, then generic date search."""
+    """Pick the effective date: context-scored first, first-DATE fallback.
+
+    Sentences containing an effective-date cue ("effective date",
+    "commences", "made on", "entered into", ...) win; among them the first
+    in document order is used. With no cue, behaviour is unchanged: the
+    first DATE entity (or first generic date match) is returned.
+    """
+    for c in clauses:
+        for sentence in _SENTENCE_RE.split(c.text or ""):
+            if not _effective_date_cues(sentence):
+                continue
+            # Score every date mention in the cue sentence: prefer the one
+            # the cue actually points at. For an amendment recital
+            # ("... dated X was amended on Y"), the operative date is the
+            # one *after* "amended on"; otherwise the sentence's first
+            # date follows the cue ("made on X", "commences on X").
+            cue_dates = [m.group(1).strip() for m in _GENERIC_DATE_RE.finditer(sentence)]
+            if cue_dates:
+                m_cue = _AMENDMENT_RECITAL_RE.search(sentence)
+                if m_cue:
+                    tail_dates = _GENERIC_DATE_RE.findall(sentence[m_cue.end():])
+                    return tail_dates[0] if tail_dates else cue_dates[-1]
+                return cue_dates[0]
+            m = _GENERIC_DATE_RE.search(sentence)
+            if m:
+                return m.group(1).strip()
     for c in clauses:
         for ent in c.entities:
             if ent.label == "DATE":
                 value = ent.text.strip()
                 if value and len(value) > 4:
                     return value
-    generic_date_re = re.compile(
-        r"\b(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{2,4})\b",
-        re.IGNORECASE,
-    )
     for c in clauses[:10]:
         text = c.text or ""
-        m = generic_date_re.search(text)
+        m = _GENERIC_DATE_RE.search(text)
         if m:
             return m.group(1).strip()
     return None

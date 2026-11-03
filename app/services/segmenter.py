@@ -390,9 +390,36 @@ def _split_long_clause(
                 continue
             i = s
             while i < e:
-                out.append((i, min(i + long_threshold, e)))
-                i += long_threshold
+                end_point = min(i + long_threshold, e)
+                out.append((i, end_point))
+                i = (
+                    end_point
+                    if end_point >= e
+                    else _whitespace_cut_point(i, end_point, e, long_threshold)
+                )
         return out or [(start, end)]
+
+    def _whitespace_cut_point(i: int, end_point: int, e: int, threshold: int) -> int:
+        """Advance past a fixed-size chunk, preferring whitespace cut points.
+
+        When the naive cut lands mid-word, search up to 10% of the threshold
+        on each side for the nearest whitespace and cut there instead, so we
+        do not split a token. Falls back to the raw threshold when no
+        whitespace is available in the window (e.g. a very long token).
+        """
+        if end_point >= e:
+            return e
+        if cleaned[end_point - 1].isspace() or cleaned[end_point].isspace():
+            return end_point
+        window = max(1, int(threshold * 0.10))
+        nearest: Optional[int] = None
+        for cand in range(end_point - window, end_point + window + 1):
+            if cand <= i + 1 or cand >= e:
+                continue
+            if cleaned[cand].isspace() or cleaned[cand - 1].isspace():
+                nearest = cand
+                break
+        return nearest if nearest is not None else end_point
 
     expanded: List[tuple[int, int]] = []
     for s, e, _t in body_spans:

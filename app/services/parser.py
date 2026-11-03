@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional
@@ -25,6 +26,19 @@ OCR_PAGE_CHAR_THRESHOLD = 50
 
 # Soft cap for total extracted characters (prevents pathological inputs).
 MAX_TOTAL_CHARS = 2_000_000
+
+# Minimum meaningful content: below this we treat the document as not
+# extractable (e.g. a scanned PDF where OCR is unavailable) rather than
+# letting a handful of stray glyphs pass as a successful parse.
+MIN_MEANINGFUL_CHARS = 200
+MIN_MEANINGFUL_PAGE_FRACTION = 0.5
+
+# Above this share of non-printable/non-text characters a .txt file is
+# almost certainly binary garbage mislabeled as text.
+MAX_BINARY_CHAR_RATIO = 0.30
+
+# {"reason": Optional[str]} — populated lazily by _ocr_unavailable_reason.
+_OCR_UNAVAILABLE: dict = {}
 
 
 @dataclass
@@ -99,6 +113,8 @@ def parse_document(
             "Document parsed but no text could be extracted. The file may be empty or corrupted."
         )
 
+    _check_min_meaningful_content(parsed)
+
     if parsed.char_count > MAX_TOTAL_CHARS:
         parsed.warnings.append(
             f"Document exceeded the {MAX_TOTAL_CHARS:,} char safety cap; truncated."
@@ -115,13 +131,80 @@ def parse_document(
     return parsed
 
 
+def _check_min_meaningful_content(parsed: ParsedDocument) -> None:
+    """Reject near-empty parses that would otherwise pass silently.
+
+    A scanned PDF with OCR unavailable can yield a handful of stray glyphs
+    (page numbers, ligatures) on most pages. That is *not* a successful
+    parse, so we fail with a specific message instead of letting it look
+    healthy downstream.
+    """
+    total_pages = len(parsed.pages)
+    non_empty = sum(1 for pg in parsed.pages if pg.text.strip())
+    chars = len(parsed.full_text.strip())
+    # The gate only applies to genuinely multi-page documents (real PDF
+    # pages). DOCX/TXT pseudo-pages are a grouping artefact and short
+    # single-page notes are legitimate, so near-empty single-chunk docs
+    # still parse (the empty-text check above already catches the truly
+    # empty case).
+    if total_pages <= 1:
+        return
+    page_fraction = non_empty / total_pages
+    under_min_chars = chars < MIN_MEANINGFUL_CHARS
+    under_min_pages = page_fraction < MIN_MEANINGFUL_PAGE_FRACTION
+    if not (under_min_chars or under_min_pages):
+        return
+    if any(pg.method == "ocr" for pg in parsed.pages) or any(
+        w.startswith("OCR") for w in parsed.warnings
+    ):
+        parsed.warnings.append(
+            "Degraded parsing: most pages had no extractable text and OCR was "
+            "attempted or unavailable; the document appears to be image-only."
+        )
+    if total_pages and total_pages > 1 and non_empty == 0:
+        raise DocumentParseError(
+            "Document has no extractable text. The document may be "
+            "image-only (scanned); install tesseract-ocr for OCR support."
+        )
+    detail = (
+        f"Only {chars} characters were extracted from {non_empty} of "
+        f"{total_pages} pages."
+        if total_pages > 1
+        else f"Only {chars} characters could be extracted in total."
+    )
+    raise DocumentParseError(
+        "Document appears to be image-only (scanned) or has no extractable "
+        f"text; install tesseract-ocr for OCR support. {detail}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # PDF strategies
 # ---------------------------------------------------------------------------
 
 
 def _parse_pdf(path: Path, *, contract_id: str, enable_ocr: bool) -> ParsedDocument:
+    """Parse a PDF via pdfplumber, falling back to PyMuPDF.
+
+    ``ocr_stats`` tracks how many pages went through the OCR path and how
+    many of those produced no text, so degraded parses are surfaced as
+    warnings instead of looking successful.
+    """
+    ocr_stats = {"attempted": 0, "no_text": 0}
     pages: List[ParsedPage] = []
+
+    def _handle_page(idx: int, raw_text: str) -> ParsedPage:
+        text = strip_headers_footers(clean_text(raw_text))
+        method = "native"
+        if len(text) < OCR_PAGE_CHAR_THRESHOLD and enable_ocr:
+            ocr_stats["attempted"] += 1
+            ocr_text = _ocr_pdf_page(path, idx)
+            if ocr_text:
+                text = ocr_text
+                method = "ocr"
+            else:
+                ocr_stats["no_text"] += 1
+        return ParsedPage(idx, text, method, len(text))
 
     # Strategy 1: pdfplumber (best for tables / digital text)
     try:
@@ -134,14 +217,7 @@ def _parse_pdf(path: Path, *, contract_id: str, enable_ocr: bool) -> ParsedDocum
                 except Exception as exc:  # pragma: no cover - defensive
                     logger.warning("pdfplumber failed on page {}: {}", idx, exc)
                     text = ""
-                text = clean_text(text)
-                method = "native"
-                if len(text) < OCR_PAGE_CHAR_THRESHOLD and enable_ocr:
-                    ocr_text = _ocr_pdf_page(path, idx)
-                    if ocr_text:
-                        text = ocr_text
-                        method = "ocr"
-                pages.append(ParsedPage(idx, text, method, len(text)))
+                pages.append(_handle_page(idx, text))
     except Exception as exc:
         logger.warning("pdfplumber failed entirely: {} — falling back to PyMuPDF", exc)
         pages = []
@@ -154,15 +230,7 @@ def _parse_pdf(path: Path, *, contract_id: str, enable_ocr: bool) -> ParsedDocum
             doc = fitz.open(str(path))
             pages = []
             for idx, page in enumerate(doc, start=1):
-                text = page.get_text("text") or ""
-                text = clean_text(text)
-                method = "native"
-                if len(text) < OCR_PAGE_CHAR_THRESHOLD and enable_ocr:
-                    ocr_text = _ocr_pdf_page(path, idx)
-                    if ocr_text:
-                        text = ocr_text
-                        method = "ocr"
-                pages.append(ParsedPage(idx, text, method, len(text)))
+                pages.append(_handle_page(idx, page.get_text("text") or ""))
             doc.close()
         except Exception as exc:
             logger.error("PyMuPDF failed entirely: {}", exc)
@@ -171,6 +239,20 @@ def _parse_pdf(path: Path, *, contract_id: str, enable_ocr: bool) -> ParsedDocum
         raise DocumentParseError("Unable to extract any pages from PDF.")
 
     full_text = "\n\n".join(pg.text for pg in pages if pg.text)
+    warnings: List[str] = []
+    unavailable = _ocr_unavailable_reason() if ocr_stats["attempted"] else None
+    if ocr_stats["attempted"]:
+        if unavailable:
+            warnings.append(
+                f"OCR unavailable ({unavailable}); {ocr_stats['attempted']} of "
+                f"{len(pages)} pages had low text extraction."
+            )
+        if ocr_stats["no_text"]:
+            warnings.append(
+                f"OCR attempted on {ocr_stats['attempted']} pages; "
+                f"{ocr_stats['no_text']} produced no text."
+            )
+
     return ParsedDocument(
         contract_id=contract_id,
         title=path.stem.replace("_", " ").title(),
@@ -178,7 +260,30 @@ def _parse_pdf(path: Path, *, contract_id: str, enable_ocr: bool) -> ParsedDocum
         full_text=full_text,
         pages=pages,
         metadata={"ext": ".pdf", "page_count": len(pages)},
+        warnings=warnings,
     )
+
+
+def _ocr_unavailable_reason() -> Optional[str]:
+    """Return a human-readable reason if the OCR toolchain is unusable.
+
+    Covers missing Python libraries *and* a missing tesseract binary
+    (the common case in slim containers). Result is cached after the first
+    check because the environment does not change during a parse.
+    """
+    cached = _OCR_UNAVAILABLE.get("reason")
+    if cached is not None:
+        return cached
+    reason: Optional[str] = None
+    try:
+        import pytesseract  # type: ignore
+
+        if pytesseract.get_tesseract_version() is None:
+            reason = "tesseract not installed"
+    except Exception as exc:  # missing lib or binary raises various types
+        reason = f"OCR unavailable ({exc})"
+    _OCR_UNAVAILABLE["reason"] = reason
+    return reason
 
 
 def _ocr_pdf_page(pdf_path: Path, page_number: int) -> str:
@@ -204,6 +309,9 @@ def _ocr_pdf_page(pdf_path: Path, page_number: int) -> str:
         return clean_text(text)
     except Exception as exc:  # pragma: no cover - depends on system OCR
         logger.warning("OCR failed for page {}: {}", page_number, exc)
+        # A tesseract-not-in-PATH failure is environment-level: remember it
+        # so the parse can warn once instead of per page.
+        _ocr_unavailable_reason()
         return ""
 
 
@@ -233,13 +341,27 @@ def _parse_docx(path: Path, *, contract_id: str) -> ParsedDocument:
             approx_pages.append(buffer.copy())
             buffer.clear()
 
-    for para in doc.paragraphs:
-        text = clean_text(para.text)
+    def add_block(text: str) -> None:
         if not text:
-            continue
+            return
         if sum(len(p) for p in buffer) + len(text) > char_budget:
             flush_page()
         buffer.append(text)
+
+    # Walk the body in document order so tables (fee schedules, signature
+    # blocks) are not lost — ``doc.paragraphs`` excludes ``w:tbl`` content.
+    from docx.table import Table as _DocxTable  # type: ignore
+    from docx.text.paragraph import Paragraph as _DocxParagraph  # type: ignore
+
+    body = doc.element.body
+    for child in body.iterchildren():
+        if child.tag.endswith("}p"):
+            text = clean_text(_DocxParagraph(child, doc).text)
+            add_block(text)
+        elif child.tag.endswith("}tbl"):
+            table = _DocxTable(child, doc)
+            rows = [" | ".join(cell.text for cell in row.cells) for row in table.rows]
+            add_block(clean_text("\n".join(rows)))
     flush_page()
 
     for idx, page_paras in enumerate(approx_pages, start=1):
@@ -266,19 +388,31 @@ def _parse_docx(path: Path, *, contract_id: str) -> ParsedDocument:
 
 
 def _parse_text(path: Path, *, contract_id: str) -> ParsedDocument:
-    encodings = ["utf-8", "utf-16", "latin-1", "cp1252"]
+    data = path.read_bytes()
+    # UTF-16 is only a realistic encoding for text files that carry a BOM;
+    # without one, decoding binary garbage as UTF-16 can produce plausible-
+    # looking letters and mask the garbage.
+    if data.startswith(b"\xff\xfe") or data.startswith(b"\xfe\xff"):
+        encodings = ["utf-16", "utf-8", "latin-1", "cp1252"]
+    else:
+        encodings = ["utf-8", "latin-1", "cp1252"]
     text: Optional[str] = None
     last_exc: Optional[Exception] = None
     for enc in encodings:
         try:
-            text = path.read_text(encoding=enc)
+            text = data.decode(enc)
             break
         except UnicodeDecodeError as exc:
             last_exc = exc
             continue
     if text is None:
         # last-resort binary decode
-        text = path.read_bytes().decode("utf-8", errors="replace")
+        text = data.decode("utf-8", errors="replace")
+    # latin-1 (and cp1252) never fail to decode, so binary garbage with a
+    # .txt extension must be caught here: real text is overwhelmingly
+    # letters, digits, punctuation and whitespace by Unicode category.
+    if _binary_char_ratio(text) > MAX_BINARY_CHAR_RATIO:
+        raise DocumentParseError("File does not appear to be text")
 
     cleaned = clean_text(text)
     paragraphs = split_into_paragraphs(cleaned)
@@ -306,6 +440,27 @@ def _parse_text(path: Path, *, contract_id: str) -> ParsedDocument:
         metadata={"ext": _ext_of(path), "page_count": len(pages)},
         warnings=([f"Used fallback encoding after {last_exc}"] if last_exc else []),
     )
+
+
+def _binary_char_ratio(text: str) -> float:
+    """Fraction of characters that are not letters/digits/punct/whitespace.
+
+    Uses Unicode categories: letters (L*), numbers (N*), punctuation (P*),
+    whitespace (Z*). Control characters, C1/L1 symbols, surrogates and the
+    like all count as 'binary' — a share above ``MAX_BINARY_CHAR_RATIO``
+    means the file is almost certainly not text.
+    """
+    if not text:
+        return 0.0
+    text_chars = 0
+    for ch in text:
+        if ch.isspace():
+            text_chars += 1
+        else:
+            cat = unicodedata.category(ch)
+            if cat[0] in ("L", "N", "P", "Z"):
+                text_chars += 1
+    return 1.0 - text_chars / len(text)
 
 
 # ---------------------------------------------------------------------------
@@ -336,8 +491,8 @@ def parse_bytes(
 
 
 _HEADER_FOOTER_HINTS = re.compile(
-    r"(page\s*\d+\s*of\s*\d+|confidential|"
-    r"draft|private\s*and\s*confidential)",
+    r"(page\s*\d+\s*of\s*\d+|\bconfidential\b|"
+    r"\bdraft\b|private\s+and\s+confidential)",
     re.IGNORECASE,
 )
 
