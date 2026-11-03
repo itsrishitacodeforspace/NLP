@@ -184,11 +184,19 @@ def _update(job_id: str, *, progress: float, message: str) -> None:
 
 
 def _contract_id_for(filename: str, contents: bytes) -> str:
+    """Build a per-upload unique contract id: content hash + timestamp + uuid.
+
+    The uuid4 component guarantees uniqueness even when the same content is
+    uploaded twice within the same second — without it the id would collide
+    and a Neo4j MERGE would fuse two separate analyses into one node (audit
+    P2).
+    """
     import hashlib
+    import uuid
 
     digest = hashlib.sha256(contents).hexdigest()[:10]
     stamp = utcnow().strftime("%Y%m%d_%H%M%S")
-    return f"c_{stamp}_{digest}"
+    return f"c_{stamp}_{digest}_{uuid.uuid4().hex[:8]}"
 
 
 def _owner_scope(principal: Principal) -> Optional[str]:

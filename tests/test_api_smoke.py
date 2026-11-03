@@ -38,3 +38,15 @@ def test_upload_analysis_roundtrip():
         graph = client.get(f"/api/v1/graph/{contract_id}")
         assert graph.status_code == 200
         assert graph.json()["nodes"]
+
+
+def test_same_content_uploads_same_second_get_distinct_contract_ids():
+    """Regression (audit P2): identical content uploaded within the same second
+    must produce different contract ids — the uuid4 component makes collisions
+    impossible; without it a Neo4j MERGE would fuse two analyses into one node.
+    """
+    from app.api.routes_contracts import _contract_id_for
+
+    contents = b"1. Payment\nCustomer shall pay within 30 days."
+    ids = {_contract_id_for("c.txt", contents) for _ in range(50)}
+    assert len(ids) == 50, "contract id collided for identical content"
