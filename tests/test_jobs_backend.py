@@ -444,3 +444,71 @@ def test_set_probe_window_extends_fastfail(monkeypatch):
     assert postgres.postgres_available() is False
     now[0] = 1000.0 + postgres._PROBE_RETRY_SECONDS
     assert postgres.postgres_available() is True
+
+
+# ---------------------------------------------------------------------------
+# (i) bounded job worker pool (audit P2: one daemon thread per upload)
+# ---------------------------------------------------------------------------
+
+
+def _wait_for_terminal(job_ids: list[str], timeout: float = 10.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        with jobs._jobs_lock:
+            states = [
+                jobs._jobs.get(jid)
+                for jid in job_ids
+            ]
+        if all(j is not None and j.status in {JobStatus.SUCCEEDED, JobStatus.FAILED} for j in states):
+            return
+        time.sleep(0.02)
+    raise AssertionError("jobs did not all reach a terminal state in time")
+
+
+def test_job_pool_bounds_concurrency(monkeypatch, clear_memory_jobs):
+    """More submissions than workers: at most N run concurrently and all
+    jobs still complete (the pool queues the excess instead of threading)."""
+    monkeypatch.setattr(jobs, "upsert_job", lambda payload: None)
+    monkeypatch.setattr(jobs, "_job_workers", lambda: 2)  # pool of 2
+    # Force a fresh pool sized 2 regardless of what the rest of the suite built.
+    with jobs._executor_lock:
+        jobs._executor = None
+
+    n = 6
+    delay = 0.15
+    state = {"running": 0, "max": 0}
+    state_lock = threading.Lock()
+    done = threading.Event()
+    done_count = 0
+
+    def _slow(info: JobInfo):
+        nonlocal done_count
+        with state_lock:
+            state["running"] += 1
+            state["max"] = max(state["max"], state["running"])
+        try:
+            time.sleep(delay)
+            return _make_result(info.contract_id)
+        finally:
+            with state_lock:
+                state["running"] -= 1
+                done_count += 1
+                if done_count == n:
+                    done.set()
+
+    job_ids = []
+    for i in range(n):
+        job = jobs.create_job(f"c{i}")
+        job_ids.append(job.job_id)
+        jobs.run_in_background(_slow, job.job_id, f"c{i}")
+
+    assert done.wait(15), "not all pool jobs finished"
+    _wait_for_terminal(job_ids)
+
+    # (b) at most N ran concurrently.
+    assert state["max"] <= 2, f"concurrency peaked at {state['max']} (expected <= 2)"
+    # (a) all jobs completed successfully.
+    with jobs._jobs_lock:
+        finished = [jobs._jobs[jid] for jid in job_ids]
+    assert all(j.status == JobStatus.SUCCEEDED for j in finished)
+    assert all(j.result is not None for j in finished)

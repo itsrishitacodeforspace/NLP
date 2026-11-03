@@ -79,6 +79,9 @@ class Settings(BaseSettings):
     # Internal toggles
     enable_background_jobs: bool = Field(default=True)
     enable_ocr_fallback: bool = Field(default=True)
+    # Background job worker pool size (bounded concurrency for analysis jobs;
+    # extra submissions queue on the pool instead of spawning one thread each).
+    job_worker_count: int = Field(default=4)
 
     # Authentication (OFF by default so the demo needs zero configuration)
     auth_enabled: bool = Field(default=False)

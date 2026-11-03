@@ -200,6 +200,40 @@ CASE_LAW: Dict[str, List[dict]] = {
             ),
         ),
     ],
+    "RISK_NONCOMPETE_001": [
+        _entry(
+            "Indian Contract Act, 1872, s. 27",
+            (
+                "Every agreement in restraint of a lawful trade, business, "
+                "profession or vocation is void. The section is ordinarily "
+                "read to void a POST-employment restraint on trade; a restraint "
+                "during the term of employment, and a non-solicit, fall outside "
+                "it. Statute-only pointer — no case citation is curated for "
+                "this rule, so confirm the current position (including the "
+                "treatment of partial and client-specific restraints) with "
+                "Indian counsel before relying on it."
+            ),
+        ),
+    ],
+    "RISK_DISPUTE_001": [
+        _entry(
+            "Plain-law note (statute pointers) — no case citation curated",
+            (
+                "What is verified by this pointer: the existence of the two "
+                "statutory defaults an Indian contract falls back to when it is "
+                "silent on dispute resolution — arbitration under the "
+                "Arbitration and Conciliation Act, 1996 (Part I applies to "
+                "arbitrations seated in India), and the civil jurisdiction of "
+                "the courts under the Code of Civil Procedure, 1908 (including "
+                "the territorial limits in ss. 5-6 that determine which court "
+                "can entertain a suit). What is NOT verified: no specific case "
+                "has been curated for this rule, and whether a given silence "
+                "creates a practical gap is fact-specific (the default forum "
+                "is a valid, enforceable fallback, not a defect in law). "
+                "Confirm applicability to the specific contract with counsel."
+            ),
+        ),
+    ],
     "RISK_DATA_MISSING": [
         _entry(
             "Digital Personal Data Protection Act, 2023, s. 8(6)",

@@ -212,8 +212,10 @@ class ContractSummary(BaseModel):
     # P5 (charter: score explainability): per-term contributions of
     # ``overall_risk_score`` so a reviewer can see WHY the score is what it is
     # (top finding, volume, severity mass — see ``nlp.risk_scoring.scorer``).
-    # Keys are stable: "top", "volume", "severity_mass", "cap_adjustment".
-    risk_score_breakdown: Optional[Dict[str, float]] = None
+    # Numeric keys: "top", "volume", "severity_mass", "cap_adjustment".
+    # The ``findings_by_severity`` entry maps a severity label to its count
+    # (int), hence the ``Any`` leaf type.
+    risk_score_breakdown: Optional[Dict[str, Any]] = None
     # P5: one-line honesty note attached to the score. Always set by the
     # analyzer; never a probability or a legal assessment.
     score_caveat: Optional[str] = None

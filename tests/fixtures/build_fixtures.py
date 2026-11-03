@@ -34,7 +34,10 @@ HEADER_Y = 50
 FOOTER_Y = 810
 BODY_Y0 = 90
 BODY_YMAX = 780
-CHARS_PER_LINE = 96
+# Keep wrapped lines under ~90 chars: PyMuPDF silently clips base-14 text at
+# ~107 chars/line at 11pt, and lines near that width make pdfplumber emit
+# spurious mid-word line breaks (e.g. "se\nrvice") that fragment clauses.
+CHARS_PER_LINE = 90
 
 
 def _wrap(text: str, width: int = CHARS_PER_LINE) -> List[str]:
@@ -316,8 +319,9 @@ def build_multi_page_pdf(path: Path) -> None:
     # Page 2 holds the cl4 heading plus 30 of its body lines; the remaining
     # body lines open page 3 (the mid-clause page break under test).
     fit_p2 = 30
-    assert 1 < fit_p2 < len(cl4_lines), (
-        f"clause 4 must break across pages 2->3; fits {fit_p2} of {len(cl4_lines)}"
+    assert len(cl4_lines) > fit_p2, (
+        f"clause 4 must break across pages 2->3; needs >{fit_p2} body lines, "
+        f"has {len(cl4_lines)}"
     )
     p2 = 1 + fit_p2
     assert p2 <= PAGE_CAPACITY

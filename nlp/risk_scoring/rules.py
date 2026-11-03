@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from app.models.schemas import (
     Clause,
@@ -108,6 +108,14 @@ def _clause_states_cap(lowered: str) -> bool:
     return False
 
 
+def _sentence_text(text: str, trigger_pos: int) -> str:
+    """Return the sentence (in the given case) containing ``trigger_pos``."""
+    if trigger_pos == -1:
+        return text or ""
+    start, end = _sentence_span((text or "").lower(), trigger_pos)
+    return (text or "")[start:end]
+
+
 def _sentence_span(lowered: str, trigger_start: int) -> tuple[int, int]:
     """Half-open (start, end) offsets of the sentence containing a trigger.
 
@@ -132,6 +140,82 @@ def _any_clause_type(clause: Clause, *types: str) -> bool:
     if not clause.clause_types:
         return False
     return any(t in clause.clause_types for t in types)
+
+
+# ---------------------------------------------------------------------------
+# P5 (charter §5.A): why-it-matters helpers
+#
+# The enrichment fields (impact_summary, affected_parties, review_action,
+# uncertainty_note) are populated ONLY where the rule logic genuinely knows
+# the answer from the available data. ``None`` means "cannot be determined" —
+# it is never filled by guesswork.
+# ---------------------------------------------------------------------------
+
+
+def _role_mentioned_in(text: str, *roles: str) -> Optional[str]:
+    """First role noun present in ``text`` (case-insensitive, word-boundary)."""
+    low = (text or "").lower()
+    for role in roles:
+        if re.search(rf"\b{re.escape(role)}\b", low):
+            return role.capitalize()
+    return None
+
+
+def _party_in_parties(name: str, parties: List[str]) -> Optional[str]:
+    """Match a role/canonical party name against detected party names
+    (case-insensitive); returns the detected spelling or ``None``."""
+    key = re.sub(r"[^a-z0-9]+", "", (name or "").lower())
+    for party in parties:
+        if re.sub(r"[^a-z0-9]+", "", party.lower()) == key:
+            return party
+    return None
+
+
+def _affected_parties(
+    summary: ContractSummary,
+    clause_text: str,
+    *,
+    named: Optional[str] = None,
+    mutual: bool = False,
+) -> Optional[List[str]]:
+    """Determine which parties are affected by a finding.
+
+    Priority: an explicitly ``named`` party (from the rule logic) when it is a
+    detected party or a plain role; then a single role mention in the clause;
+    then the mutual-scope default. Returns ``None`` only when nothing at all
+    can be determined.
+    """
+    if named:
+        detected = _party_in_parties(named, summary.parties or [])
+        if detected:
+            return [detected]
+        if not mutual:
+            # A named role the detector never met is still a legitimate,
+            # role-level answer — but only for plain role nouns.
+            return [named]
+    mentioned = _role_mentioned_in(clause_text, *_PARTY_NOUNS)
+    if mentioned:
+        detected = _party_in_parties(mentioned, summary.parties or [])
+        return [detected] if detected else [mentioned]
+    if mutual or named:
+        return ["both parties"]
+    return None
+
+
+def _related_ids_from_context(clause: Clause) -> List[str]:
+    """Clause ids the context resolver already linked for this clause."""
+    ctx = clause.context if isinstance(clause.context, dict) else {}
+    return [rid for rid in (ctx.get("related_clause_ids") or []) if rid]
+
+
+def _phrase_search_uncertainty_note(extra: str = "") -> str:
+    """Standard honesty note for any finding derived from phrase search."""
+    note = (
+        "The check is phrase-based: the wording may be expressed differently "
+        "or located in an annexure/schedule, so absence from the searched "
+        "phrases does not prove absence from the agreement."
+    )
+    return f"{note} {extra}".strip()
 
 
 # ---------------------------------------------------------------------------
@@ -228,6 +312,177 @@ def _cross_reference_states_applicable_cap(clause: Clause) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# P5 (charter §5.C): cross-reference contradiction detector
+#
+# A deliberately narrow, high-precision contract-level check: two clauses that
+# each state a *different* liability-cap amount for what appears to be the
+# same scope. It fires ONLY when both amounts are in an explicit cap context
+# ("cap", "shall not exceed", "in aggregate", "maximum liability", ...), the
+# currency is recognised (INR/USD/EUR/GBP), the values are comparable after
+# normalisation (lakh/crore units included), and no scope word (per incident,
+# per claim, per year, ...) distinguishes the two — a scope mismatch means the
+# amounts may legitimately differ, so the check abstains.
+# ---------------------------------------------------------------------------
+
+_MONEY_RE = re.compile(
+    r"(?:INR|USD|EUR|GBP|Rs\.?|₹)\s*([\d,]+(?:\.\d+)?)\s*(lakh|lakhs|lacs|crore|crores)?",
+    re.IGNORECASE,
+)
+_LIABILITY_CAP_CONTEXT_RE = re.compile(
+    r"\b(?:liability|liabilities)\b.*\b(?:cap(?:ped|ped)?|limit(?:ed|ation)?|ceiling|maximum|shall not exceed|not to exceed|in aggregate)"
+    r"|\b(?:cap(?:ped|ped)?|ceiling|maximum)\b.*\b(?:liability|liabilities)\b",
+    re.IGNORECASE,
+)
+_SCOPE_MARKERS = (
+    "per incident", "per claim", "per event", "per occurrence",
+    "per breach", "per year", "per annum", "annually",
+)
+
+
+def _parse_money_amount(token: str, unit: Optional[str]) -> Optional[float]:
+    """Normalise a money token + Indian unit into a float (base units)."""
+    try:
+        value = float(token.replace(",", ""))
+    except ValueError:
+        return None
+    if unit:
+        unit = unit.lower()
+        if unit.startswith("lakh"):
+            value *= 100_000
+        elif unit.startswith("crore"):
+            value *= 10_000_000
+    return value
+
+
+def _clause_cap_amounts(clause: Clause) -> List[Tuple[float, str, int]]:
+    """Money amounts in an explicit liability-cap sentence of ``clause``.
+
+    Returns a list of ``(value_in_base_units, currency, char_start)``. A
+    sentence that contains scope words (per incident / per claim / per year /
+    ...) is skipped: the amount cannot be compared against an aggregate figure
+    without knowing the scope.
+    """
+    amounts: List[Tuple[float, str, int]] = []
+    for match in _LIABILITY_CAP_CONTEXT_RE.finditer(clause.text or ""):
+        sentence = _sentence_text(clause.text or "", match.start())
+        if any(marker in sentence.lower() for marker in _SCOPE_MARKERS):
+            continue
+        for money in _MONEY_RE.finditer(sentence):
+            value = _parse_money_amount(money.group(1), money.group(2))
+            if value is None:
+                continue
+            # The sentence is stored case-preserved, so the currency prefix is
+            # read from the *stored* clause text at the same offsets.
+            raw = clause.text or ""
+            prefix = raw[money.start() : money.end()]  # the currency token itself
+            currency = "INR" if re.search(r"(?:INR|Rs\.?|₹)", prefix, re.IGNORECASE) else (
+                "USD" if "USD" in prefix.upper() or "$" in prefix
+                else "EUR" if "EUR" in prefix.upper() else "GBP" if "GBP" in prefix.upper() else "UNK"
+            )
+            if currency == "UNK":
+                continue
+            amounts.append((value, currency, match.start()))
+    return amounts
+
+
+def rule_contradictory_liability_caps(
+    clauses: List[Clause],
+    summary: ContractSummary,
+) -> Optional[RiskFlag]:
+    """Detect two clauses stating different amounts for the same liability cap.
+
+    Conservative by design: abstains on any ambiguity (scope words, different
+    currencies, unrecognised wording). Fires once per contract.
+    """
+    hits: List[Tuple[Clause, float, str, str]] = []
+    for cl in clauses:
+        for value, currency, pos in _clause_cap_amounts(cl):
+            hits.append((cl, value, currency, _sentence_text(cl.text or "", pos)))
+    for i in range(len(hits)):
+        for j in range(i + 1, len(hits)):
+            cl_a, val_a, cur_a, sent_a = hits[i]
+            cl_b, val_b, cur_b, sent_b = hits[j]
+            if cl_a.clause_id == cl_b.clause_id:
+                continue
+            if cur_a != cur_b:
+                continue  # different currencies are not comparable here
+            if val_a == val_b:
+                continue  # same value — consistent
+            # A different, comparable liability-cap amount in two clauses.
+            a_val = f"{val_a:,.0f}"
+            b_val = f"{val_b:,.0f}"
+            flag = RiskFlag(
+                risk_id=f"contract_RISK_CONFLICT_001_{cl_a.clause_id}_{cl_b.clause_id}",
+                clause_id=None,
+                rule_id="RISK_CONFLICT_001",
+                name="Contradictory liability cap amounts",
+                severity=RiskSeverity.HIGH,
+                explanation=(
+                    f"Two clauses state different liability cap amounts "
+                    f"({cur_a} {a_val} in {cl_a.clause_id} vs "
+                    f"{cur_b} {b_val} in {cl_b.clause_id})."
+                ),
+                recommendation=(
+                    "Confirm which amount is intended and align the clauses "
+                    "before signing; the cap is only as strong as its "
+                    "weakest expression."
+                ),
+                score=65.0,
+                impact_summary=(
+                    "In a dispute, the lower (or better-supported) figure may "
+                    "prevail; the parties may not agree on which amount caps "
+                    "their exposure."
+                ),
+                affected_parties=_affected_parties(summary, "", mutual=True),
+                review_action=(
+                    f"Compare clause {cl_a.clause_id} and clause "
+                    f"{cl_b.clause_id} side by side and confirm with the "
+                    "drafting team which amount governs."
+                ),
+                related_clause_ids=sorted({cl_a.clause_id, cl_b.clause_id}),
+                uncertainty_note=(
+                    "The two amounts may cover different scopes (e.g. per "
+                    "claim vs aggregate) that the detector could not "
+                    "distinguish; verify the intended scope of each before "
+                    "treating this as a true contradiction."
+                ),
+            )
+            flag.evidence_spans = [
+                _cap_evidence_span(cl_a, sent_a),
+                _cap_evidence_span(cl_b, sent_b),
+            ]
+            flag.search_scope = (
+                f"liability-cap amounts extracted from {len(clauses)} clause(s); "
+                "both amounts are in explicit cap contexts in their own clauses"
+            )
+            return flag
+    return None
+
+
+def _cap_evidence_span(clause: Clause, sentence: str):
+    """Direct evidence span for one clause's cap sentence.
+
+    Offsets are into ``clause.text``; the span is the exact stored slice of
+    the located sentence. Returns an ``EvidenceSpan`` even when the sentence
+    cannot be located (in which case the offsets span the whole clause text —
+    never a fabricated nearby passage).
+    """
+    from app.models.schemas import EvidenceSpan
+
+    raw = clause.text or ""
+    low = raw.lower()
+    pos = low.find(sentence.lower().strip()[:60]) if sentence else -1
+    if pos == -1:
+        return EvidenceSpan(text=raw, char_start=0, char_end=len(raw), clause_id=clause.clause_id, role="direct", locator="clause_text")
+    start, end = _sentence_span(low, pos)
+    while start < end and raw[start] in " \t\r\n":
+        start += 1
+    while end > start and raw[end - 1] in " \t\r\n":
+        end -= 1
+    return EvidenceSpan(text=raw[start:end], char_start=start, char_end=end, clause_id=clause.clause_id, role="direct", locator="clause_text")
+
+
+# ---------------------------------------------------------------------------
 # Risk rules
 # ---------------------------------------------------------------------------
 
@@ -252,6 +507,13 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
         return None
     trigger = _first_unnegated_trigger(text, triggers)
     if trigger:
+        # The party named in the same sentence as the trigger carries the
+        # uncapped exposure; if no single party is named in that sentence,
+        # the exposure is undeterminable at party level — say "both parties"
+        # rather than guess a single one.
+        trigger_sentence = _sentence_text(text, text.find(trigger))
+        named = _role_mentioned_in(trigger_sentence, *_PARTY_NOUNS)
+        affected = _affected_parties(summary, clause.text or "", named=named, mutual=named is None)
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_LIABILITY_001",
             clause_id=clause.clause_id,
@@ -265,6 +527,21 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
             ),
             score=85.0,
             evidence_text=trigger,
+            impact_summary=(
+                "If this clause operates as written, the affected party's exposure "
+                "is not bounded by any amount, so a single loss event can exceed "
+                "the value of the entire contract."
+            ),
+            affected_parties=affected,
+            review_action=(
+                "Check whether a cap appears in another clause (e.g. a cross-"
+                "referenced limitation section) before escalating."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=(
+                "Negation and scoping in other clauses were not analysed; "
+                "verify the exposure against the full agreement."
+            ),
         )
     has_cap_language = any(t in text for t in _OWN_CLAUSE_CAP_LANGUAGE) or _clause_states_cap(text)
     if not has_cap_language and not _has_label(clause.entities, "PAYMENT_AMOUNT"):
@@ -275,6 +552,7 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
         # finding as a human-review prompt.
         if _cross_reference_states_applicable_cap(clause):
             return None
+        affected = _affected_parties(summary, clause.text or "", mutual=True)
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_LIABILITY_002",
             clause_id=clause.clause_id,
@@ -284,6 +562,19 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
             explanation="Limitation-of-Liability clause is present but does not state a cap.",
             recommendation="Define an explicit cap (e.g. 1x annual fees).",
             score=70.0,
+            impact_summary=(
+                "Without an express cap, each party's recoverable damages are "
+                "not bounded by the contract and depend on general law."
+            ),
+            affected_parties=affected,
+            review_action=(
+                "Check other clauses and annexures for a cap that this clause "
+                "may refer to, then negotiate an explicit cap if none exists."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=_phrase_search_uncertainty_note(
+                "A cap may be stated in different wording elsewhere in the document."
+            ),
         )
     return None
 
@@ -299,6 +590,8 @@ def rule_one_sided_termination(clause: Clause, summary: ContractSummary) -> Opti
     ]
     trigger = _first_unnegated_trigger(text, triggers)
     if trigger:
+        trigger_sentence = _sentence_text(text, text.find(trigger))
+        affected = _affected_parties(summary, clause.text or "", named=_role_mentioned_in(trigger_sentence, *_PARTY_NOUNS))
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_TERM_001",
             clause_id=clause.clause_id,
@@ -309,6 +602,20 @@ def rule_one_sided_termination(clause: Clause, summary: ContractSummary) -> Opti
             recommendation="Require mutual termination rights and reasonable notice.",
             score=72.0,
             evidence_text=trigger,
+            impact_summary=(
+                "The party without the termination right can be terminated at "
+                "any time without cause, disrupting its reliance on the contract."
+            ),
+            affected_parties=affected,
+            review_action=(
+                "Check the rest of the clause and any termination sub-clauses for "
+                "mutual or reciprocal termination rights."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=(
+                "Other sub-clauses may balance this right (mutual notice, cure "
+                "periods); verify against the full termination section."
+            ),
         )
     return None
 
@@ -349,6 +656,20 @@ def rule_auto_renewal(clause: Clause, summary: ContractSummary) -> Optional[Risk
             explanation=explanation,
             recommendation="Add a calendar reminder at least 60 days before renewal.",
             score=70.0 if severity == RiskSeverity.HIGH else 50.0,
+            impact_summary=(
+                "If no renewal notice is given in time, the contract continues "
+                "for another term automatically at the agreed terms."
+            ),
+            affected_parties=["both parties"],
+            review_action=(
+                "Note the renewal date and notice deadline in the review calendar "
+                "and confirm who is responsible for giving notice."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=(
+                "The notice period was read from this clause only; a different "
+                "notice procedure may be set out elsewhere in the document."
+            ),
         evidence_text=notice.group(0) if notice else "automatically renews",
     )
     return None
@@ -361,6 +682,8 @@ def rule_broad_indemnity(clause: Clause, summary: ContractSummary) -> Optional[R
     broad_triggers = ["any and all claims", "all losses", "from any cause whatsoever"]
     trigger = _first_unnegated_trigger(text, broad_triggers)
     if trigger:
+        trigger_sentence = _sentence_text(text, text.find(trigger))
+        affected = _affected_parties(summary, clause.text or "", named=_role_mentioned_in(trigger_sentence, *_PARTY_NOUNS))
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_INDEMNITY_001",
             clause_id=clause.clause_id,
@@ -371,6 +694,21 @@ def rule_broad_indemnity(clause: Clause, summary: ContractSummary) -> Optional[R
             recommendation="Limit indemnity to third-party claims caused by indemnifying party.",
             score=72.0,
             evidence_text=trigger,
+            impact_summary=(
+                "As written, the indemnity can reach losses beyond third-party "
+                "claims caused by the indemnifying party, including its own "
+                "first-party losses."
+            ),
+            affected_parties=affected,
+            review_action=(
+                "Compare the indemnity scope against the limitation-of-liability "
+                "clause to see whether the broad scope is capped elsewhere."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=(
+                "Cap or exclusion clauses in other sections may narrow this "
+                "indemnity; verify against the full agreement."
+            ),
         )
     return None
 
@@ -397,6 +735,7 @@ def rule_data_breach_window(clause: Clause, summary: ContractSummary) -> Optiona
         else:
             hours = None
         if hours is not None and hours <= 24:
+            affected = _affected_parties(summary, clause.text or "", named=_role_mentioned_in(_sentence_text(text, notice.start()), *_PARTY_NOUNS))
             return RiskFlag(
                 risk_id=f"{clause.clause_id}_RISK_DATA_001",
                 clause_id=clause.clause_id,
@@ -407,6 +746,21 @@ def rule_data_breach_window(clause: Clause, summary: ContractSummary) -> Optiona
                 recommendation="Negotiate a 48–72 hour window if feasible.",
                 score=55.0,
                 evidence_text=notice.group(0),
+                impact_summary=(
+                    "A missed notification inside this window can itself become "
+                    "a breach, with exposure under the data-protection regime."
+                ),
+                affected_parties=affected,
+                review_action=(
+                    "Confirm the notifying party's incident-response process can "
+                    "meet the window, and negotiate 48–72 hours if not."
+                ),
+                related_clause_ids=_related_ids_from_context(clause),
+                uncertainty_note=(
+                    "The window was read from this clause; related "
+                    "data-protection terms (e.g. in an annexure) may set a "
+                    "different or complementary procedure."
+                ),
             )
     return None
 
@@ -490,6 +844,20 @@ def rule_governing_law_mismatch(clause: Clause, summary: ContractSummary) -> Opt
         recommendation="Negotiate Indian governing law or limit to cross-border elements.",
         score=68.0,
         evidence_text=phrase,
+        impact_summary=(
+            "Disputes may have to be interpreted (and possibly fought) under a "
+            "foreign law that neither party is familiar with."
+        ),
+        affected_parties=_affected_parties(summary, clause.text or "", mutual=True),
+        review_action=(
+            "Confirm with counsel whether the foreign law is genuinely intended "
+            "for this domestic contract or should be Indian law."
+        ),
+        related_clause_ids=_related_ids_from_context(clause),
+        uncertainty_note=(
+            "The jurisdiction reading is based on the extracted governing-law "
+            "phrase; verify the intended jurisdiction before escalating."
+        ),
     )
 
 
@@ -520,6 +888,21 @@ def rule_arbitration_seat_mismatch(clause: Clause, summary: ContractSummary) -> 
             ),
             recommendation="Align seat with venue, or justify the foreign seat with rationale.",
             score=70.0,
+            impact_summary=(
+                "Interim relief in Indian courts may be unavailable for a purely "
+                "foreign-seated arbitration, weakening the practical value of an "
+                "Indian venue."
+            ),
+            affected_parties=_affected_parties(summary, clause.text or "", mutual=True),
+            review_action=(
+                "Decide whether the seat or the venue is a drafting error and "
+                "align the two, or document why the mismatch is intended."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=(
+                "Seat/venue were detected by keyword heuristics; confirm the "
+                "exact seat and venue language before acting."
+            ),
         )
     return None
 
@@ -542,6 +925,20 @@ def rule_missing_stamp_duty(clause: Clause, summary: ContractSummary) -> Optiona
         ),
         recommendation="Verify stamping; where applicable add a stamp duty clause and execute on e-stamp paper of appropriate value.",
         score=50.0,
+        impact_summary=(
+            "If the executed document is unstamped or under-stamped, it may be "
+            "inadmissible in evidence until the deficit duty and penalty are paid."
+        ),
+        affected_parties=_affected_parties(summary, "", mutual=True),
+        review_action=(
+            "Check the executed copy for a stamp (or e-stamp certificate) of "
+            "sufficient value; stamping is often done at execution, outside the "
+            "contract text."
+        ),
+        uncertainty_note=_phrase_search_uncertainty_note(
+            "Stamping is typically handled at execution, so its absence from the "
+            "text is expected and not evidence of non-compliance."
+        ),
     )
 
 
@@ -565,6 +962,19 @@ def rule_tds_missing(clause: Clause, summary: ContractSummary) -> Optional[RiskF
         ),
         recommendation="If applicable, add: 'Subject to deduction of tax at source under the Income Tax Act, 1961.'",
         score=30.0,
+        impact_summary=(
+            "If TDS applies to these payments, the payer's failure to deduct "
+            "exposes it to interest, penalty and disallowance of the expense."
+        ),
+        affected_parties=_affected_parties(summary, clause.text or "", named=_role_mentioned_in(clause.text or "", *_PARTY_NOUNS)),
+        review_action=(
+            "Confirm with the tax team whether TDS applies to this payment type "
+            "and, if so, add the standard TDS clause."
+        ),
+        uncertainty_note=_phrase_search_uncertainty_note(
+            "TDS applicability depends on the nature of the payment and the "
+            "parties; absence from the text does not establish non-compliance."
+        ),
     )
 
 
@@ -591,8 +1001,258 @@ def rule_section_124_indemnity(clause: Clause, summary: ContractSummary) -> Opti
             ),
             recommendation="If direct-loss or breach-of-contract coverage is intended, expressly extend the indemnity to those losses.",
             score=50.0,
+            impact_summary=(
+                "If the parties intended direct-loss coverage, the indemnity as "
+                "worded may not deliver it, leaving the indemnified party to "
+                "pursue an ordinary breach claim instead."
+            ),
+            affected_parties=_affected_parties(summary, clause.text or "", named=_role_mentioned_in(clause.text or "", *_PARTY_NOUNS)),
+            review_action=(
+                "Decide whether direct-loss or breach-of-contract coverage is "
+                "intended and, if so, extend the indemnity wording expressly."
+            ),
+            related_clause_ids=_related_ids_from_context(clause),
+            uncertainty_note=(
+                "Other clauses (e.g. a limitation section) may allocate these "
+                "losses differently; verify the intended scope first."
+            ),
         )
     return None
+
+
+# ---------------------------------------------------------------------------
+# Post-employment non-compete (Indian-specific)
+#
+# Indian Contract Act s. 27 voids agreements in restraint of a lawful trade,
+# business, profession or vocation. A clause restraining a *former*
+# employee/consultant from competing after the relationship ends is therefore
+# at risk of being void and unenforceable — a real, high-value finding for
+# Indian employment and consulting contracts.
+#
+# Precision: the trigger is deliberately restricted to POST-relationship
+# restraint language ("following/after termination", "after the employment
+# ends", ...). In-employment non-solicits of employees/customers (standard and
+# potentially enforceable), confidentiality clauses and IP assignments never
+# match: none of them use the post-relationship window + competing verb
+# construction. A clause labelled "Non-Compete / Non-Solicit" without
+# post-relationship language is not flagged either.
+# ---------------------------------------------------------------------------
+
+# Post-relationship window: the restraint must run AFTER the relationship
+# ends. A window whose first mention is negated (e.g. "not after termination")
+# is not a post-relationship window.
+_POST_EMPLOYMENT_WINDOW_TRIGGERS = (
+    "following the termination",
+    "following termination",
+    "following the expiry",
+    "following expiry",
+    "after the termination",
+    "after termination",
+    "following the end of the",
+    "after the end of the",
+    "after the expiry",
+    "upon the termination",
+    "upon termination",
+    "after his or her employment",
+    "after the employment",
+    "following the cessation",
+    "after the cessation",
+)
+# The competing/restraint action, in a non-negated context (reuses the
+# sentence-level negation guard every rule trigger uses).
+_NON_COMPETE_ACTION_TRIGGERS = (
+    "compete with",
+    "competing with",
+    "engag[ei]ng in any business that competes",
+    "carry on any business similar",
+    "be engaged in any business similar",
+    "carry on a similar business",
+    "carry on or be engaged in any business",
+    "be associated with any business that competes",
+    "establish or acquire any business that competes",
+    "solicit any customer",
+    "solicit any client",
+)
+
+
+def rule_post_employment_non_compete(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:
+    if not summary.jurisdiction or summary.jurisdiction.lower() not in {"india", "indian"}:
+        return None
+    if "Non-Compete / Non-Solicit" not in (clause.clause_types or []):
+        # The rule is gated on the classifier's non-compete label (which is
+        # itself rule-based — "non-compete", "shall not solicit", ...). This
+        # keeps the trigger tight: confidentiality, IP-assignment and other
+        # clauses that merely mention a competitor never reach the trigger.
+        return None
+    text = _text_lower(clause)
+    window = _first_unnegated_trigger(text, list(_POST_EMPLOYMENT_WINDOW_TRIGGERS))
+    if not window:
+        return None
+    action = _first_unnegated_trigger(text, list(_NON_COMPETE_ACTION_TRIGGERS))
+    if not action:
+        return None
+    return RiskFlag(
+        risk_id=f"{clause.clause_id}_RISK_NONCOMPETE_001",
+        clause_id=clause.clause_id,
+        rule_id="RISK_NONCOMPETE_001",
+        name="Post-employment non-compete may be unenforceable",
+        severity=RiskSeverity.MEDIUM,
+        explanation=(
+            "The clause restrains the employee/consultant from competing AFTER the "
+            "relationship ends. Under s. 27 of the Indian Contract Act, 1872, "
+            "agreements in restraint of a lawful trade, business, profession or "
+            "vocation are void, so a post-employment non-compete is likely "
+            "unenforceable in India (plain-law reading; no specific case has been "
+            "curated for this rule). An in-employment non-solicit, by contrast, "
+            "is outside s. 27 and may be enforceable."
+        ),
+        recommendation=(
+            "Replace the post-employment non-compete with an in-employment "
+            "non-solicit plus a confidentiality obligation that runs for a "
+            "reasonable period after employment, and confirm with Indian counsel."
+        ),
+        score=55.0,
+        evidence_text=action,
+        impact_summary=(
+            "If the restraint is void, the party relying on it has no "
+            "contractual remedy against a departing employee/consultant who "
+            "competes, leaving it to the (often weaker) general law of "
+            "confidentiality and misappropriation."
+        ),
+        affected_parties=_affected_parties(summary, clause.text or "", mutual=True),
+        review_action=(
+            "Check whether the restraint is intended to run only during "
+            "employment (potentially enforceable) or after it ends (void under "
+            "s. 27 ICA), and consult Indian counsel on enforceability."
+        ),
+        related_clause_ids=_related_ids_from_context(clause),
+        uncertainty_note=(
+            "This is a phrase-based screen on the post-relationship window and "
+            "the competing action; the clause may be drafted in different "
+            "wording, and partial restraints (geographic, client-specific) have "
+            "different enforceability profiles — verify with counsel."
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Missing dispute resolution (contract-level)
+#
+# A contract with NO arbitration clause AND no court/jurisdiction clause at
+# all falls back to the default statutory forum. That is a genuine gap in an
+# Indian commercial contract, but it is an ABSENCE finding: it can only be
+# stated at the contract level, from a document-wide phrase search, and it
+# must be marked unverified by construction (no span can prove an absence).
+#
+# The search reuses the same negation-aware context cues NER uses for
+# arbitration-seat detection (_has_arbitration_context), so a NEGATED
+# mention ("there is no arbitration clause") does NOT count as a mechanism.
+# Court/jurisdiction wording is checked for positive, non-negated mentions.
+# ---------------------------------------------------------------------------
+
+# Positive court/jurisdiction mechanisms (non-negated). "subject to the
+# jurisdiction of" / "the jurisdiction of the courts" / "courts at X shall
+# have jurisdiction" all assert a forum; bare "jurisdiction of" alone is too
+# weak (it also appears in forum-RESTRAINT clauses).
+_COURT_JURISDICTION_TRIGGERS = (
+    "jurisdiction of the courts",
+    "courts at",
+    "courts of",
+    "courts of competent jurisdiction",
+    "subject to the jurisdiction",
+    "shall have jurisdiction",
+    "shall be to the exclusive jurisdiction",
+    "exclusive jurisdiction of",
+    "non-exclusive jurisdiction",
+)
+# A forum-RESTRAINT clause ("neither party shall submit to the jurisdiction
+# of ...") is the opposite of a mechanism and must not count as one.
+_FORUM_RESTRAINT_MARKERS = (
+    "shall not submit to the jurisdiction",
+    "shall not submit itself to the jurisdiction",
+    "restrain the jurisdiction",
+    "deprive the courts",
+    "bar the jurisdiction",
+)
+
+
+def rule_missing_dispute_resolution(clauses: List[Clause], summary: ContractSummary) -> Optional[RiskFlag]:
+    """Contract-level: no arbitration mechanism AND no court/jurisdiction
+    mechanism anywhere in the document."""
+    if not summary.jurisdiction or summary.jurisdiction.lower() not in {"india", "indian"}:
+        return None
+    from nlp.ner.ner import _has_arbitration_context
+
+    corpus = " ".join((c.text or "") for c in clauses)
+    lowered = corpus.lower()
+
+    # 1. Arbitration / dispute-resolution mechanism (context-cue + negation
+    #    aware, the same way NER treats seat mentions).
+    has_arbitration = any(_has_arbitration_context(sent.lower()) for sent in lowered.split("\n"))
+    # Sentence-level too (the document may keep sentences on one line).
+    if not has_arbitration:
+        for sent in re.split(r"(?<=[.!?])\s+", lowered):
+            if _has_arbitration_context(sent):
+                has_arbitration = True
+                break
+
+    # 2. Court / jurisdiction mechanism — positive, non-negated, and not a
+    #    forum-restraint (which is the opposite of a mechanism).
+    has_court = False
+    for trigger in _COURT_JURISDICTION_TRIGGERS:
+        for m in re.finditer(re.escape(trigger), lowered):
+            if _trigger_is_negated(lowered, m.start()):
+                continue
+            sentence = _sentence_text(lowered, m.start())
+            if any(marker in sentence for marker in _FORUM_RESTRAINT_MARKERS):
+                continue
+            has_court = True
+            break
+        if has_court:
+            break
+
+    if has_arbitration or has_court:
+        return None
+    return RiskFlag(
+        risk_id="contract_RISK_DISPUTE_001",
+        clause_id=None,
+        rule_id="RISK_DISPUTE_001",
+        name="No dispute-resolution mechanism found",
+        severity=RiskSeverity.MEDIUM,
+        explanation=(
+            "No arbitration clause and no court/jurisdiction clause were detected "
+            "anywhere in the document (not found). The parties would fall back to "
+            "the default statutory forum for any dispute, which may be less "
+            "predictable or convenient than a negotiated mechanism. A negated "
+            "mention ('there is no arbitration clause') does not count as a "
+            "mechanism."
+        ),
+        recommendation=(
+            "Add a dispute-resolution clause — e.g. arbitration under the "
+            "Arbitration and Conciliation Act, 1996 with an Indian seat, or "
+            "express submission to the courts of a specified city."
+        ),
+        score=50.0,
+        impact_summary=(
+            "Without a chosen mechanism, a dispute goes to the default court "
+            "forum under the Code of Civil Procedure, with no agreed seat, "
+            "law or process for resolution."
+        ),
+        affected_parties=_affected_parties(summary, "", mutual=True),
+        review_action=(
+            "Search the full document (including annexures and schedules) for "
+            "arbitration or court/jurisdiction wording in alternative phrasing "
+            "before concluding the mechanism is absent."
+        ),
+        search_scope=(
+            f"document-wide phrase-based search across {len(clauses)} clause(s); "
+            "absence-of-language check - no single span proves a gap"
+        ),
+        uncertainty_note=_phrase_search_uncertainty_note(
+            "A dispute-resolution mechanism may be expressed differently or "
+            "located in an annex/schedule that the searched phrases did not match."
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -622,6 +1282,8 @@ RISK_RULES: List[RiskRule] = [
              description="No TDS deduction reference in payment clause.", requires_indian=True, is_contract_level=True, check=rule_tds_missing),
     RiskRule(rule_id="RISK_S124_001", name="Indemnity may not cover direct losses", severity=RiskSeverity.MEDIUM, clause_type="ANY",
              description="Indian indemnity gap.", requires_indian=True, is_contract_level=True, check=rule_section_124_indemnity),
+    RiskRule(rule_id="RISK_NONCOMPETE_001", name="Post-employment non-compete may be unenforceable", severity=RiskSeverity.MEDIUM, clause_type="Non-Compete / Non-Solicit",
+             description="Post-termination restraint on trade likely void under s. 27 ICA.", requires_indian=True, check=rule_post_employment_non_compete),
 ]
 
 
@@ -819,6 +1481,13 @@ def _bind_evidence(flags: List[RiskFlag], clauses: List[Clause]) -> None:
 def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> List[RiskFlag]:
     flags: List[RiskFlag] = []
 
+    # P5 (charter §5.C): contradictory liability caps across clauses.
+    # Runs before the missing-clause checks; it is a pure text comparison
+    # and is independent of classification or jurisdiction.
+    conflict = rule_contradictory_liability_caps(clauses, summary)
+    if conflict is not None:
+        flags.append(conflict)
+
     # Missing mandatory clauses — use BOTH the classifier output AND a
     # keyword check across clause text to avoid false negatives.
     detected_types = {t for c in clauses for t in c.clause_types}
@@ -829,6 +1498,15 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
         ("Termination", ["termination", "may terminate", "terminate this agreement"]),
         ("Limitation of Liability", ["limitation of liability", "limit of liability", "in no event shall"]),
     ]
+    # Document-wide search scope (annexures included when segmented).
+    annexure_clauses = [
+        c for c in clauses
+        if re.match(r"^\s*(schedule|exhibit|annexure|appendix)\b", (c.heading or ""), re.IGNORECASE)
+    ]
+    scope_note = (
+        f"document-wide phrase-based search across {len(clauses)} clause(s), "
+        f"including {len(annexure_clauses)} annexure/schedule clause(s)"
+    )
     for clause_type, keywords in mandatory_checks:
         classified_present = clause_type in detected_types
         keyword_present = any(k in text_corpus for k in keywords)
@@ -839,16 +1517,44 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
                     rule_id=f"MISSING_CLAUSE_{clause_type.upper().replace(' ', '_')}",
                     name=f"Missing clause: {clause_type}",
                     severity=RiskSeverity.HIGH,
-                    explanation=f"{clause_type} clause not detected.",
+                    explanation=(
+                        f"{clause_type} clause not detected (not found)."
+                    ),
                     recommendation=f"Add a standard {clause_type.lower()} clause.",
                     score=60.0,
+                    impact_summary=(
+                        f"Without a {clause_type.lower()} clause, the parties "
+                        "fall back to default law where the contract is silent, "
+                        "which may be less predictable than negotiated terms."
+                    ),
+                    affected_parties=["both parties"],
+                    review_action=(
+                        f"Search the full document (including annexures and "
+                        f"schedules) for {clause_type.lower()} wording in "
+                        "alternative phrasing before adding a new clause."
+                    ),
+                    search_scope=scope_note,
+                    uncertainty_note=_phrase_search_uncertainty_note(
+                        f"A {clause_type.lower()} protection may be expressed "
+                        "differently or located in an annex/schedule that the "
+                        "phrases above did not match."
+                    ),
                 )
             )
 
     # Data protection presence if personal data is referenced.
     mentions_personal_data = "personal data" in text_corpus or "personal information" in text_corpus
+    # Presence check: classification OR any of the phrases below (the keyword
+    # list is intentionally narrow; a protection phrased in a different way
+    # still triggers the "not found" honesty note rather than being silently
+    # assumed).
     has_dp = "Data Protection" in detected_types or any(
-        k in text_corpus for k in ("data protection", "data breach", "personal data")
+        k in text_corpus
+        for k in (
+            "data protection", "data breach", "personal data",
+            "data protection policy", "privacy policy", "data security",
+            "security incident", "information security", "data fiduciary",
+        )
     )
     if mentions_personal_data and not has_dp:
         flags.append(
@@ -857,9 +1563,29 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
                 rule_id="RISK_DATA_MISSING",
                 name="Missing data protection clause",
                 severity=RiskSeverity.HIGH,
-                explanation="Contract references personal data but lacks a data protection clause.",
+                explanation=(
+                    "Contract references personal data but no data protection "
+                    "clause was detected (not found)."
+                ),
                 recommendation="Add a data protection, breach notification, and security clause.",
                 score=70.0,
+                impact_summary=(
+                    "If personal data is processed without contractual "
+                    "protection terms, the parties' obligations under the "
+                    "data-protection regime are not allocated by the contract."
+                ),
+                affected_parties=_affected_parties(summary, "", mutual=True),
+                review_action=(
+                    "Search the full document and all annexures for data "
+                    "protection wording (e.g. a policy attached as an "
+                    "annexure) before adding a new clause."
+                ),
+                search_scope=scope_note,
+                uncertainty_note=_phrase_search_uncertainty_note(
+                    "The protection may be expressed differently or located in "
+                    "an annexure (e.g. a data protection policy attached as an "
+                    "annex) that the searched phrases did not match."
+                ),
             )
         )
 
@@ -884,6 +1610,18 @@ def _contract_level_rules(clauses: List[Clause], summary: ContractSummary) -> Li
                 f"indemnification clauses only ({len(indemnity_clauses)}); "
                 "absence-of-language check - no single span proves a gap"
             )
+            flags.append(flag)
+
+    # Missing dispute-resolution mechanism (contract-level, India only).
+    # It takes the full clause list (the check is document-wide) and returns a
+    # single unverified contract-level finding, so it is not run through the
+    # per-clause RISK_RULES loop below.
+    if (summary.jurisdiction or "").lower() in {"india", "indian"}:
+        try:
+            flag = rule_missing_dispute_resolution(clauses, summary)
+        except Exception:
+            flag = None
+        if flag is not None:
             flags.append(flag)
 
     # Other Indian-statutory checks run once against the whole contract.

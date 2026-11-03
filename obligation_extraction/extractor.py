@@ -54,6 +54,28 @@ DATE_DEADLINE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Recurring cadence adverbs ("monthly", "quarterly", ...) — not deadlines.
+# "per X" / "every X" forms map onto the same normalised vocabulary.
+# Deliberately tight: only unambiguous frequency words are accepted; vague
+# cadences ("periodically", "as needed") are NOT extracted.
+_FREQUENCY_RE = re.compile(
+    r"\b(?:"
+    r"(monthly|quarterly|annually|weekly|biannually|bi-annually|semiannually|semi-annually|daily|yearly)"
+    r"|(?:per|every)\s+(?:month|quarter|year|week|day|annum)\b"
+    r")",
+    re.IGNORECASE,
+)
+_FREQUENCY_NORMALISE = {
+    "monthly": "monthly", "per month": "monthly", "every month": "monthly",
+    "quarterly": "quarterly", "per quarter": "quarterly", "every quarter": "quarterly",
+    "annually": "annually", "yearly": "annually", "per annum": "annually",
+    "per year": "annually", "every year": "annually",
+    "weekly": "weekly", "per week": "weekly", "every week": "weekly",
+    "daily": "daily", "per day": "daily", "every day": "daily",
+    "biannually": "biannually", "bi-annually": "biannually",
+    "semiannually": "semiannually", "semi-annually": "semiannually",
+}
+
 _PASSIVE_PARTICIPLE_RE = re.compile(
     r"^(?:be|is|are|was|were)\s+(?!entitled\b)"
     r"(?:[A-Za-z]+(?:ed|en)|sent|made|paid|done|taken|met|held)\b",
@@ -150,6 +172,7 @@ class ObligationHit:
     condition: Optional[str]
     deadline_expression: Optional[str]
     deadline_date: Optional[str]
+    frequency: Optional[str]
     risk_level: RiskSeverity
     confidence: float
 
@@ -175,10 +198,18 @@ def extract_obligations_from_clause(
     # Split by sentence-like boundaries while keeping them in order
     sentences = _split_sentences(clause_text)
     obligations: List[Obligation] = []
+    seen_in_clause: set[tuple] = set()
     for sent in sentences:
         hit = _analyse_sentence(sent, party_aliases=party_aliases)
         if not hit:
             continue
+        # Deduplicate EXACT duplicates within this clause (boilerplate
+        # restatements: same subject+action+object+condition). Keep the first
+        # occurrence; the duplicate is silently dropped.
+        dedup_key = (hit.subject, hit.action, hit.object, hit.condition)
+        if dedup_key in seen_in_clause:
+            continue
+        seen_in_clause.add(dedup_key)
         obligation_counter += 1
         char_start, char_end = _locate_sentence(clause_text, sent.strip())
         cited_text = (
@@ -199,6 +230,7 @@ def extract_obligations_from_clause(
                 condition=hit.condition,
                 deadline_expression=hit.deadline_expression,
                 deadline_date=hit.deadline_date,
+                frequency=hit.frequency,
                 risk_level=hit.risk_level,
                 confidence=hit.confidence,
                 source="rule",
@@ -316,6 +348,7 @@ def _analyse_sentence(
     # Deadlines inside a condition belong to the condition, not the duty.
     deadline_expr = _extract_deadline(masked)
     deadline_date = _extract_deadline_date(masked)
+    frequency = _extract_frequency(sentence)
     risk_level = _derive_risk_level(obligation_type, deadline_expr, sentence.lower(), action)
 
     return ObligationHit(
@@ -328,6 +361,7 @@ def _analyse_sentence(
         condition=condition,
         deadline_expression=deadline_expr,
         deadline_date=deadline_date,
+        frequency=frequency,
         risk_level=risk_level,
         confidence=confidence,
     )
@@ -557,6 +591,21 @@ def _extract_counterparty(
         if subject and _norm_party(party) == _norm_party(subject):
             continue
         return _canonical_party(party, party_aliases)
+    # Second pass: an explicit dative party appears immediately after the
+    # action verb, but the object phrase contains a second, unrelated
+    # reference to the same party ("indemnify the Customer against the
+    # Customer's losses"). The verb-adjacent party is still the beneficiary;
+    # the self-reference is not a new candidate.
+    if subject:
+        self_ref = re.escape(_norm_party(subject))
+        for match in _DOUBLE_OBJECT_RE.finditer(raw_tail):
+            rest = raw_tail[match.end():]
+            first = _party_after(rest, 0)
+            if first and _norm_party(first) != _norm_party(subject):
+                continue
+            if not re.search(r"\b(?:for|against|of)\s+(?:the\s+)?" + self_ref, rest, re.IGNORECASE):
+                continue
+            return _canonical_party(first, party_aliases)
     return None
 
 
@@ -610,6 +659,20 @@ def _extract_deadline_date(sentence: str) -> Optional[str]:
     if not match:
         return None
     return match.group(1).strip()
+
+
+def _extract_frequency(sentence: str) -> Optional[str]:
+    """Extract a recurring cadence from a frequency adverb, if present.
+
+    Only unambiguous words are accepted ("monthly", "quarterly", "per
+    annum", ...); vague cadences ("periodically", "as needed") yield None.
+    """
+    for match in _FREQUENCY_RE.finditer(sentence):
+        token = match.group(0).lower()
+        normalised = _FREQUENCY_NORMALISE.get(token)
+        if normalised:
+            return normalised
+    return None
 
 
 # Severity is driven by obligation TYPE/content, not deadline urgency. A

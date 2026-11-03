@@ -8,6 +8,7 @@ later.
 from __future__ import annotations
 
 import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Callable, Dict, Optional
 
@@ -26,6 +27,35 @@ _jobs_lock = threading.Lock()
 
 
 MAX_IN_MEMORY_JOBS = 200
+
+
+def _job_workers() -> int:
+    """Worker count for the job pool, resolved lazily so tests can monkeypatch."""
+    from app.core.config import get_settings
+
+    try:
+        return max(1, int(get_settings().job_worker_count))
+    except Exception:  # pragma: no cover - config must never block a job
+        return 4
+
+
+# Bounded worker pool for background jobs. ``submit`` already queues when the
+# pool is saturated (no new thread per upload — audit P2); the pool is a
+# singleton and is never explicitly joined, mirroring the old daemon-thread
+# semantics (queued work is dropped only if the process exits mid-flight).
+_executor: Optional[ThreadPoolExecutor] = None
+_executor_lock = threading.Lock()
+
+
+def _get_executor() -> ThreadPoolExecutor:
+    global _executor
+    with _executor_lock:
+        if _executor is None:
+            _executor = ThreadPoolExecutor(
+                max_workers=_job_workers(),
+                thread_name_prefix="job",
+            )
+        return _executor
 
 
 def create_job(contract_id: str, owner: str = "") -> JobInfo:
@@ -161,7 +191,13 @@ def run_in_background(
     job_id: str,
     contract_id: str,
 ) -> None:
-    """Run the synchronous worker in a daemon thread."""
+    """Run the synchronous worker on the bounded job pool.
+
+    The pool (``JOB_WORKER_COUNT`` threads, default 4) bounds analysis
+    concurrency; when it is saturated ``submit`` queues the runner instead of
+    spawning a thread per upload (audit P2). The pool is never joined, which
+    keeps the old daemon-thread semantics.
+    """
     def _mark_failed(error: str, log: bool) -> None:
         """Force the job to a terminal FAILED state, in memory and in Postgres.
 
@@ -216,8 +252,7 @@ def run_in_background(
             logger.exception("Job {} aborted", job_id)
             _mark_failed(f"Aborted: {type(exc).__name__}", log=False)
 
-    t = threading.Thread(target=_runner, name=f"job-{job_id}", daemon=True)
-    t.start()
+    _get_executor().submit(_runner)
 
 
 # ---------------------------------------------------------------------------
