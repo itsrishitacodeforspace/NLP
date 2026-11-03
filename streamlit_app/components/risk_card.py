@@ -71,6 +71,9 @@ def risk_card(risk: dict) -> None:
                 for ref in authorities:
                     st.markdown(f"**{ref.get('citation', '')}**")
                     st.caption(ref.get("summary", ""))
+                    note = ref.get("verify_note")
+                    if note:
+                        st.caption(f"⚠️ {note}")
 
 
 def clause_card(clause: dict) -> None:

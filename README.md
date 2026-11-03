@@ -256,6 +256,21 @@ The pipeline is engineered to **degrade gracefully**:
 
 You can run the entire demo (FastAPI + Streamlit + bundled sample) with **zero infra** other than Python.
 
+### Docker notes
+
+- **The container image does NOT include `data/processed/`** (excluded by
+  `.dockerignore`): the CUAD keyword bank is unavailable in-container, so the
+  rule classifier runs without it (graceful degradation by design). The
+  bundled `models/*.7z` archives ARE shipped.
+- **Exposure caveat:** with default settings (`AUTH_ENABLED=false`,
+  `API_HOST=0.0.0.0`) the API is readable by anyone who can reach the port —
+  do not expose it without auth.
+- **Root duplicate packages:** the image ships root-level duplicates of the
+  `nlp/*` modules (see the comment block in `docker/Dockerfile` above
+  `COPY . .`). They exist because `pyproject.toml` only packages
+  `app`/`nlp`/`streamlit_app`; they are superseded by `nlp/*` and are locked
+  to "identical" by `tests/test_no_stale_duplicates.py`.
+
 ---
 
 ## Tests

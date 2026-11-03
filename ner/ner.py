@@ -83,8 +83,27 @@ DATE_RES = [
     re.compile(r"\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{2,4}\b", re.IGNORECASE),
     re.compile(r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b", re.IGNORECASE),
 ]
+# A deontic prefix (within / no later than / at least / ...) is REQUIRED for
+# the NOTICE_PERIOD label: bare durations ("the term is 90 days") are not
+# notice periods. The prefix is a non-capturing group so the match never
+# includes leading whitespace.
 NOTICE_PERIOD_RE = re.compile(
-    r"\b(?:within|no later than|at least|prior to|after)?\s*(\d+)\s+"
+    r"\b(?:within|no later than|at least|prior to|before|after)\s+(\d+)\s+"
+    r"(hour|hours|day|days|week|weeks|month|months|year|years|business day[s]?)\b",
+    re.IGNORECASE,
+)
+# "30 days prior written notice" — the number is followed (through optional
+# adjectives) by the word "notice". Anchored to "notice" so a bare duration
+# without a notice context is not labelled as a notice period.
+NOTICE_PERIOD_SUFFIX_RE = re.compile(
+    r"\b(\d+)\s+"
+    r"(hour|hours|day|days|week|weeks|month|months|year|years|business day[s]?)"
+    r"(?:\s+(?:prior|written|advance|sufficient|reasonable))*\s+notice\b",
+    re.IGNORECASE,
+)
+# Bare durations without a deontic prefix ("term of 90 days", "12 months").
+DURATION_RE = re.compile(
+    r"\b(\d+)\s+"
     r"(hour|hours|day|days|week|weeks|month|months|year|years|business day[s]?)\b",
     re.IGNORECASE,
 )
@@ -144,7 +163,13 @@ def extract_entities(text: str, *, clause_text: Optional[str] = None) -> Extract
         entities.extend(_scan_regex(regex, scan_text, "DATE", 0.95))
 
     # Notice / term durations
-    entities.extend(_scan_regex(NOTICE_PERIOD_RE, scan_text, "NOTICE_PERIOD", 0.9))
+    notice_entities = _scan_regex(NOTICE_PERIOD_RE, scan_text, "NOTICE_PERIOD", 0.9)
+    notice_suffix = _scan_regex(NOTICE_PERIOD_SUFFIX_RE, scan_text, "NOTICE_PERIOD", 0.9)
+    entities.extend(notice_entities)
+    entities.extend(notice_suffix)
+    # Bare durations without a deontic prefix are DURATION, not notice periods.
+    notice_spans = [(e.start_char, e.end_char) for e in notice_entities + notice_suffix]
+    entities.extend(_scan_durations(scan_text, notice_spans=notice_spans))
     entities.extend(_scan_regex(TERM_DURATION_RE, scan_text, "TERM_DURATION", 0.9))
     entities.extend(_scan_regex(CURE_PERIOD_RE, scan_text, "CURE_PERIOD", 0.9))
 
@@ -180,6 +205,11 @@ def detect_arbitration_seat(text: str) -> Optional[str]:
       2. Inside arbitration-context sentences, prefer FOREIGN seats, then
          Indian *cities* (not the generic "India").
       3. Skip the generic "India" entry unless nothing more specific was found.
+
+    A city only counts as a seat when it appears in a sentence with an
+    arbitration-context cue (arbitration, seat, venue, dispute resolution,
+    tribunal, ...). A bare city mention in a payment address, data-hosting
+    location or elsewhere in the document yields ``None``.
     """
     cleaned = clean_text(text)
     lowered = cleaned.lower()
@@ -199,10 +229,11 @@ def detect_arbitration_seat(text: str) -> Optional[str]:
         if value and value.lower() not in {"india", "indian"}:
             return value.title()
 
-    # 2. Walk arbitration-context sentences and prefer specific cities
+    # 2/3. Walk arbitration-context sentences; a seat is only accepted from a
+    #      sentence that actually discusses arbitration / dispute resolution.
     for sent in re.split(r"(?<=[.!?])\s+", cleaned):
         ls = sent.lower()
-        if "arbitration" not in ls and "seat" not in ls and "venue" not in ls:
+        if not _has_arbitration_context(ls):
             continue
         for seat in FOREIGN_SEATS:
             if seat in ls:
@@ -211,18 +242,33 @@ def detect_arbitration_seat(text: str) -> Optional[str]:
             if seat in ls:
                 return seat.title()
 
-    # 3. Anywhere — first foreign seat, then specific Indian city.
-    for seat in FOREIGN_SEATS:
-        if seat in lowered:
-            return seat.title()
-    for seat in INDIAN_SEATS - {"india"}:
-        if seat in lowered:
-            return seat.title()
-
-    # 4. Last resort — return "India" only as generic jurisdiction.
-    if "india" in lowered or "indian" in lowered:
+    # 4. Last resort — return "India" only as generic jurisdiction, and only
+    #    when the document actually references arbitration / a seat / venue.
+    if _has_arbitration_context(lowered) and ("india" in lowered or "indian" in lowered):
         return "India"
     return None
+
+
+# A city only counts as an arbitration seat when its sentence actually talks
+# about arbitration / dispute resolution. A payment address, data-centre
+# location or registered office must not become the "seat".
+_ARBITRATION_CONTEXT_CUES = (
+    "arbitration", "arbitral", "seat", "venue", "dispute resolution",
+    "tribunal", "siac", "icc", "lcia", "ciarb", "finally settled",
+)
+
+
+def _has_arbitration_context(sentence_low: str) -> bool:
+    """True when a sentence positively references arbitration / dispute
+    resolution. A *negated* mention ("there is no arbitration clause") does
+    NOT count — the sentence is saying arbitration is absent."""
+    for cue in _ARBITRATION_CONTEXT_CUES:
+        for match in re.finditer(re.escape(cue), sentence_low):
+            # A negation cue within 3 tokens before the cue negates it.
+            prefix_tokens = sentence_low[: match.start()].split()[-3:]
+            if not any(t in ("not", "no", "never", "without", "neither", "nor") for t in prefix_tokens):
+                return True
+    return False
 
 
 def detect_arbitration_venue(text: str) -> Optional[str]:
@@ -269,14 +315,24 @@ def detect_governing_law(text: str) -> Optional[str]:
 # sentence: distant or unrelated negation ("no later than 30 days ... duly
 # stamped paper", a negated previous sentence) never hides a valid mention.
 _NEGATION_CUES = ("not", "no", "never", "without", "neither", "nor", "exempt")
+# Extended cue set used by the risk-rule trigger guard (rules.py): in addition
+# to the stamp/TDS cue list it covers scoping words that narrow a claim
+# ("except", "excludes"). Multi-word negators ("shall not", "does not") are
+# handled by the "not" cue — the auxiliary verbs themselves are NOT negation
+# cues, so "shall indemnify" is not negated.
+RISK_NEGATION_CUES = _NEGATION_CUES + (
+    "exclude", "excludes", "except", "excepted",
+)
 _NEGATION_WINDOW_TOKENS = 6
 
 
-def _is_negated_mention(lowered: str, start: int) -> bool:
+def is_negated_mention(lowered: str, start: int, cues: tuple[str, ...] = _NEGATION_CUES) -> bool:
     """True when a negation cue appears within a few tokens before ``start``,
     inside the same sentence (sentence punctuation and newlines bound the
     window; commas do not, so "..., without deduction of tax at source, ..."
-    is still negated)."""
+    is still negated). ``cues`` extends the cue vocabulary; the stamp/TDS
+    detectors pass the tight default list, the risk-rule trigger guard passes
+    ``RISK_NEGATION_CUES``."""
     prefix = lowered[:start]
     boundary = max(
         prefix.rfind("."), prefix.rfind("!"), prefix.rfind("?"),
@@ -285,7 +341,11 @@ def _is_negated_mention(lowered: str, start: int) -> bool:
     window = prefix[boundary + 1:] if boundary != -1 else prefix
     tokens = [t.strip("(),:\"'") for t in window.split()]
     tail = [t for t in tokens if t]
-    return any(tok in _NEGATION_CUES for tok in tail[-_NEGATION_WINDOW_TOKENS:])
+    return any(tok in cues for tok in tail[-_NEGATION_WINDOW_TOKENS:])
+
+
+def _is_negated_mention(lowered: str, start: int) -> bool:
+    return is_negated_mention(lowered, start)
 
 
 # Stamp-duty wording beyond the plain keyword list: "duly stamped paper",
@@ -389,6 +449,34 @@ def _scan_regex(pattern: re.Pattern, text: str, label: str, confidence: float) -
                 start_char=m.start(),
                 end_char=m.end(),
                 confidence=confidence,
+                source="regex",
+            )
+        )
+    return matches
+
+
+def _scan_durations(
+    text: str,
+    *,
+    notice_spans: List[tuple[int, int]] | None = None,
+) -> List[Entity]:
+    """Emit bare durations ("90 days") as ``DURATION`` entities.
+
+    Spans already claimed by a NOTICE_PERIOD match are skipped so "within
+    30 days" is labelled exactly once, as a notice period.
+    """
+    claimed = list(notice_spans or [])
+    matches: List[Entity] = []
+    for m in DURATION_RE.finditer(text):
+        if any(start < m.end() and m.start() < end for start, end in claimed):
+            continue
+        matches.append(
+            Entity(
+                text=m.group(0),
+                label="DURATION",
+                start_char=m.start(),
+                end_char=m.end(),
+                confidence=0.85,
                 source="regex",
             )
         )

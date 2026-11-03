@@ -18,8 +18,9 @@ from app.models.schemas import (
     RiskFlag,
     RiskSeverity,
 )
-from app.utils.text import NUMBER_TOKEN_RE, written_number_to_int
+from app.utils.text import NUMBER_TOKEN_RE, clean_text, written_number_to_int
 from nlp.context.resolver import resolved_reference_texts
+from nlp.ner.ner import RISK_NEGATION_CUES, detect_governing_law, is_negated_mention
 from nlp.risk_scoring.case_law import lookup_case_law
 
 
@@ -55,6 +56,76 @@ def _number_token_value(match: Optional[re.Match[str]]) -> Optional[int]:
     if match is None:
         return None
     return written_number_to_int(match.group(2) or match.group(1))
+
+
+# A trigger only fires when its *sentence* asserts it. A sentence-level
+# negation ("the liability of neither party shall be unlimited") or scoping
+# language ("the indemnity does not extend to any and all claims") inverts the
+# meaning, so the trigger is suppressed — the same cue logic NER uses for
+# stamp-duty / TDS mentions, with an extended cue list for multi-word negators.
+def _trigger_is_negated(lowered: str, trigger_start: int) -> bool:
+    return is_negated_mention(lowered, trigger_start, RISK_NEGATION_CUES)
+
+
+def _first_unnegated_trigger(lowered: str, triggers: List[str]) -> Optional[str]:
+    """Return the first trigger that appears in a non-negated context, if any.
+
+    For each trigger occurrence the sentence before it is inspected; a trigger
+    whose sentence is negated is skipped (every occurrence must be negated for
+    the trigger to be suppressed).
+    """
+    for trigger in triggers:
+        for match in re.finditer(re.escape(trigger), lowered):
+            if not _trigger_is_negated(lowered, match.start()):
+                return trigger
+    return None
+
+
+# Symmetric to the uncapped triggers: when the clause itself states a cap,
+# RISK_LIABILITY_002 ("missing cap") is wrong by definition. A negated cap
+# phrase ("there is no limitation of liability") is not cap language.
+_CAP_PHRASES = (
+    "in aggregate",
+    "shall not exceed",
+    "limited to",
+    "capped at",
+    "maximum aggregate liability",
+    "not exceed",
+    "aggregate cap",
+    "cap of",
+    "ceiling",
+    "does not exceed",
+    "is not to exceed",
+)
+
+
+def _clause_states_cap(lowered: str) -> bool:
+    """True when the clause text contains a non-negated cap phrase."""
+    for phrase in _CAP_PHRASES:
+        for match in re.finditer(re.escape(phrase), lowered):
+            if not _trigger_is_negated(lowered, match.start()):
+                return True
+    return False
+
+
+def _sentence_span(lowered: str, trigger_start: int) -> tuple[int, int]:
+    """Half-open (start, end) offsets of the sentence containing a trigger.
+
+    Sentence boundaries are ., !, ? and newlines (semicolons are not, to match
+    the NER negation window).
+    """
+    before = lowered[:trigger_start]
+    start = 0
+    for sep in (".", "!", "?", "\n"):
+        pos = before.rfind(sep)
+        if pos != -1 and pos + 1 > start:
+            start = pos + 1
+    end = len(lowered)
+    for sep in (".", "!", "?", "\n"):
+        pos = lowered.find(sep, trigger_start)
+        if pos != -1 and pos < end:
+            end = pos
+    return start, end
 
 
 def _any_clause_type(clause: Clause, *types: str) -> bool:
@@ -179,7 +250,8 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
     # Liability" and "Indemnification" when only the latter is correct.
     if "indemn" in (clause.heading or "").lower():
         return None
-    if any(t in text for t in triggers):
+    trigger = _first_unnegated_trigger(text, triggers)
+    if trigger:
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_LIABILITY_001",
             clause_id=clause.clause_id,
@@ -192,8 +264,9 @@ def rule_uncapped_liability(clause: Clause, summary: ContractSummary) -> Optiona
                 "for direct damages, with standard carve-outs."
             ),
             score=85.0,
+            evidence_text=trigger,
         )
-    has_cap_language = any(t in text for t in _OWN_CLAUSE_CAP_LANGUAGE)
+    has_cap_language = any(t in text for t in _OWN_CLAUSE_CAP_LANGUAGE) or _clause_states_cap(text)
     if not has_cap_language and not _has_label(clause.entities, "PAYMENT_AMOUNT"):
         # A resolved cross-reference to a clause that states a verifiably
         # applicable cap means the cap is not missing. This is reference-based
@@ -224,7 +297,8 @@ def rule_one_sided_termination(clause: Clause, summary: ContractSummary) -> Opti
         "terminate at any time without cause",
         "sole discretion",
     ]
-    if any(t in text for t in triggers):
+    trigger = _first_unnegated_trigger(text, triggers)
+    if trigger:
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_TERM_001",
             clause_id=clause.clause_id,
@@ -234,6 +308,7 @@ def rule_one_sided_termination(clause: Clause, summary: ContractSummary) -> Opti
             explanation="One party can terminate at any time, creating operational risk.",
             recommendation="Require mutual termination rights and reasonable notice.",
             score=72.0,
+            evidence_text=trigger,
         )
     return None
 
@@ -274,7 +349,8 @@ def rule_auto_renewal(clause: Clause, summary: ContractSummary) -> Optional[Risk
             explanation=explanation,
             recommendation="Add a calendar reminder at least 60 days before renewal.",
             score=70.0 if severity == RiskSeverity.HIGH else 50.0,
-        )
+        evidence_text=notice.group(0) if notice else "automatically renews",
+    )
     return None
 
 
@@ -283,7 +359,8 @@ def rule_broad_indemnity(clause: Clause, summary: ContractSummary) -> Optional[R
     if not _any_clause_type(clause, "Indemnification"):
         return None
     broad_triggers = ["any and all claims", "all losses", "from any cause whatsoever"]
-    if any(t in text for t in broad_triggers):
+    trigger = _first_unnegated_trigger(text, broad_triggers)
+    if trigger:
         return RiskFlag(
             risk_id=f"{clause.clause_id}_RISK_INDEMNITY_001",
             clause_id=clause.clause_id,
@@ -293,6 +370,7 @@ def rule_broad_indemnity(clause: Clause, summary: ContractSummary) -> Optional[R
             explanation="Indemnification is broader than standard third-party claims.",
             recommendation="Limit indemnity to third-party claims caused by indemnifying party.",
             score=72.0,
+            evidence_text=trigger,
         )
     return None
 
@@ -328,6 +406,7 @@ def rule_data_breach_window(clause: Clause, summary: ContractSummary) -> Optiona
                 explanation="A breach notification window of ≤24h may be operationally difficult.",
                 recommendation="Negotiate a 48–72 hour window if feasible.",
                 score=55.0,
+                evidence_text=notice.group(0),
             )
     return None
 
@@ -337,29 +416,81 @@ def rule_missing_data_protection(clause: Clause, summary: ContractSummary) -> Op
     return None
 
 
+# Jurisdictions known to be foreign: any governing-law phrase that names one
+# (or any explicit country/state other than India) is foreign for this rule.
+_FOREIGN_LAW_HINTS = (
+    # countries
+    "singapore", "england", "wales", "scotland", "britain", "united kingdom",
+    "delaware", "california", "new york", "texas", "florida", "illinois",
+    "virginia", "maryland", "massachusetts", "washington", "oregon",
+    "jersey", "cayman", "luxembourg", "france", "germany", "netherlands",
+    "switzerland", "austria", "spain", "italy", "portugal", "greece",
+    "poland", "denmark", "norway", "sweden", "finland", "ireland",
+    "canada", "quebec", "ontario", "australia", "new zealand",
+    "united states", "america", "japan", "korea", "china", "indonesia",
+    "malaysia", "philippines", "thailand", "vietnam", "israel", "uae",
+)
+# Indian states/UTs: "laws of the State of X" is Indian when X is one of these.
+_INDIAN_LAW_STATE_HINTS = (
+    "andhra pradesh", "arunachal pradesh", "assam", "bihar", "chhattisgarh",
+    "goa", "gujarat", "haryana", "himachal pradesh", "jharkhand", "karnataka",
+    "kerala", "madhya pradesh", "maharashtra", "manipur", "meghalaya",
+    "mizoram", "nagaland", "odisha", "orissa", "punjab", "rajasthan",
+    "sikkim", "tamil nadu", "telangana", "tripura", "uttar pradesh",
+    "uttarakhand", "west bengal", "delhi", "jammu", "kashmir",
+    "ladakh", "chandigarh", "puducherry", "andaman", "lakshadweep",
+)
+
+
+def _governing_law_is_indian(phrase: Optional[str]) -> bool:
+    """Classify a governing-law phrase as Indian or foreign.
+
+    Any "india"/"indian" reference is Indian. Otherwise a phrase that names an
+    Indian state/UT is Indian. Anything else (a foreign country/state name, or
+    an unrecognised jurisdiction) is treated as foreign — the rule stays a
+    human-review prompt either way.
+    """
+    if not phrase:
+        return True  # no extractable phrase — nothing to flag
+    low = phrase.lower()
+    if "india" in low or "indian" in low:
+        return True
+    return any(state in low for state in _INDIAN_LAW_STATE_HINTS)
+
+
 def rule_governing_law_mismatch(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:
-    text = _text_lower(clause)
     if not _any_clause_type(clause, "Governing Law", "Dispute Resolution"):
         return None
-    if summary.jurisdiction and summary.jurisdiction.lower() in {"india", "indian"}:
-        if any(foreign in text for foreign in [
-            "laws of new york", "state of new york", "laws of england",
-            "laws of singapore", "laws of the state of california",
-        ]):
-            return RiskFlag(
-                risk_id=f"{clause.clause_id}_RISK_GOV_001",
-                clause_id=clause.clause_id,
-                rule_id="RISK_GOV_001",
-                name="Foreign governing law in domestic contract",
-                severity=RiskSeverity.HIGH,
-                explanation=(
-                    "Both parties appear Indian but governing law is foreign. "
-                    "Indian courts may refuse to enforce, leading to unenforceable awards."
-                ),
-                recommendation="Negotiate Indian governing law or limit to cross-border elements.",
-                score=68.0,
-            )
-    return None
+    if not (summary.jurisdiction and summary.jurisdiction.lower() in {"india", "indian"}):
+        return None
+    # Extract the governing-law phrase (NER handles the common phrasings:
+    # "governed by the laws of ...", "subject to the laws of ...",
+    # "laws of the state of ...", "laws of India"). If it names a foreign
+    # jurisdiction, flag it.
+    phrase = detect_governing_law(clause.text or "")
+    if phrase is None:
+        # Fallback: a plain "governed by ... law" construction that NER's
+        # patterns do not cover (e.g. "governed by Delaware law").
+        m = re.search(r"governed\s+by\s+(?:the\s+)?laws?\s+of\s+([^.]{1,60})", _text_lower(clause))
+        if not m:
+            return None
+        phrase = f"laws of {m.group(1).strip()}"
+    if _governing_law_is_indian(phrase):
+        return None
+    return RiskFlag(
+        risk_id=f"{clause.clause_id}_RISK_GOV_001",
+        clause_id=clause.clause_id,
+        rule_id="RISK_GOV_001",
+        name="Foreign governing law in domestic contract",
+        severity=RiskSeverity.HIGH,
+        explanation=(
+            "Both parties appear Indian but governing law is foreign. "
+            "Indian courts may refuse to enforce, leading to unenforceable awards."
+        ),
+        recommendation="Negotiate Indian governing law or limit to cross-border elements.",
+        score=68.0,
+        evidence_text=phrase,
+    )
 
 
 def rule_arbitration_seat_mismatch(clause: Clause, summary: ContractSummary) -> Optional[RiskFlag]:
@@ -606,13 +737,52 @@ def _analyze_cross_references(flags: List[RiskFlag], clauses: List[Clause]) -> N
             )
 
 
+def _tight_span(clause: Clause, trigger: Optional[str]) -> tuple[str, int, int]:
+    """Tight evidence span for a clause-level finding.
+
+    When ``trigger`` is present and found verbatim in the clause text, the
+    span is the sentence containing it (offsets computed against the *stored*
+    clause text). Otherwise the span is the whole clause text (the old
+    behaviour). The returned ``(text, start, end)`` always satisfies
+    ``clause.text[start:end] == text``.
+    """
+    raw = clause.text or ""
+    if not trigger:
+        return raw, 0, len(raw)
+    # Find the trigger verbatim in the raw (stored) clause text. The trigger is
+    # produced from the lowercased text, so look case-insensitively in the
+    # cleaned text, then map back to the raw text via a simple offset search.
+    lowered = clean_text(raw).lower()
+    pos = lowered.find(trigger.lower())
+    if pos == -1:
+        return raw, 0, len(raw)
+    # Map from cleaned offset to raw offset: walk both strings in lock-step.
+    # clean_text only removes whitespace/control chars and smart-quote
+    # translations — it does not insert characters — so the raw offset is at
+    # least the cleaned offset. A conservative approach: search the raw text
+    # for the trigger (case-insensitive) and use the first match.
+    raw_low = raw.lower()
+    raw_pos = raw_low.find(trigger.lower())
+    if raw_pos == -1:
+        return raw, 0, len(raw)
+    start, end = _sentence_span(raw_low, raw_pos)
+    # Strip leading/trailing whitespace from the span.
+    while start < end and raw[start] in " \t\r\n":
+        start += 1
+    while end > start and raw[end - 1] in " \t\r\n":
+        end -= 1
+    return raw[start:end], start, end
+
+
 def _bind_evidence(flags: List[RiskFlag], clauses: List[Clause]) -> None:
     """Attach traceable evidence without inventing spans.
 
-    Clause-level findings get the owning clause's full text with offsets into
-    ``Clause.text`` (locator="clause_text") and ``evidence_status="direct"``.
-    Contract-level findings (no clause) get an explicit ``search_scope`` and
-    ``evidence_status="unverified"`` - never a fabricated nearby clause.
+    Clause-level findings get the *trigger sentence* when a ``evidence_text``
+    trigger is available and locatable, else the full clause text, in both
+    cases with offsets into ``Clause.text`` (locator="clause_text") and
+    ``evidence_status="direct"``. Contract-level findings (no clause) get an
+    explicit ``search_scope`` and ``evidence_status="unverified"`` - never a
+    fabricated nearby clause.
     """
     from app.models.schemas import EvidenceSpan
 
@@ -623,11 +793,12 @@ def _bind_evidence(flags: List[RiskFlag], clauses: List[Clause]) -> None:
         if flag.clause_id:
             clause = by_id.get(flag.clause_id)
             if clause is not None and (clause.text or "").strip():
+                span_text, span_start, span_end = _tight_span(clause, flag.evidence_text)
                 flag.evidence_spans = [
                     EvidenceSpan(
-                        text=clause.text,
-                        char_start=0,
-                        char_end=len(clause.text),
+                        text=span_text,
+                        char_start=span_start,
+                        char_end=span_end,
                         clause_id=clause.clause_id,
                         role="direct",
                         locator="clause_text",

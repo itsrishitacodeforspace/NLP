@@ -1,5 +1,15 @@
 # Phase 2C Readiness Report
 
+> **CORRENDUM 2026-11-03:** this report contains factual errors about the datasets (names, licenses, provenance, split sizes). Correct facts:
+>
+> - **CUAD** = "Contract Understanding **Atticus** Dataset" (Atticus Project, NeurIPS 2021) — not "Atlantis".
+> - **MAUD** = "**Merger Agreement Understanding** Dataset" (Atticus Project) — not "Multi-Document Understanding".
+> - **Not synthetic**: both are real datasets — CUAD clauses come from real Atticus/EDGAR SEC filings; MAUD clauses come from real (anonymised) merger agreements, as visible in `data/datasets/cuad/CUADv1.json` and `data/datasets/maud/data/MAUD_*.csv`.
+> - **Licenses**: CC BY 4.0 per this report's own later statement (kept above); the repo does not ship LICENSE files, so verify against the dataset documentation before redistribution.
+> - **Splits**: the "Train 9,278 / Dev 22,450 / Test 13,130" table mislabels the artifacts. Actual `data/processed/` (restored 2026-10-30): `clause_classifier.csv` 9,278 rows, `cuad_examples.jsonl` 22,450 rows, `maud_examples.jsonl` 32,580 rows, `unified_examples.jsonl` 55,030 rows — see the `*.manifest.json` files. **No 13,130-row test artifact exists.**
+>
+> The original text below is preserved unedited for the record. See `DEEP_AUDIT_20261103.md` §C12.
+
 ## Executive Summary
 
 Phase 2C (Evaluation Quality and Dataset Readiness) investigation completed.

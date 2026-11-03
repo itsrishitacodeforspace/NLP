@@ -66,3 +66,10 @@ uv run streamlit run streamlit_app/Home.py      # UI   -> :8501
 docker compose -f docker/docker-compose.yml up --build   # full stack
 ```
 Rebuild the training corpus / keyword bank: `uv run python scripts/build_training_data.py`.
+
+## Deep audit 2026-11-03
+See `DEEP_AUDIT_20261103.md` (whole-repo audit: 6 parallel reviewers + empirical
+re-verification). Rule for using it: findings marked **CONFIRMED** there were
+re-verified by running the code and may be trusted as-is; findings marked
+**REPORTED** (subagent static analysis) still need re-verification before any
+fix based on them is trusted.

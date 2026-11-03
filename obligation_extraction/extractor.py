@@ -316,7 +316,7 @@ def _analyse_sentence(
     # Deadlines inside a condition belong to the condition, not the duty.
     deadline_expr = _extract_deadline(masked)
     deadline_date = _extract_deadline_date(masked)
-    risk_level = _derive_risk_level(obligation_type, deadline_expr, sentence.lower())
+    risk_level = _derive_risk_level(obligation_type, deadline_expr, sentence.lower(), action)
 
     return ObligationHit(
         text=sentence,
@@ -612,33 +612,109 @@ def _extract_deadline_date(sentence: str) -> Optional[str]:
     return match.group(1).strip()
 
 
-def _derive_risk_level(typ: ObligationType, deadline: Optional[str], sentence_low: str) -> RiskSeverity:
-    text = sentence_low
-    risk = RiskSeverity.MEDIUM if typ == ObligationType.PROHIBITION else RiskSeverity.LOW
-    if deadline:
-        match = re.match(
-            r"(\d+)\s+(hour|hours|day|days|week|weeks|month|months|year|years|business\s+days)",
-            deadline.lower(),
-        )
-        if match:
-            value = int(match.group(1))
-            unit = match.group(2)
-            if "hour" in unit:
-                days = value / 24
-            elif "week" in unit:
-                days = value * 7
-            elif "month" in unit:
-                days = value * 30
-            elif "year" in unit:
-                days = value * 365
-            else:
-                days = value
-            if days <= 1:
-                risk = RiskSeverity.CRITICAL
-            elif days <= 7:
-                risk = RiskSeverity.HIGH
-            elif days <= 30:
-                risk = RiskSeverity.MEDIUM
-    if "indemnif" in text and "all losses" in text:
-        risk = RiskSeverity.HIGH
-    return risk
+# Severity is driven by obligation TYPE/content, not deadline urgency. A
+# 1-hour deadline on a trivial notification must not outrank a 30-day
+# indemnity. The table is intentionally small and explicit:
+#   - HIGH: obligations that can trigger a material financial or contractual
+#     consequence (indemnify, terminate, pay, deliver, refund, compensate).
+#   - MEDIUM: obligations with operational impact (notify, report, inform,
+#     maintain, encrypt, delete, protect, keep, ensure, provide, supply).
+#   - LOW: anything else (general compliance, acknowledge, cooperate, ...).
+# Deadline urgency is a *bounded* modifier: +1 level at most, and only when
+# the deadline is <=24h AND the content is already HIGH. A CRITICAL deadline
+# boost is never applied (it would conflate urgency with severity).
+_OBLIGATION_SEVERITY_TABLE = {
+    # HIGH — material financial / contractual consequence
+    "indemnify": RiskSeverity.HIGH, "indemnifies": RiskSeverity.HIGH,
+    "indemnified": RiskSeverity.HIGH, "indemnifying": RiskSeverity.HIGH,
+    "terminate": RiskSeverity.HIGH, "terminates": RiskSeverity.HIGH,
+    "terminated": RiskSeverity.HIGH, "terminating": RiskSeverity.HIGH,
+    "pay": RiskSeverity.HIGH, "pays": RiskSeverity.HIGH,
+    "paid": RiskSeverity.HIGH, "paying": RiskSeverity.HIGH,
+    "deliver": RiskSeverity.HIGH, "delivers": RiskSeverity.HIGH,
+    "delivered": RiskSeverity.HIGH, "delivering": RiskSeverity.HIGH,
+    "refund": RiskSeverity.HIGH, "refunds": RiskSeverity.HIGH,
+    "refunded": RiskSeverity.HIGH, "refunding": RiskSeverity.HIGH,
+    "compensate": RiskSeverity.HIGH, "compensates": RiskSeverity.HIGH,
+    "compensated": RiskSeverity.HIGH, "compensating": RiskSeverity.HIGH,
+    # MEDIUM — operational impact
+    "notify": RiskSeverity.MEDIUM, "notifies": RiskSeverity.MEDIUM,
+    "notified": RiskSeverity.MEDIUM, "notifying": RiskSeverity.MEDIUM,
+    "report": RiskSeverity.MEDIUM, "reports": RiskSeverity.MEDIUM,
+    "reported": RiskSeverity.MEDIUM, "reporting": RiskSeverity.MEDIUM,
+    "inform": RiskSeverity.MEDIUM, "informs": RiskSeverity.MEDIUM,
+    "informed": RiskSeverity.MEDIUM, "informing": RiskSeverity.MEDIUM,
+    "maintain": RiskSeverity.MEDIUM, "maintains": RiskSeverity.MEDIUM,
+    "maintained": RiskSeverity.MEDIUM, "maintaining": RiskSeverity.MEDIUM,
+    "encrypt": RiskSeverity.MEDIUM, "encrypts": RiskSeverity.MEDIUM,
+    "encrypted": RiskSeverity.MEDIUM, "encrypting": RiskSeverity.MEDIUM,
+    "delete": RiskSeverity.MEDIUM, "deletes": RiskSeverity.MEDIUM,
+    "deleted": RiskSeverity.MEDIUM, "deleting": RiskSeverity.MEDIUM,
+    "protect": RiskSeverity.MEDIUM, "protects": RiskSeverity.MEDIUM,
+    "protected": RiskSeverity.MEDIUM, "protecting": RiskSeverity.MEDIUM,
+    "keep": RiskSeverity.MEDIUM, "keeps": RiskSeverity.MEDIUM,
+    "kept": RiskSeverity.MEDIUM, "keeping": RiskSeverity.MEDIUM,
+    "ensure": RiskSeverity.MEDIUM, "ensures": RiskSeverity.MEDIUM,
+    "ensured": RiskSeverity.MEDIUM, "ensuring": RiskSeverity.MEDIUM,
+    "provide": RiskSeverity.MEDIUM, "provides": RiskSeverity.MEDIUM,
+    "provided": RiskSeverity.MEDIUM, "providing": RiskSeverity.MEDIUM,
+    "supply": RiskSeverity.MEDIUM, "supplies": RiskSeverity.MEDIUM,
+    "supplied": RiskSeverity.MEDIUM, "supplying": RiskSeverity.MEDIUM,
+    "furnish": RiskSeverity.MEDIUM, "furnishes": RiskSeverity.MEDIUM,
+    "furnished": RiskSeverity.MEDIUM, "furnishing": RiskSeverity.MEDIUM,
+    "issue": RiskSeverity.MEDIUM, "issues": RiskSeverity.MEDIUM,
+    "issued": RiskSeverity.MEDIUM, "issuing": RiskSeverity.MEDIUM,
+    # LOW — everything else
+}
+
+_SEVERITY_ORDER = {
+    RiskSeverity.LOW: 0,
+    RiskSeverity.MEDIUM: 1,
+    RiskSeverity.HIGH: 2,
+    RiskSeverity.CRITICAL: 3,
+}
+
+
+def _deadline_days(deadline: Optional[str]) -> Optional[float]:
+    """Convert a deadline expression to days (for the bounded urgency boost)."""
+    if not deadline:
+        return None
+    match = re.match(
+        r"(\d+)\s+(hour|hours|day|days|week|weeks|month|months|year|years|business\s+days)",
+        deadline.lower(),
+    )
+    if not match:
+        return None
+    value = int(match.group(1))
+    unit = match.group(2)
+    if "hour" in unit:
+        return value / 24
+    if "week" in unit:
+        return value * 7
+    if "month" in unit:
+        return value * 30
+    if "year" in unit:
+        return value * 365
+    return float(value)
+
+
+def _derive_risk_level(typ: ObligationType, deadline: Optional[str], sentence_low: str, action: Optional[str] = None) -> RiskSeverity:
+    # Start from the content table (action verb), falling back to a
+    # text-based scan of the sentence when no action verb is in the table.
+    content = RiskSeverity.LOW
+    if action:
+        content = _OBLIGATION_SEVERITY_TABLE.get(action.lower(), RiskSeverity.LOW)
+    if content == RiskSeverity.LOW:
+        for verb, sev in _OBLIGATION_SEVERITY_TABLE.items():
+            if re.search(rf"\b{re.escape(verb)}\b", sentence_low):
+                content = sev
+                break
+    # Prohibitions are at least MEDIUM (a "shall not" is a binding constraint).
+    if typ == ObligationType.PROHIBITION and content == RiskSeverity.LOW:
+        content = RiskSeverity.MEDIUM
+    # Bounded urgency modifier: +1 level at most, only for <=24h deadlines
+    # on already-HIGH content. Never escalates to CRITICAL.
+    days = _deadline_days(deadline)
+    if days is not None and days <= 1 and content == RiskSeverity.HIGH:
+        content = RiskSeverity.CRITICAL
+    return content

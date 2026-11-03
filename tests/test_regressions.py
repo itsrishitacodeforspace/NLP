@@ -63,6 +63,69 @@ def test_case_law_is_attached_to_statutory_risks():
     assert all(isinstance(v, list) for v in CASE_LAW.values())
 
 
+def test_case_law_verification_metadata_is_honest():
+    from nlp.risk_scoring.case_law import UNVERIFIED_NOTE, lookup_case_law
+
+    # Every rule with a curated pointer must carry the machine-readable
+    # unverified state (DEEP_AUDIT_20261103.md C18 / charter §9.2).
+    all_refs = [
+        ref
+        for rule_id in ("RISK_STAMP_001", "RISK_ARB_001", "RISK_S124_001", "RISK_TDS_001",
+                        "RISK_GOV_001", "RISK_LIABILITY_001", "RISK_TERM_001",
+                        "RISK_RENEWAL_001", "RISK_INDEMNITY_001", "RISK_LIABILITY_002",
+                        "RISK_DATA_001", "RISK_DATA_MISSING")
+        for ref in lookup_case_law(rule_id)
+    ]
+    assert all_refs, "case-law pointers are missing"
+    for ref in all_refs:
+        assert ref.verified_on is None, (
+            "verified_on must stay None until a primary-source verification "
+            "pass records the ISO date"
+        )
+        assert ref.verify_note == UNVERIFIED_NOTE, (
+            "verify_note must carry the curated-pointer disclaimer"
+        )
+    # The schema defaults keep old payloads (no metadata) deserialisable.
+    from app.models.schemas import CaseLawReference
+
+    legacy = CaseLawReference(citation="X", summary="y")
+    assert legacy.verified_on is None and legacy.verify_note is None
+
+
+def test_case_law_citation_corrections():
+    from nlp.risk_scoring.case_law import lookup_case_law
+
+    # DPDP: the citation is the notification duty (s. 8(6)); the penalty
+    # section is referenced in the summary, not mis-cited as if both were
+    # the duty.
+    dpdp = " ".join(r.citation for r in lookup_case_law("RISK_DATA_001"))
+    assert "s. 8(6)" in dpdp
+    for rule_id in ("RISK_DATA_001", "RISK_DATA_MISSING"):
+        summary = " ".join(r.summary for r in lookup_case_law(rule_id))
+        assert "s. 33" in summary, f"{rule_id}: penalty section must appear in summary"
+
+    # GOV: the summary must disclose that s. 28 is a forum-restraint provision,
+    # that foreign governing-law clauses are generally enforceable, and that
+    # applicability needs verification.
+    gov = lookup_case_law("RISK_GOV_001")[0]
+    assert "s. 28" in gov.citation
+    assert "generally enforceable" in gov.summary
+    assert "forum-restraint" in gov.summary
+    assert "Verify applicability" in gov.summary
+
+    # The four HIGH-severity rules that previously had no authority must now
+    # carry at least one entry (a real citation or an explicit plain-law note).
+    for rule_id in ("RISK_TERM_001", "RISK_RENEWAL_001", "RISK_INDEMNITY_001", "RISK_LIABILITY_002"):
+        refs = lookup_case_law(rule_id)
+        assert refs, f"{rule_id}: missing case-law entry"
+        assert all(r.citation and r.summary for r in refs), f"{rule_id}: empty citation/summary"
+
+    # No user-facing typo regression.
+    import nlp.risk_scoring.case_law as case_law_mod
+
+    assert "abreviated" not in case_law_mod.__doc__
+
+
 def test_tfidf_outputs_are_canonicalised():
     class FakePipeline:
         classes_ = ["Pricing Terms", "Unknown Label"]
