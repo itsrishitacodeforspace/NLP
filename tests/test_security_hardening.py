@@ -56,3 +56,111 @@ def test_custom_secret_is_fine_in_production():
     from app import main
 
     main.guard_auth_secret(_settings(app_env="production", secret="a-very-long-random-secret"))
+
+
+# ---------------------------------------------------------------------------
+# 2. /token rate limiting (per-username failure throttle)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def auth_client(monkeypatch):
+    """Auth-enabled app with one user (ana/pw), clean throttle around it."""
+    from fastapi.testclient import TestClient
+
+    from app.core.config import get_settings
+    from app.core.security import user_store
+
+    monkeypatch.setenv("AUTH_ENABLED", "true")
+    monkeypatch.setenv("AUTH_SECRET_KEY", "test-secret")
+    monkeypatch.setenv('AUTH_USERS', '[{"username": "ana", "password": "pw", "role": "analyst"}]')
+    get_settings.cache_clear()
+    user_store.reset()
+    user_store._seed()
+    from app.api import routes_auth
+
+    routes_auth._reset_token_throttle()
+    client = TestClient(__import__("app.main", fromlist=["app"]).app)
+    yield client
+    routes_auth._reset_token_throttle()
+    get_settings.cache_clear()
+    user_store.reset()
+
+
+def test_token_throttle_locks_after_five_failures(auth_client, monkeypatch):
+    """5 bad passwords -> the 6th attempt within the window returns 429."""
+    from app.api import routes_auth
+
+    for i in range(5):
+        r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+        assert r.status_code == 401, f"attempt {i + 1}: {r.status_code}"
+    # 6th attempt: locked out (time is real, well inside the 60s window).
+    r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    assert r.status_code == 429, r.text
+    assert "Retry-After" in r.headers
+
+
+def test_token_throttle_lockout_ignores_even_correct_password(auth_client):
+    """While locked, even the right password gets 429 (no credential oracle)."""
+    from app.api import routes_auth
+
+    for _ in range(routes_auth.TOKEN_MAX_FAILURES):
+        auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "pw"})
+    assert r.status_code == 429
+
+
+def test_token_throttle_success_resets_counter(auth_client):
+    """A successful login resets the counter, so more than MAX failures can
+    accumulate across sessions without a permanent lock."""
+    from app.api import routes_auth
+
+    for _ in range(routes_auth.TOKEN_MAX_FAILURES - 1):
+        auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "pw"})
+    assert r.status_code == 200
+    # Counter reset: another full round of MAX failures is possible.
+    for _ in range(routes_auth.TOKEN_MAX_FAILURES):
+        auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    assert auth_client.post(
+        "/api/v1/auth/token", data={"username": "ana", "password": "bad"}
+    ).status_code == 429
+
+
+def test_token_throttle_usernames_are_independent(auth_client):
+    """Locking one username does not affect others."""
+    from app.api import routes_auth
+
+    for _ in range(routes_auth.TOKEN_MAX_FAILURES):
+        auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    # Unknown usernames are not in AUTH_USERS, so they 401 normally...
+    r = auth_client.post("/api/v1/auth/token", data={"username": "ghost", "password": "x"})
+    assert r.status_code == 401
+    # ...and ana is locked.
+    r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "pw"})
+    assert r.status_code == 429
+    assert set(routes_auth._throttle_snapshot()) == {"ana", "ghost"}
+
+
+def test_token_throttle_window_resets_with_time(auth_client, monkeypatch):
+    """After the lockout window elapses (faked clock), attempts are allowed again."""
+    import time as _time
+
+    from app.api import routes_auth
+
+    now = [1000.0]
+    monkeypatch.setattr(routes_auth, "_now", lambda: now[0])
+
+    for _ in range(routes_auth.TOKEN_MAX_FAILURES):
+        now[0] += 0.01
+        auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    assert auth_client.post(
+        "/api/v1/auth/token", data={"username": "ana", "password": "bad"}
+    ).status_code == 429
+
+    # Elapse the window; the first new attempt is no longer throttled (it
+    # 401s on the bad password and restarts the counter).
+    now[0] += routes_auth.TOKEN_LOCKOUT_SECONDS + 1
+    r = auth_client.post("/api/v1/auth/token", data={"username": "ana", "password": "bad"})
+    assert r.status_code == 401, r.text
+    assert routes_auth._throttle_snapshot()["ana"][0] == 1
