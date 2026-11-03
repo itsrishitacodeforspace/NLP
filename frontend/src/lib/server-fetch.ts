@@ -12,7 +12,7 @@ import type { ContractSummary, Clause, Obligation, RiskFlag, GraphSnapshot } fro
 const BASE = (process.env.BACKEND_URL || 'http://127.0.0.1:8010').replace(/\/$/, '');
 
 async function get<T>(path: string, revalidate = 60): Promise<T> {
-  const res = await fetch(`${BASE}/api/${path}`, {
+  const res = await fetch(`${BASE}/api/v1/${path}`, {
     cache: 'force-cache',
     next: { revalidate },
   });

@@ -22,7 +22,7 @@ export async function apiRequest<T>(path: string, opts: RequestOptions = {}): Pr
   const token = noAuth ? null : getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const url = `${BASE}/api/${path.replace(/^\/+/, '')}`;
+  const url = `${BASE}/api/v1/${path.replace(/^\/+/, '')}`;
   let res: Response;
   try {
     res = await fetch(url, {

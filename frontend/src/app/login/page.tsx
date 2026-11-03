@@ -101,7 +101,7 @@ function LoginForm({ next }: { next: string | null }) {
   );
 }
 
-export default function LoginPage() {
+function LoginInner() {
   const { backendAuthEnabled, loading } = useAuth();
   const searchParams = useSearchParams();
   const next = searchParams.get('next');
@@ -129,5 +129,24 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  // useSearchParams() requires a Suspense boundary during static prerender in
+  // Next.js 14 — wrapping the inner component satisfies that.
+  return (
+    <React.Suspense
+      fallback={
+        <div className="mx-auto max-w-sm space-y-4 pt-10">
+          <div className="flex justify-center">
+            <Spinner />
+          </div>
+          <p className="text-center text-sm text-muted-foreground">Checking authentication…</p>
+        </div>
+      }
+    >
+      <LoginInner />
+    </React.Suspense>
   );
 }
