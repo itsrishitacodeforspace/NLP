@@ -123,6 +123,12 @@ class CaseLawReference(BaseModel):
     citation: str
     summary: str
     jurisdiction: str = "India"
+    # Verification metadata (charter §9.2). ``verified_on`` is an ISO date the
+    # citation was checked against a primary source; ``None`` (the default for
+    # all curated entries) means it has not been independently verified.
+    # ``verify_note`` carries the honest state in a machine-readable form.
+    verified_on: Optional[str] = None
+    verify_note: Optional[str] = None
 
 
 class EvidenceSpan(BaseModel):
@@ -159,6 +165,10 @@ class RiskFlag(BaseModel):
     related_clause_ids: List[str] = Field(default_factory=list)
     # P4: advisory cross-reference analysis (additive; never suppresses a finding).
     cross_reference_note: Optional[str] = None
+    # P2 (C7): the exact trigger phrase / matched span that fired the rule.
+    # Used by ``_bind_evidence`` to bind a tight evidence span rather than the
+    # whole clause. ``None`` for contract-level or trigger-less findings.
+    evidence_text: Optional[str] = None
 
 
 class ContractSummary(BaseModel):
@@ -204,6 +214,9 @@ class JobInfo(BaseModel):
     finished_at: Optional[datetime] = None
     result: Optional[AnalysisResult] = None
     error: Optional[str] = None
+    # Set when a SUCCEEDED job's stored result JSON could not be re-validated
+    # (schema drift / corruption). ``result`` is None in that case.
+    result_error: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
