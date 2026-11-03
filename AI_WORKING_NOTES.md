@@ -232,3 +232,34 @@ docker compose -f docker/docker-compose.yml up --build   # full stack
   uv (Python 3.12).
 - Verified: `pytest` → 262 passed; `ruff` → 3 known B008 warnings.
 - Created this file.
+
+### 2026-11-03 (deep audit session, same day)
+- User attached `BharatContract_AI_Project_Charter.md` (the main charter) and
+  asked for a very deep whole-repo audit (max 5-6 subagents), local only, no
+  push.
+- Ran 6 parallel reviewer subagents (NLP core, backend, data/models/leakage,
+  pipeline/parser, tests/evaluation, docs/UI/infra/legal).
+- Personally re-verified the highest-stakes findings by executing code:
+  - bcrypt 5.x hash/verify WORKS via the direct-bcrypt path (subagent's
+    "bcrypt broken" hypothesis disproven; passlib is bypassed by design).
+  - Confirmed false positives: negated "unlimited/uncapped" still fires
+    RISK_LIABILITY_002; negated broad indemnity fires RISK_INDEMNITY_001;
+    `detect_arbitration_seat` returns "Mumbai"/"Singapore" from mere address/
+    data-center mentions; `NOTICE_PERIOD_RE` labels bare "90 days"/"12 months"
+    durations as NOTICE_PERIOD; `rule_governing_law_mismatch` misses
+    "Republic of Singapore" and "Delaware"; 1-hour typo notification
+    obligation → CRITICAL.
+  - Confirmed `cases_gold.json` fabrication: gold party names (Vendor/Client,
+    Manufacturer/Distributor) not present in the case texts (Provider/
+    Customer, Supplier/Customer); gold rule IDs RISK_TERMINATION_001 /
+    RISK_GOVERNING_LAW_001 / RISK_PARTY_001 / RISK_OBLIGATION_001 do not exist
+    in the engine (real: RISK_TERM_001 / RISK_GOV_001).
+  - Confirmed `_persist` omits created_at/finished_at; `list_jobs` only hits
+    Postgres when in-memory dict is empty.
+  - Confirmed 25 tracked files of root-level duplicate packages (byte-identical
+    taxonomy.py/provenance.py vs nlp/), 6.6 MB of tracked
+    command-code-session-* dumps, tracked tests/*.bak.
+- Wrote `DEEP_AUDIT_20261103.md` — the full consolidated report with
+  CONFIRMED vs REPORTED split, verified-good list, and a prioritized P0-P3
+  fix plan. NOTHING has been fixed yet; the fix plan awaits user approval.
+- Subagent session IDs for follow-up are in DEEP_AUDIT_20261103.md §5.
