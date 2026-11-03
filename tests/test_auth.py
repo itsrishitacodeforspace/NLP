@@ -6,6 +6,8 @@ cache).
 """
 from __future__ import annotations
 
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
@@ -107,3 +109,91 @@ def test_login_and_role_based_access(monkeypatch):
             monkeypatch.delenv(key, raising=False)
         get_settings.cache_clear()
         user_store.reset()
+
+
+# ---------------------------------------------------------------------------
+# Token re-validation against the live user store (audit P2)
+# ---------------------------------------------------------------------------
+
+
+def _setup_auth_env(monkeypatch, users_json: str):
+    monkeypatch.setenv("AUTH_ENABLED", "true")
+    monkeypatch.setenv("AUTH_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("AUTH_USERS", users_json)
+    get_settings.cache_clear()
+    user_store.reset()
+    user_store._seed()
+
+
+def _teardown_auth_env(monkeypatch):
+    monkeypatch.delenv("AUTH_ENABLED", raising=False)
+    monkeypatch.delenv("AUTH_SECRET_KEY", raising=False)
+    monkeypatch.delenv("AUTH_USERS", raising=False)
+    get_settings.cache_clear()
+    user_store.reset()
+
+
+def test_token_revalidation_deleted_user_rejected(monkeypatch):
+    _setup_auth_env(monkeypatch, '[{"username": "ana", "password": "pw", "role": "analyst"}]')
+    try:
+        from app.api.deps import get_current_principal
+
+        token, _ = create_access_token("ana", "analyst")
+        # Baseline: the token works while the user exists.
+        assert get_current_principal(token).username == "ana"
+
+        # Delete the user after the token was minted.
+        del user_store._users["ana"]
+        with pytest.raises(HTTPException) as exc:
+            get_current_principal(token)
+        assert exc.value.status_code == 401
+    finally:
+        _teardown_auth_env(monkeypatch)
+
+
+def test_token_revalidation_demoted_user_rejected(monkeypatch):
+    _setup_auth_env(monkeypatch, '[{"username": "ana", "password": "pw", "role": "analyst"}]')
+    try:
+        from app.api.deps import get_current_principal
+
+        token, _ = create_access_token("ana", "analyst")
+        assert get_current_principal(token).role == "analyst"
+
+        # Demote the stored user to viewer.
+        user_store._users["ana"].role = "viewer"
+        with pytest.raises(HTTPException) as exc:
+            get_current_principal(token)
+        assert exc.value.status_code == 401
+    finally:
+        _teardown_auth_env(monkeypatch)
+
+
+def test_token_revalidation_inflated_role_rejected(monkeypatch):
+    _setup_auth_env(monkeypatch, '[{"username": "ana", "password": "pw", "role": "viewer"}]')
+    try:
+        from app.api.deps import get_current_principal
+
+        # A token claiming admin for a stored viewer must be rejected.
+        token, _ = create_access_token("ana", "admin")
+        with pytest.raises(HTTPException) as exc:
+            get_current_principal(token)
+        assert exc.value.status_code == 401
+
+        # A token at exactly the stored role still works.
+        ok, _ = create_access_token("ana", "viewer")
+        assert get_current_principal(ok).role == "viewer"
+    finally:
+        _teardown_auth_env(monkeypatch)
+
+
+def test_token_revalidation_promoted_user_upgraded(monkeypatch):
+    """A user promoted since the token was minted immediately gets the new role."""
+    _setup_auth_env(monkeypatch, '[{"username": "ana", "password": "pw", "role": "viewer"}]')
+    try:
+        from app.api.deps import get_current_principal
+
+        token, _ = create_access_token("ana", "viewer")
+        user_store._users["ana"].role = "admin"
+        assert get_current_principal(token).role == "admin"
+    finally:
+        _teardown_auth_env(monkeypatch)

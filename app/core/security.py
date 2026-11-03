@@ -119,10 +119,16 @@ class UserStore:
     def __init__(self) -> None:
         self._users: Dict[str, User] = {}
         self._seeded = False
+        # Users this process has ever known. Used by token re-validation to tell
+        # a *deleted* user (seen before, now gone — reject) from a user that was
+        # never seeded in this process (store not yet initialised — trust the
+        # token so auth degrades the same way as a store outage).
+        self._ever_seen: set[str] = set()
 
     def reset(self) -> None:
         """Drop all users and force re-seeding (used by tests)."""
         self._users = {}
+        self._ever_seen = set()
         self._seeded = False
 
     def _seed(self) -> None:
@@ -140,6 +146,7 @@ class UserStore:
                         role=str(entry.get("role", "viewer")),
                         hashed_password=hash_password(str(entry["password"])),
                     )
+                    self._ever_seen.add(username)
                 logger.info("Loaded {} auth user(s) from AUTH_USERS", len(self._users))
                 return
             except Exception as exc:
@@ -149,14 +156,27 @@ class UserStore:
             role="admin",
             hashed_password=hash_password(settings.auth_admin_password or "admin"),
         )
+        self._ever_seen.add("admin")
         logger.warning(
             "Auth enabled with a seeded 'admin' account. Set AUTH_USERS or "
             "AUTH_ADMIN_PASSWORD before exposing this service."
         )
 
-    def get(self, username: str) -> Optional[User]:
-        self._seed()
+    def get(self, username: str, *, seed: bool = True) -> Optional[User]:
+        """Look up a user by name.
+
+        ``seed=False`` looks at the current user set as-is, without lazily
+        (re)seeding from configuration — used by the token re-validation path
+        so a user removed at runtime stays removed for the life of the process.
+        """
+        if seed:
+            self._seed()
         return self._users.get(username)
+
+    def has_ever_seen(self, username: str) -> bool:
+        """True if this process has loaded ``username`` at any point."""
+        self._seed()
+        return username in self._ever_seen
 
     def authenticate(self, username: str, password: str) -> Optional[User]:
         user = self.get(username)
