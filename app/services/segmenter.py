@@ -265,6 +265,16 @@ def _looks_like_heading_line(line: str) -> bool:
         and not stripped.endswith(",")
     ):
         return True
+    # Annexure / schedule / exhibit / appendix headings. These are clause
+    # boundaries regardless of case or embedded letters/digits (e.g.
+    # "ANNEXURE A: SERVICE LEVELS", "Annex 2: Delivery Terms", "SCHEDULE 1",
+    # "EXHIBIT B", "Appendix C").
+    if (
+        len(stripped) <= 80
+        and not stripped.endswith((".", ","))
+        and _ANNEXURE_HEADING_RE.search(stripped)
+    ):
+        return True
     # Keyword hint — only if the line is very short (<= 60 chars) and is title-cased.
     if (
         len(stripped) <= 60
@@ -276,6 +286,17 @@ def _looks_like_heading_line(line: str) -> bool:
     ):
         return True
     return False
+
+
+# Matches lines that open an annexure/schedule/exhibit/appendix. The keyword
+# must be at the start (optionally preceded by a section number) so that body
+# sentences like "the parties shall refer to Annexure A" are not treated as
+# headings.
+_ANNEXURE_HEADING_RE = re.compile(
+    r"^(?:\d+(?:\.\d+)*[\.\):]\s+)?"
+    r"(?:annexure|annex|schedule|exhibit|appendix)\b",
+    re.IGNORECASE,
+)
 
 
 _HEADING_HINTS = (

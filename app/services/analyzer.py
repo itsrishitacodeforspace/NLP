@@ -272,13 +272,21 @@ def _stamp_page_hints(raw_clauses: List, pages: Optional[list]) -> None:
         return
     doc = clean_text("\n\n".join(pg.text for pg in pages if pg.text))
     bounds: List[tuple[int, int, int]] = []  # (start, end, page_number)
+    search_from = 0
     for pg in pages:
         if not pg.text.strip():
             continue
-        found = doc.find(pg.text)
+        # Locate this page's text at or after the previous page's end. A bare
+        # doc.find(pg.text) would return the *first* occurrence, which can be
+        # an earlier page if this page's text (e.g. an annexure heading that a
+        # prior clause also mentions) re-appears there — shifting every
+        # subsequent bound. Searching forward from the previous page keeps the
+        # offsets in document order.
+        found = doc.find(pg.text, search_from)
         if found == -1:
             continue
         bounds.append((found, found + len(pg.text), pg.page_number))
+        search_from = found + len(pg.text)
     if not bounds:
         return
     for clause in raw_clauses:

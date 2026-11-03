@@ -109,9 +109,7 @@ def parse_document(
         parsed = _parse_text(p, contract_id=contract_id)
 
     if not parsed.full_text.strip():
-        raise DocumentParseError(
-            "Document parsed but no text could be extracted. The file may be empty or corrupted."
-        )
+        _raise_no_extractable_text(parsed)
 
     _check_min_meaningful_content(parsed)
 
@@ -129,6 +127,32 @@ def parse_document(
         ",".join({pg.method for pg in parsed.pages}) or "n/a",
     )
     return parsed
+
+
+def _raise_no_extractable_text(parsed: ParsedDocument) -> None:
+    """Raise for a document with no extractable text, with an OCR hint when the
+    document is a multi-page PDF that went through (or attempted) the OCR path.
+
+    An image-only (scanned) PDF with tesseract absent is the common case: the
+    operator needs to know to install tesseract-ocr, not a vague "empty or
+    corrupted" message.
+    """
+    if parsed.metadata.get("ext") == ".pdf" and len(parsed.pages) > 1:
+        raise DocumentParseError(
+            "Document has no extractable text. The document may be image-only "
+            "(scanned); install tesseract-ocr for OCR support."
+        )
+    # Single-page PDFs that attempted OCR also get the hint.
+    if parsed.metadata.get("ext") == ".pdf" and any(
+        w.startswith("OCR") for w in parsed.warnings
+    ):
+        raise DocumentParseError(
+            "Document has no extractable text. The document may be image-only "
+            "(scanned); install tesseract-ocr for OCR support."
+        )
+    raise DocumentParseError(
+        "Document parsed but no text could be extracted. The file may be empty or corrupted."
+    )
 
 
 def _check_min_meaningful_content(parsed: ParsedDocument) -> None:
@@ -490,17 +514,41 @@ def parse_bytes(
     return parsed
 
 
+# A real page header/footer is short. Requiring the matching line to be at or
+# under this length stops the bare ``confidential`` / ``draft`` hints from
+# stripping clause *body* lines that merely contain those words (e.g.
+# "Confidentiality is paramount." or "This is a draft of the agreement.").
+# "Page N of M" is unambiguous enough that it is stripped at any length.
+_MAX_HEADER_LEN = 60
+
 _HEADER_FOOTER_HINTS = re.compile(
-    r"(page\s*\d+\s*of\s*\d+|\bconfidential\b|"
-    r"\bdraft\b|private\s+and\s+confidential)",
+    r"(page\s*\d+\s*of\s*\d+|private\s+and\s+confidential|\bconfidential\b|\bdraft\b)",
     re.IGNORECASE,
 )
 
+_PAGE_OF_RE = re.compile(r"page\s*\d+\s*of\s*\d+", re.IGNORECASE)
+
 
 def strip_headers_footers(text: str) -> str:
-    """Best-effort removal of repeating headers/footers."""
+    """Best-effort removal of repeating headers/footers.
+
+    A line is dropped when it looks like a running header/footer: a short
+    line (<= ``_MAX_HEADER_LEN`` chars) matching a header hint, or *any* line
+    containing "Page N of M" (unambiguous pagination). Clause body lines that
+    happen to contain "confidential", "draft" or "3 of the 6 parties" are
+    preserved because they are long or lack the pagination marker.
+    """
     if not text:
         return ""
-    lines = text.split("\n")
-    kept = [ln for ln in lines if not _HEADER_FOOTER_HINTS.search(ln)]
+    kept: List[str] = []
+    for ln in text.split("\n"):
+        stripped = ln.strip()
+        if not stripped:
+            kept.append(ln)
+            continue
+        if _PAGE_OF_RE.search(stripped):
+            continue  # "Page N of M" is always a header/footer
+        if len(stripped) <= _MAX_HEADER_LEN and _HEADER_FOOTER_HINTS.search(stripped):
+            continue  # short line with a header hint (confidential / draft / ...)
+        kept.append(ln)
     return "\n".join(kept).strip()
