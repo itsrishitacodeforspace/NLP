@@ -210,11 +210,15 @@ def _analyse(
             cl.risk_reasons = []
 
     # 6. Aggregate contract risk
-    from nlp.risk_scoring.scorer import score_contract
+    from nlp.risk_scoring.scorer import SCORE_CAVEAT, score_contract
 
-    overall_score, overall_level = score_contract(clauses, flags)
+    overall_score, overall_level, score_breakdown = score_contract(clauses, flags)
     summary_draft.overall_risk_score = overall_score
     summary_draft.overall_risk_level = overall_level
+    # Score explainability (charter: avoid false precision): expose the
+    # per-term contributions and always attach the honesty caveat.
+    summary_draft.risk_score_breakdown = score_breakdown or None
+    summary_draft.score_caveat = SCORE_CAVEAT
     summary_draft.high_risk_clauses = sum(
         1 for c in clauses if c.risk_level in (RiskSeverity.HIGH, RiskSeverity.CRITICAL)
     )

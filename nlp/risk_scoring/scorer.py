@@ -23,10 +23,18 @@ def _level_for(score: float) -> RiskSeverity:
     return RiskSeverity.LOW
 
 
+# One-line honesty note for any contract score (charter: avoid false
+# precision). Set by the analyzer on ``ContractSummary.score_caveat``.
+SCORE_CAVEAT = (
+    "Score is a prioritization aid derived from rule findings and their "
+    "severities, not a probability and not a legal assessment."
+)
+
+
 def score_contract(
     clauses: List[Clause],
     risks: List[RiskFlag],
-) -> tuple[float, RiskSeverity]:
+) -> tuple[float, RiskSeverity, dict]:
     """Compute the contract score from the risk flags.
 
     Formula:
@@ -39,9 +47,14 @@ def score_contract(
     The score is an *ordinal risk heuristic*, not a calibrated probability: a
     higher value means more and/or more severe findings. 100 means "at the top
     of the critical band", not "100% certain" or "100% likely to be a problem".
+
+    Returns ``(score, level, breakdown)`` where ``breakdown`` shows the
+    contribution of each formula term (per-severity counts included) so a
+    reviewer can see WHY the score is what it is. Key invariant: when no
+    capping happened, ``sum(breakdown values) == score``.
     """
     if not risks:
-        return 0.0, RiskSeverity.LOW
+        return 0.0, RiskSeverity.LOW, {}
 
     top = max((r.score for r in risks), default=0.0)
     volume = min(20.0, max(0, len(risks) - 1) * 2.0)
@@ -50,7 +63,18 @@ def score_contract(
         sum(severity_to_score(r.severity) for r in risks) / 100.0,
     )
     score = min(100.0, round(top + volume + severity_mass, 1))
-    return score, _level_for(score)
+    breakdown: dict = {
+        "top": round(top, 1),
+        "volume": round(volume, 1),
+        "severity_mass": round(severity_mass, 1),
+        "cap_adjustment": round(score - (top + volume + severity_mass), 1),
+    }
+    by_sev = {
+        sev.value: sum(1 for r in risks if r.severity is sev)
+        for sev in (RiskSeverity.CRITICAL, RiskSeverity.HIGH, RiskSeverity.MEDIUM, RiskSeverity.LOW)
+    }
+    breakdown["findings_by_severity"] = {k: v for k, v in by_sev.items() if v}
+    return score, _level_for(score), breakdown
 
 
 def severity_to_score(severity: RiskSeverity) -> float:

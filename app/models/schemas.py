@@ -106,6 +106,10 @@ class Obligation(BaseModel):
     condition: Optional[str] = None
     deadline_expression: Optional[str] = None
     deadline_date: Optional[str] = None
+    # Recurring performance cadence ("monthly", "quarterly", ...) extracted
+    # from a frequency adverb in the obligation sentence. ``None`` (the common
+    # case) means no recurring cadence is stated.
+    frequency: Optional[str] = None
     risk_level: RiskSeverity = RiskSeverity.LOW
     confidence: float = 0.7
     source: str = "rule"
@@ -169,6 +173,22 @@ class RiskFlag(BaseModel):
     # Used by ``_bind_evidence`` to bind a tight evidence span rather than the
     # whole clause. ``None`` for contract-level or trigger-less findings.
     evidence_text: Optional[str] = None
+    # P5 (charter §5.A): why-it-matters enrichment. All fields are populated
+    # only when the rule logic genuinely knows the answer from the available
+    # data; every field is left ``None`` when it cannot be determined
+    # (never fabricated). Older payloads without these keys still validate.
+    # One sentence on the practical consequence if the clause operates as
+    # written.
+    impact_summary: Optional[str] = None
+    # Which parties are affected — by name when the name is known from
+    # ``ContractSummary.parties``, else a role ("both parties").
+    affected_parties: Optional[List[str]] = None
+    # A concrete suggested next review step for a human reviewer.
+    review_action: Optional[str] = None
+    # What remains uncertain after the automated check (the residual
+    # manual-review burden, e.g. "phrase-based search; the protection may be
+    # expressed differently or located in an annex").
+    uncertainty_note: Optional[str] = None
 
 
 class ContractSummary(BaseModel):
@@ -189,6 +209,14 @@ class ContractSummary(BaseModel):
     overall_risk_level: RiskSeverity = RiskSeverity.LOW
     high_risk_clauses: int = 0
     missing_clauses: List[str] = Field(default_factory=list)
+    # P5 (charter: score explainability): per-term contributions of
+    # ``overall_risk_score`` so a reviewer can see WHY the score is what it is
+    # (top finding, volume, severity mass — see ``nlp.risk_scoring.scorer``).
+    # Keys are stable: "top", "volume", "severity_mass", "cap_adjustment".
+    risk_score_breakdown: Optional[Dict[str, float]] = None
+    # P5: one-line honesty note attached to the score. Always set by the
+    # analyzer; never a probability or a legal assessment.
+    score_caveat: Optional[str] = None
     top_risks: List[RiskFlag] = Field(default_factory=list)
     clause_count: int = 0
     obligation_count: int = 0

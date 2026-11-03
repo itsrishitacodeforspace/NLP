@@ -260,20 +260,24 @@ def test_renewal_written_notice_is_medium():
 
 
 def test_no_findings_scores_zero_low():
-    score, level = score_contract([], [])
-    assert score == 0.0 and level == RiskSeverity.LOW
+    score, level, breakdown = score_contract([], [])
+    assert score == 0.0 and level == RiskSeverity.LOW and breakdown == {}
 
 
 def test_single_critical_finding_is_critical_but_not_100():
-    score, level = score_contract([], [_flag("RISK_LIABILITY_001", RiskSeverity.CRITICAL, 85.0)])
+    score, level, breakdown = score_contract([], [_flag("RISK_LIABILITY_001", RiskSeverity.CRITICAL, 85.0)])
     assert level == RiskSeverity.CRITICAL
     assert 76.0 <= score < 100.0  # one finding does not saturate the scale
+    assert breakdown["findings_by_severity"] == {"critical": 1}
 
 
 def test_score_is_capped_at_100():
     flags = [_flag(f"R{i}", RiskSeverity.CRITICAL, 85.0) for i in range(15)]
-    score, level = score_contract([], flags)
+    score, level, breakdown = score_contract([], flags)
     assert score == 100.0 and level == RiskSeverity.CRITICAL
+    # The cap adjustment is explicit: the terms overshoot the 100 cap.
+    assert breakdown["cap_adjustment"] < 0
+    assert sum(breakdown[k] for k in ("top", "volume", "severity_mass", "cap_adjustment")) == score
 
 
 # ----------------------------------------------------------------- data breach
