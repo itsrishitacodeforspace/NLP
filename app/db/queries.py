@@ -213,6 +213,34 @@ def upsert_party(contract_id: str, party_name: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+def _json_safe(value):
+    """Coerce Neo4j-native property values (e.g. ``neo4j.time.DateTime``) to
+    JSON-safe primitives.
+
+    A node carrying a Neo4j datetime otherwise makes FastAPI/Pydantic response
+    serialization raise, surfacing as a 500 on ``GET /graph/{contract_id}``.
+    """
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    iso = getattr(value, "isoformat", None)
+    if callable(iso):
+        try:
+            return iso()
+        except Exception:
+            pass
+    iso_fmt = getattr(value, "iso_format", None)
+    if callable(iso_fmt):
+        try:
+            return iso_fmt()
+        except Exception:
+            pass
+    return str(value)
+
+
 def fetch_graph(contract_id: str) -> GraphSnapshot:
     """Return the subgraph for a contract as plain Python dicts."""
     nodes_query = """
@@ -247,7 +275,7 @@ def fetch_graph(contract_id: str) -> GraphSnapshot:
 
     nodes: List[GraphNode] = []
     for n in raw_nodes:
-        props = dict(n.get("properties") or {})
+        props = {k: _json_safe(v) for k, v in dict(n.get("properties") or {}).items()}
         # Trim noisy fields
         for k in ("text", "heading"):
             if k in props and isinstance(props[k], str) and len(props[k]) > 280:
