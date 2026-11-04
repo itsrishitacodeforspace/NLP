@@ -14,7 +14,7 @@ export function Alert({
     <div
       role="alert"
       className={cn(
-        'relative w-full rounded-md border p-4 text-sm',
+        'relative w-full rounded-none border p-4 text-sm',
         {
           default: 'bg-card',
           warning: 'border-risk-medium/40 bg-risk-medium/10 text-foreground',

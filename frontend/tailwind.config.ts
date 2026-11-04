@@ -46,6 +46,19 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        // Fraunces — editorial display face for mastheads, titles, big numbers.
+        display: ['var(--font-display)', 'Georgia', 'serif'],
+      },
+      // "Redline" surfaces are sharp — documents don't have rounded corners.
+      // `full` is intentionally left alone (status dots, spinner, progress).
+      borderRadius: {
+        DEFAULT: '0px',
+        sm: '0px',
+        md: '0px',
+        lg: '0px',
+        xl: '0px',
+        '2xl': '0px',
+        '3xl': '0px',
       },
     },
   },

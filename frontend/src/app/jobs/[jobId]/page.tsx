@@ -46,7 +46,7 @@ export default function JobPage() {
   if (isLoading || !job) {
     return (
       <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-xl font-semibold tracking-tight">Analysis in progress</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Analysis in progress</h1>
         <Card>
           <CardContent className="space-y-4 p-6">
             <LoadingState label="Fetching job status…" />
@@ -73,7 +73,7 @@ export default function JobPage() {
   if (job.status === 'failed') {
     return (
       <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-xl font-semibold tracking-tight">Analysis failed</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight">Analysis failed</h1>
         <ErrorState
           title="Analysis failed"
           description={job.error ?? 'The backend reported a failure without details. The document may be unreadable or unsupported.'}
@@ -99,7 +99,7 @@ export default function JobPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-xl font-semibold tracking-tight">Analyzing your contract</h1>
+      <h1 className="font-display text-xl font-semibold tracking-tight">Analyzing your contract</h1>
 
       <Card>
         <CardHeader>

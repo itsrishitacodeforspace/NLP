@@ -7,6 +7,7 @@ import {
   Bar,
   BarChart,
   Cell,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -177,7 +178,6 @@ function SeverityDonut({ risks }: { risks: RiskFlag[] }) {
 
 function CategoryBreakdown({ risks }: { risks: RiskFlag[] }) {
   const groups = groupByCategorySeverities(risks);
-  const max = Math.max(1, ...groups.map((g) => g.total));
   const data = groups.map((g) => ({ name: g.category, count: g.total }));
   return (
     <Card>
@@ -193,31 +193,17 @@ function CategoryBreakdown({ risks }: { risks: RiskFlag[] }) {
         ) : (
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 24 }}>
+              <BarChart data={data} layout="vertical" margin={{ left: 8, right: 40 }}>
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" width={130} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="count" name="Findings" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={16} />
+                <Bar dataKey="count" name="Findings" fill="#7b1e28" barSize={16}>
+                  <LabelList dataKey="count" position="right" style={{ fill: '#6b6558', fontSize: 12 }} />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
-        {/* Simple bar list fallback is redundant; keep the chart above. */}
-        {groups.length > 0 ? (
-          <ul className="mt-3 space-y-1">
-            {groups.map((g) => (
-              <li key={g.category} className="flex items-center gap-2 text-sm">
-                <span className="w-32 shrink-0 truncate text-muted-foreground" title={g.category}>
-                  {g.category}
-                </span>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-primary/70" style={{ width: `${(g.total / max) * 100}%` }} />
-                </div>
-                <span className="w-6 text-right tabular-nums">{g.total}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
       </CardContent>
     </Card>
   );
@@ -511,7 +497,7 @@ export default function RisksPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Risk dashboard</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Risk dashboard</h1>
         <p className="text-sm text-muted-foreground">
           {summary.title}
           {summary.parties && summary.parties.length > 0 ? (

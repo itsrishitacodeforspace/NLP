@@ -17,11 +17,11 @@ export function Progress({ value, className, label, ...props }: ProgressProps) {
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={label ?? 'Progress'}
-      className={cn('h-2 w-full overflow-hidden rounded-full bg-muted', className)}
+      className={cn('h-2 w-full overflow-hidden bg-muted', className)}
       {...props}
     >
       <div
-        className="h-full rounded-full bg-primary transition-all duration-300"
+        className="h-full bg-primary transition-all duration-300"
         style={{ width: `${pct}%` }}
       />
     </div>

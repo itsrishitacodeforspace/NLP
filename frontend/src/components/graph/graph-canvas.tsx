@@ -90,6 +90,18 @@ export function GraphCanvas({ snapshot, isLoading = false, skeletonOnly = false 
     );
   }
 
+  // Mount React Flow only after the client-side layout has populated nodes, so
+  // `fitView` fits a non-empty graph on mount (it does not re-run when nodes
+  // arrive later). Without this the initial viewport fits the empty state.
+  if (filtered.nodes.length > 0 && baseNodes.length === 0) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-[420px] w-full" />
+      </div>
+    );
+  }
+
   const onNodeClick = (_: React.MouseEvent, n: Node) => {
     const node = (n.data as { node?: GraphNode } | undefined)?.node ?? null;
     setSelectedEdge(null);
@@ -125,7 +137,7 @@ export function GraphCanvas({ snapshot, isLoading = false, skeletonOnly = false 
               onEdgesChange={onEdgesChange}
               nodeTypes={nodeTypes}
               fitView
-              fitViewOptions={{ padding: 0.25, maxZoom: 1 }}
+              fitViewOptions={{ padding: 0.15, minZoom: 0.6, maxZoom: 1 }}
               minZoom={0.15}
               maxZoom={2}
               onNodeClick={onNodeClick}

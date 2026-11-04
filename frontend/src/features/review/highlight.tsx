@@ -65,7 +65,7 @@ export function renderClauseWithHighlights(
           }
         }}
         className={cn(
-          'cursor-pointer rounded-sm border-l-2 px-0.5 text-inherit transition-opacity',
+          'cursor-pointer border-b-2 px-0.5 text-inherit transition-opacity',
           meta.bg,
           meta.border,
           p.selected

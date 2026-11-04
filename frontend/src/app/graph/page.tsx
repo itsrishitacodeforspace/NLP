@@ -53,7 +53,7 @@ export default function GraphExplorerPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold tracking-tight">
           <GitBranch className="h-5 w-5 text-muted-foreground" aria-hidden /> Graph Explorer
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -71,7 +71,7 @@ export default function GraphExplorerPage() {
                 value={selected}
                 onChange={(e) => setSelected(e.target.value)}
                 disabled={loadingContracts}
-                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
               >
                 {loadingContracts ? (
                   <option value="">Loading…</option>

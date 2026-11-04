@@ -99,7 +99,7 @@ export function DropZone() {
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           className={cn(
-            'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-colors',
+            'flex cursor-pointer flex-col items-center justify-center gap-2 border border-dashed px-6 py-10 text-center transition-colors',
             dragOver ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/40',
             rejectReason && 'border-destructive/50'
           )}
@@ -155,7 +155,7 @@ export function DropZone() {
               id="contract-type"
               value={contractType}
               onChange={(e) => setContractType(e.target.value as ContractType)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-9 w-full border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {CONTRACT_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -170,7 +170,7 @@ export function DropZone() {
               id="user-role"
               value={userRole}
               onChange={(e) => setUserRole(e.target.value as PartySide)}
-              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-9 w-full border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {PARTY_SIDES.map((s) => (
                 <option key={s} value={s}>

@@ -9,14 +9,14 @@ export function SeverityBadge({ severity, className }: { severity: string; class
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-none border px-1.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.06em]',
         meta.bg,
         meta.text,
         meta.border,
         className
       )}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" aria-hidden />
       {meta.label}
     </span>
   );
@@ -29,7 +29,7 @@ export function SourceBadge({ source, evidenceStatus }: { source?: string; evide
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] font-medium',
+        'inline-flex items-center rounded-none border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em]',
         isModel
           ? 'border-primary/30 bg-primary/10 text-primary'
           : 'border-border bg-muted/50 text-muted-foreground'
@@ -52,27 +52,27 @@ export function RiskGauge({ score, level, caveat }: { score: number; level: stri
   return (
     <div className="flex items-center gap-4">
       <svg width="110" height="110" viewBox="0 0 110 110" role="img" aria-label={`Risk score ${score} of 100, ${meta.label}`}>
-        <circle cx="55" cy="55" r={r} fill="none" stroke="currentColor" className="text-muted" strokeWidth="10" />
+        <circle cx="55" cy="55" r={r} fill="none" stroke="currentColor" className="text-muted" strokeWidth="8" />
         <circle
           cx="55"
           cy="55"
           r={r}
           fill="none"
           stroke={meta.hex}
-          strokeWidth="10"
-          strokeLinecap="round"
+          strokeWidth="8"
+          strokeLinecap="butt"
           strokeDasharray={circ}
           strokeDashoffset={circ * (1 - pct)}
           transform="rotate(-90 55 55)"
         />
-        <text x="55" y="52" textAnchor="middle" className="fill-foreground text-2xl font-semibold">
+        <text x="55" y="54" textAnchor="middle" className="fill-foreground font-display text-3xl font-semibold">
           {Math.round(score)}
         </text>
-        <text x="55" y="70" textAnchor="middle" className="fill-muted-foreground text-[10px] uppercase tracking-wide">
+        <text x="55" y="72" textAnchor="middle" className="fill-muted-foreground font-mono text-[9px] uppercase tracking-[0.12em]">
           {meta.label}
         </text>
       </svg>
-      {caveat ? <p className="max-w-[220px] text-xs text-muted-foreground">{caveat}</p> : null}
+      {caveat ? <p className="max-w-[220px] text-xs leading-relaxed text-muted-foreground">{caveat}</p> : null}
     </div>
   );
 }

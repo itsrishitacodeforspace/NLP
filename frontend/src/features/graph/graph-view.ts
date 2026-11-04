@@ -5,8 +5,8 @@ import { MarkerType } from '@xyflow/react';
 import type { GraphNode, GraphSnapshot } from '@/types';
 import { severityMeta, toSeverity } from '@/lib/severity';
 
-export type NodeKind = 'Contract' | 'Clause' | 'Obligation' | 'Risk';
-export const NODE_KINDS: NodeKind[] = ['Contract', 'Clause', 'Obligation', 'Risk'];
+export type NodeKind = 'Contract' | 'Clause' | 'Obligation' | 'Risk' | 'Party';
+export const NODE_KINDS: NodeKind[] = ['Contract', 'Clause', 'Obligation', 'Risk', 'Party'];
 
 export type RiskSeverityFilter = 'critical' | 'high' | 'medium' | 'low';
 export const RISK_SEVERITIES: RiskSeverityFilter[] = ['critical', 'high', 'medium', 'low'];
@@ -18,7 +18,7 @@ export interface GraphFilters {
 }
 
 export const defaultFilters: GraphFilters = {
-  kinds: { Contract: true, Clause: true, Obligation: true, Risk: true },
+  kinds: { Contract: true, Clause: true, Obligation: true, Risk: true, Party: true },
   severities: { critical: true, high: true, medium: true, low: true },
   search: '',
 };
@@ -58,7 +58,7 @@ type GraphEdgeLike = GraphSnapshot['edges'][number];
 export function nodeClassName(label: string, properties: GraphNode['properties']): string {
   switch (label) {
     case 'Contract':
-      return 'rounded-lg border-2 border-primary bg-card text-sm font-semibold shadow-sm';
+      return 'rounded-lg border-2 border-primary bg-card text-sm font-semibold';
     case 'Obligation':
       return 'rounded-md border border-secondary bg-secondary/60 text-sm';
     case 'Risk': {
@@ -87,6 +87,7 @@ export function nodeSummary(label: string, properties: GraphNode['properties']):
   }
   if (label === 'Obligation') return [p.type, first('action') ? `→ ${first('action')}` : undefined].filter(Boolean).join(' ');
   if (label === 'Risk') return [first('name'), first('severity') ? `(${first('severity')})` : undefined].filter(Boolean).join(' ');
+  if (label === 'Party') return first('name') ?? '';
   return '';
 }
 
@@ -96,13 +97,69 @@ function truncate(s: string | undefined, n: number): string | undefined {
 }
 
 /**
+ * Tidy top-down tree layout. The backend returns no positions, so this is the
+ * sole layout authority: parents sit centred over their children and leaves are
+ * spaced evenly — instead of everything stacking at the origin (0,0).
+ */
+function computeLayout(
+  nodes: GraphNode[],
+  edges: GraphSnapshot['edges']
+): Map<string, { x: number; y: number }> {
+  const pos = new Map<string, { x: number; y: number }>();
+  const idSet = new Set(nodes.map((n) => n.id));
+
+  const children = new Map<string, string[]>();
+  const hasParent = new Set<string>();
+  for (const e of edges) {
+    if (!idSet.has(e.source) || !idSet.has(e.target)) continue;
+    if (!children.has(e.source)) children.set(e.source, []);
+    children.get(e.source)!.push(e.target);
+    hasParent.add(e.target);
+  }
+
+  const X_GAP = 260; // >= NodeCard max width so siblings don't overlap
+  const Y_GAP = 170;
+  let leafCursor = 0;
+  const visited = new Set<string>();
+
+  const dfs = (id: string, depth: number): number => {
+    if (visited.has(id)) return leafCursor * X_GAP; // multi-parent / cycle guard
+    visited.add(id);
+    const kids = (children.get(id) ?? []).filter((k) => idSet.has(k));
+    if (kids.length === 0) {
+      const x = leafCursor * X_GAP;
+      leafCursor += 1;
+      pos.set(id, { x, y: depth * Y_GAP });
+      return x;
+    }
+    const xs = kids.map((k) => dfs(k, depth + 1));
+    const center = (Math.min(...xs) + Math.max(...xs)) / 2;
+    pos.set(id, { x: center, y: depth * Y_GAP });
+    return center;
+  };
+
+  // Roots = nodes with no incoming edge (the Contract + any contract-level risk).
+  for (const n of nodes) if (!hasParent.has(n.id)) dfs(n.id, 0);
+  // Unreachable stragglers (defensive) — line them up on the top row.
+  for (const n of nodes) {
+    if (!pos.has(n.id)) {
+      pos.set(n.id, { x: leafCursor * X_GAP, y: 0 });
+      leafCursor += 1;
+    }
+  }
+  return pos;
+}
+
+/**
  * Map the (already filtered) subset of a backend snapshot onto React Flow
  * nodes/edges. Pure — renders exactly what the backend returned, nothing invented.
  */
 export function toFlow(snapshot: GraphSnapshot, subset: { nodes: GraphNode[]; edges: GraphSnapshot['edges'] }): { nodes: Node[]; edges: Edge[] } {
+  const positions = computeLayout(subset.nodes, subset.edges);
   const nodes: Node[] = subset.nodes.map((n) => ({
     id: n.id,
-    position: { x: 0, y: 0 },
+    type: 'card',
+    position: positions.get(n.id) ?? { x: 0, y: 0 },
     data: { label: n.label, summary: nodeSummary(n.label, n.properties), node: n },
     className: nodeClassName(n.label, n.properties),
   }));

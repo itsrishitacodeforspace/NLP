@@ -144,7 +144,7 @@ export function ObligationsTable({
 
   const canExport = anyObligationHasDate(obligations);
   const selectCls =
-    'h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+    'h-9 border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
   return (
     <div className="space-y-3">
@@ -224,10 +224,10 @@ export function ObligationsTable({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto border border-border">
         <table className="w-full min-w-[900px] text-sm">
           <thead className="bg-muted/40">
-            <tr className="text-left text-xs text-muted-foreground">
+            <tr className="text-left font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
               <th className="px-3 py-2 font-medium">Obligation</th>
               <SortHeader label="Responsible party" active={sortKey === 'party'} dir={sortDir} onClick={() => toggleSort('party')} />
               <th className="px-3 py-2 font-medium">Beneficiary</th>
@@ -350,7 +350,7 @@ function ObligationRow({
       <td className="px-3 py-2.5">
         <span
           className={cn(
-            'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+            'inline-flex items-center rounded-none border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide whitespace-nowrap',
             OBLIGATION_STATUS_STYLE[d.status]
           )}
         >
@@ -359,9 +359,9 @@ function ObligationRow({
       </td>
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-1.5">
-          <div className="h-1.5 w-12 overflow-hidden rounded-full bg-muted">
+            <div className="h-1.5 w-12 overflow-hidden bg-muted">
             <div
-              className="h-full rounded-full bg-primary/70"
+              className="h-full bg-primary/70"
               style={{ width: `${Math.round(Math.max(0, Math.min(1, o.confidence)) * 100)}%` }}
             />
           </div>

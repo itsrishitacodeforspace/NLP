@@ -52,7 +52,7 @@ export default function ObligationsPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Obligation tracker</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">Obligation tracker</h1>
         <p className="text-sm text-muted-foreground">
           {summary?.title ?? contractId}
           {summary?.parties && summary.parties.length > 0 ? (

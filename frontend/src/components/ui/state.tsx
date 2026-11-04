@@ -40,7 +40,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-10 text-center', className)}>
+    <div className={cn('flex flex-col items-center justify-center gap-2 rounded-none border border-dashed p-10 text-center', className)}>
       {icon ? <div className="text-muted-foreground">{icon}</div> : null}
       <h3 className="text-sm font-medium">{title}</h3>
       {description ? <p className="max-w-sm text-sm text-muted-foreground">{description}</p> : null}
@@ -63,7 +63,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className={cn('flex flex-col items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-10 text-center', className)}
+      className={cn('flex flex-col items-center justify-center gap-2 rounded-none border border-destructive/40 bg-destructive/5 p-10 text-center', className)}
     >
       <h3 className="text-sm font-medium text-destructive">{title}</h3>
       {description ? <p className="max-w-sm text-sm text-muted-foreground">{description}</p> : null}

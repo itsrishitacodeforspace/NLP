@@ -36,14 +36,14 @@ export function GraphFilterBar({ filters, onChange, visible, total }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Nodes</span>
         {NODE_KINDS.map((k) => (
           <Toggle key={k} checked={filters.kinds[k]} label={k} onToggle={() => kindOn(k)} />
         ))}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
         <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Risk severity</span>
         {RISK_SEVERITIES.map((s) => (
           <Toggle key={s} checked={filters.severities[s]} label={severityMeta(s).label} onToggle={() => sevOn(s)} />
@@ -55,7 +55,7 @@ export function GraphFilterBar({ filters, onChange, visible, total }: Props) {
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
         placeholder="Search id / label / properties…"
-        className="h-7 w-52 rounded-md border border-input bg-background px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="h-7 w-52 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
 
       <span className={cn('ml-auto text-xs text-muted-foreground', allOff && 'text-destructive')}>

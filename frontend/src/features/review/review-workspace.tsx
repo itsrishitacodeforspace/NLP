@@ -56,7 +56,13 @@ export function ReviewWorkspace({ data }: { contractId: string; data: ReviewData
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
-  const risks = risksQuery.data?.risks ?? data?.risks ?? [];
+  // Memoised so the downstream useMemo hooks keep a stable reference; the
+  // `?? []` fallback would otherwise allocate a new array on every render and
+  // make their dependencies change each time (react-hooks/exhaustive-deps).
+  const risks = React.useMemo(
+    () => risksQuery.data?.risks ?? data?.risks ?? [],
+    [risksQuery.data, data]
+  );
   const selectedRisk = React.useMemo(
     () => risks.find((r) => r.risk_id === selectedRiskId) ?? null,
     [risks, selectedRiskId]
@@ -169,15 +175,15 @@ function PageSkeleton() {
   return (
     <div className="flex min-h-[60vh] flex-col gap-4 lg:flex-row">
       <div className="flex min-h-0 flex-1 flex-col gap-4">
-        <div className="rounded-lg border bg-card p-5">
+        <div className="border border-border bg-card p-5">
           <Skeleton className="h-6 w-1/2" />
           <Skeleton className="mt-2 h-4 w-3/4" />
           <Skeleton className="mt-4 h-3 w-2/3" />
         </div>
-        <div className="rounded-lg border bg-card p-5">
+        <div className="border border-border bg-card p-5">
           <Skeleton className="h-9 w-full" />
         </div>
-        <div className="min-h-64 space-y-3 rounded-lg border bg-card p-5">
+        <div className="min-h-64 space-y-3 border border-border bg-card p-5">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="space-y-2">
               <Skeleton className="h-4 w-1/3" />
@@ -187,7 +193,7 @@ function PageSkeleton() {
           ))}
         </div>
       </div>
-      <div className="w-full shrink-0 rounded-lg border bg-card p-5 lg:w-[400px]">
+      <div className="w-full shrink-0 border border-border bg-card p-5 lg:w-[400px]">
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="mt-3 h-4 w-full" />
         <Skeleton className="mt-2 h-4 w-full" />

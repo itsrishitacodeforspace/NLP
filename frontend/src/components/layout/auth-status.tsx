@@ -27,7 +27,7 @@ export function AuthStatus() {
 
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="text-muted-foreground">
+      <span className="hidden text-muted-foreground sm:inline">
         {user.username} · <span className="capitalize">{user.role}</span>
       </span>
       <LogoutButton />

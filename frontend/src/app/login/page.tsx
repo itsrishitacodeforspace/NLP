@@ -119,6 +119,9 @@ function LoginInner() {
 
   return (
     <div className="mx-auto max-w-sm space-y-6 pt-10">
+      <p className="text-center font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
+        § Restricted access
+      </p>
       <Card>
         <CardHeader>
           <CardTitle>Sign in</CardTitle>

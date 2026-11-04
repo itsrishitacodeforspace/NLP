@@ -4,53 +4,80 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 39% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 39% 11%;
-    --primary: 224 30% 26%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 30% 26%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
-    --accent: 220 14% 94%;
-    --accent-foreground: 224 30% 20%;
-    --destructive: 0 72% 45%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 88%;
-    --input: 220 13% 84%;
-    --ring: 224 30% 26%;
-    /* risk states */
-    --risk-low: 152 60% 36%;
-    --risk-medium: 38 92% 44%;
-    --risk-high: 25 95% 46%;
-    --risk-critical: 0 72% 42%;
-    --radius: 0.5rem;
+    /* ── "Redline" — warm paper & ink ───────────────────────────
+       Light = bone paper, warm ink type, oxblood accent.
+       Format MUST be bare HSL channels: tailwind uses hsl(var(--x))
+       so that /10 opacity modifiers keep working. */
+    --background: 43 40% 92%;
+    --foreground: 40 18% 11%;
+
+    --card: 45 45% 97%;
+    --card-foreground: 40 18% 11%;
+
+    --popover: 45 45% 97%;
+    --popover-foreground: 40 18% 11%;
+
+    --primary: 354 60% 30%;
+    --primary-foreground: 43 40% 96%;
+
+    --secondary: 42 32% 87%;
+    --secondary-foreground: 40 20% 14%;
+
+    --muted: 42 30% 89%;
+    --muted-foreground: 40 8% 40%;
+
+    --accent: 42 32% 87%;
+    --accent-foreground: 354 45% 24%;
+
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 0 40% 97%;
+
+    --border: 43 32% 84%;
+    --input: 43 28% 79%;
+    --ring: 354 60% 30%;
+
+    /* risk states — the only chromatic layer, tuned warm for paper */
+    --risk-low: 134 33% 36%;
+    --risk-medium: 43 85% 40%;
+    --risk-high: 22 74% 44%;
+    --risk-critical: 358 70% 42%;
+
+    --radius: 0.125rem;
   }
 
   .dark {
-    --background: 224 32% 8%;
-    --foreground: 210 40% 96%;
-    --card: 224 30% 11%;
-    --card-foreground: 210 40% 96%;
-    --primary: 214 50% 82%;
-    --primary-foreground: 224 32% 10%;
-    --secondary: 222 24% 17%;
-    --secondary-foreground: 210 40% 94%;
-    --muted: 222 24% 16%;
-    --muted-foreground: 220 12% 62%;
-    --accent: 222 24% 20%;
-    --accent-foreground: 210 40% 94%;
+    --background: 40 12% 9%;
+    --foreground: 42 30% 92%;
+
+    --card: 40 10% 12%;
+    --card-foreground: 42 30% 92%;
+
+    --popover: 40 10% 12%;
+    --popover-foreground: 42 30% 92%;
+
+    --primary: 353 44% 61%;
+    --primary-foreground: 40 25% 12%;
+
+    --secondary: 40 10% 17%;
+    --secondary-foreground: 42 26% 90%;
+
+    --muted: 40 10% 17%;
+    --muted-foreground: 42 12% 58%;
+
+    --accent: 40 14% 21%;
+    --accent-foreground: 42 30% 92%;
+
     --destructive: 0 62% 50%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 222 20% 22%;
-    --input: 222 20% 26%;
-    --ring: 214 50% 70%;
-    --risk-low: 152 55% 45%;
-    --risk-medium: 40 92% 55%;
-    --risk-high: 26 95% 56%;
-    --risk-critical: 0 72% 55%;
+    --destructive-foreground: 0 40% 97%;
+
+    --border: 40 14% 19%;
+    --input: 40 14% 25%;
+    --ring: 353 44% 61%;
+
+    --risk-low: 134 45% 46%;
+    --risk-medium: 43 85% 52%;
+    --risk-high: 22 80% 54%;
+    --risk-critical: 358 75% 55%;
   }
 }
 
@@ -63,15 +90,40 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+  /* editorial selection: a faint oxblood wash, like a redline highlight */
+  ::selection {
+    background: hsl(var(--primary) / 0.16);
+    color: hsl(var(--foreground));
   }
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
+@layer components {
+  /* A hairline section rule with a mono § marker hanging in the left margin.
+     Purely decorative when aria-hidden. */
+  .rule {
+    @apply border-t border-border;
+  }
+  .mark {
+    font-variant-numeric: tabular-nums;
+    @apply font-mono text-xs tracking-widest text-muted-foreground;
+  }
+}
+
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
+  }
+  /* Warm paper grain — extremely subtle, keeps flat surfaces from feeling sterile. */
+  .paper-grain {
+    background-image: radial-gradient(
+      hsl(var(--foreground) / 0.022) 1px,
+      transparent 1px
+    );
+    background-size: 3px 3px;
   }
 }

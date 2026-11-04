@@ -4,7 +4,7 @@ Legal contract intelligence for Indian commercial contracts. Upload a
 PDF/DOCX/TXT/Markdown contract; the FastAPI backend parses, segments and
 risk-scores it in the background while you watch live job progress.
 
-> **Mandatory disclaimer:** AI-generated contract analysis is for
+> **Mandatory disclaimer:** contract analysis is for
 > informational purposes only and does not constitute legal advice. Findings
 > require appropriate human review.
 

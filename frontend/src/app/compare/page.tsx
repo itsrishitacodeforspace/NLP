@@ -76,7 +76,7 @@ function ContractPicker({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={loading}
-        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
         {loading ? (
           <option value="">Loading…</option>
@@ -198,7 +198,7 @@ export default function ComparePage() {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 font-display text-2xl font-semibold tracking-tight">
           <GitCompareArrows className="h-5 w-5 text-muted-foreground" aria-hidden /> Contract Comparison
         </h1>
         <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground">

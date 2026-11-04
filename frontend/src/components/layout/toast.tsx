@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto rounded-md border px-4 py-3 text-sm shadow-md ${
+            className={`pointer-events-auto rounded-md border px-4 py-3 text-sm ${
               t.kind === 'error'
                 ? 'border-destructive/40 bg-destructive/10 text-foreground'
                 : t.kind === 'success'

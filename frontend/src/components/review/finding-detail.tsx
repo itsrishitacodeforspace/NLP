@@ -29,7 +29,7 @@ interface FindingDetailProps {
 
 function FieldLabel({ icon, children }: { icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+    <h3 className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
       {icon}
       {children}
     </h3>
@@ -39,9 +39,9 @@ function FieldLabel({ icon, children }: { icon?: React.ReactNode; children: Reac
 function CaseLawEntry({ entry }: { entry: CaseLawReference }) {
   const verified = entry.verified_on != null;
   return (
-    <li className="rounded-md border p-3">
+    <li className="border-l-2 border-border py-1 pl-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium">{entry.citation}</span>
+        <span className="font-display text-sm font-semibold text-foreground">{entry.citation}</span>
         {verified ? (
           <Badge variant="outline" className="gap-1 border-risk-low/40 text-risk-low">
             <Gavel className="h-3 w-3" aria-hidden />
@@ -54,9 +54,9 @@ function CaseLawEntry({ entry }: { entry: CaseLawReference }) {
         )}
         <Badge variant="secondary">{entry.jurisdiction}</Badge>
       </div>
-      <p className="mt-1.5 text-sm text-muted-foreground">{entry.summary}</p>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{entry.summary}</p>
       {!verified ? (
-        <p className="mt-1 text-xs text-destructive">
+        <p className="mt-1 text-xs leading-relaxed text-destructive">
           This citation has not been verified against primary text. Confirm with counsel before relying on it.
         </p>
       ) : null}
@@ -90,15 +90,15 @@ export function FindingDetail({ risk, onGoToClause, hasRisks }: FindingDetailPro
 
   return (
     <Card className="flex h-full min-h-0 flex-col">
-      <CardHeader className="space-y-2">
+      <CardHeader className="space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-base font-semibold leading-tight">{risk.name}</h2>
+          <h2 className="font-display text-lg font-semibold leading-tight tracking-tight">{risk.name}</h2>
           <SeverityBadge severity={risk.severity} />
           <SourceBadge source={risk.source} evidenceStatus={risk.evidence_status} />
         </div>
         {risk.clause_id ? (
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="max-w-full truncate font-mono" title={risk.clause_id}>
+            <span className="max-w-full truncate font-mono text-[11px]" title={risk.clause_id}>
               {risk.clause_id}
             </span>
             <Button
@@ -138,25 +138,27 @@ export function FindingDetail({ risk, onGoToClause, hasRisks }: FindingDetailPro
         <section className="space-y-1.5">
           <FieldLabel icon={<Quote className="h-3.5 w-3.5" aria-hidden />}>Exact supporting evidence</FieldLabel>
           {evidenceUnbound ? (
-            <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+            <p className="border border-dashed border-border p-3 text-sm text-muted-foreground">
               Supporting evidence is not directly bound to a passage.
               {risk.search_scope ? (
                 <span className="mt-1 block text-xs">{risk.search_scope}</span>
               ) : null}
             </p>
           ) : evidenceSpans.length > 0 ? (
-            <ul className="space-y-2">
+            <ul className="space-y-2.5">
               {evidenceSpans.map((span, i) => (
-                <li key={i} className="rounded-md border p-3">
-                  <blockquote className="border-l-2 border-border pl-3 text-sm italic leading-relaxed">
+                <li key={i} className="border-l-2 border-primary/50 pl-3">
+                  <blockquote className="font-mono text-[13px] leading-[1.7] text-foreground/90">
                     “{span.text}”
                   </blockquote>
-                  <p className="mt-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">{span.role}</p>
+                  <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    {span.role}
+                  </p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+            <p className="border border-dashed border-border p-3 text-sm text-muted-foreground">
               No quoted evidence was captured for this finding.
             </p>
           )}
@@ -186,7 +188,7 @@ export function FindingDetail({ risk, onGoToClause, hasRisks }: FindingDetailPro
         {risk.uncertainty_note ? (
           <section className="space-y-1.5">
             <FieldLabel>Uncertainty</FieldLabel>
-            <p className="text-sm leading-relaxed">{risk.uncertainty_note}</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">{risk.uncertainty_note}</p>
           </section>
         ) : null}
 
@@ -199,7 +201,7 @@ export function FindingDetail({ risk, onGoToClause, hasRisks }: FindingDetailPro
                   key={cid}
                   type="button"
                   onClick={() => onGoToClause(cid)}
-                  className="rounded-full border border-input bg-background px-2.5 py-1 font-mono text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="border border-border px-2.5 py-1 font-mono text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                   title={cid}
                 >
                   {cid.slice(-8)}
@@ -215,7 +217,7 @@ export function FindingDetail({ risk, onGoToClause, hasRisks }: FindingDetailPro
         {risk.case_law?.length ? (
           <section className="space-y-2">
             <FieldLabel icon={<Gavel className="h-3.5 w-3.5" aria-hidden />}>Legal references</FieldLabel>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {risk.case_law.map((c) => (
                 <CaseLawEntry key={c.citation} entry={c} />
               ))}
