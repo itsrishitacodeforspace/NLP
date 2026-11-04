@@ -11,11 +11,13 @@ afterEach(() => {
 describe('format.ts', () => {
   describe('formatDateTime', () => {
     it('treats naive-UTC ISO (no Z, no offset) as UTC', () => {
-      // Rendered in the viewer's local timezone, but the parsed instant must be 12:00Z.
-      const out = formatDateTime('2026-11-03T12:00:00');
-      expect(out).toContain('2026');
-      expect(out).toContain('Nov');
-      expect(out).toContain('12');
+      // Rendering is in the viewer's timezone, so assert the parsed instant
+      // (a naive stamp must equal its explicit-Z form) rather than a fixed
+      // local hour, which would only hold in a UTC environment.
+      const naive = formatDateTime('2026-11-03T12:00:00');
+      expect(naive).toBe(formatDateTime('2026-11-03T12:00:00Z'));
+      expect(naive).toContain('Nov');
+      expect(naive).toContain('2026');
     });
 
     it('also accepts explicit Z and offset suffixes', () => {
