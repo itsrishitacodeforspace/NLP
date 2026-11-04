@@ -22,3 +22,4 @@ o conserve usage, avoiding needless synchronization, rebuilds, retraining, or se
 - Prefers scratch and temporary work to live in a temp file/directory inside the repository (e.g. tmp/), never in the system temp directory. Confidence: 0.9
 - Never adds a co-author trailer (e.g. "Co-authored-by: CommandCodeBot" or any co-author) to git commit messages; if such a trailer appears in git history, cleans it by rewriting only the assistant's own local, unpushed commits. Confidence: 0.9
 - Does not present raw, uncalibrated model scores/confidences as probabilities (e.g. treating 0.98 as a "98% chance"): keeps the raw value for diagnostics but labels it explicitly as an uncalibrated score, not a likelihood. Confidence: 0.65
+- For UI/frontend work, wants designs that are genuinely good-looking and distinctive, explicitly avoiding "AI slop" — the generic AI-generated look (template/cookie-cutter aesthetics) should be actively steered clear of. Confidence: 0.65
