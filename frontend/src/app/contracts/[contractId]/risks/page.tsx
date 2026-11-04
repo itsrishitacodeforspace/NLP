@@ -197,8 +197,12 @@ function CategoryBreakdown({ risks }: { risks: RiskFlag[] }) {
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" width={130} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                 <Tooltip cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-                <Bar dataKey="count" name="Findings" fill="#7b1e28" barSize={16}>
-                  <LabelList dataKey="count" position="right" style={{ fill: '#6b6558', fontSize: 12 }} />
+                <Bar dataKey="count" name="Findings" fill="#7b1e28" className="fill-primary" barSize={16}>
+                  <LabelList
+                    dataKey="count"
+                    position="right"
+                    style={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                  />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
